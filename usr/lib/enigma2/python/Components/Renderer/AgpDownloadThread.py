@@ -298,6 +298,7 @@ class AgpDownloadThread(Thread):
 					return False, "[SKIP : tvdb] {} [{}-{}] => {} (Not found)".format(self.title_safe, chkType, year, url_tvdbg)
 			else:
 				return False, "[SKIP : tvdb] {} [{}-{}] => {} (Not found)".format(self.title_safe, chkType, year, url_tvdbg)
+
 		except Exception as e:
 			if exists(dwn_poster):
 				remove(dwn_poster)
@@ -665,6 +666,7 @@ class AgpDownloadThread(Thread):
 			if response.status_code == 200:
 				try:
 					data = response.json()
+					data = data
 					# If the data is JSON, we can do something with it
 					# E.g., you can process it before saving it, if necessary
 				except ValueError as e:
@@ -765,7 +767,8 @@ class AgpDownloadThread(Thread):
 		cId = 100 * cId // lId
 		return cId
 
-	"""
+
+"""
 	def PMATCH(self, textA, textB):
 		if not textA or not textB:
 			return 0

@@ -52,7 +52,7 @@ from os.path import (  # Utilities path
 	basename,
 
 )
-
+from pathlib import Path  # Management path object-oriented
 import glob              # Search file pattern
 
 # ========================
@@ -76,7 +76,6 @@ from logging.handlers import RotatingFileHandler
 from time import ctime
 from datetime import datetime, timedelta
 import time
-from enigma import Timer
 # ========================
 # IMPORTS FOR WORD PROCESSING
 # ========================
@@ -88,6 +87,10 @@ from re import sub, IGNORECASE  # Regular expressions
 # ========================
 from Components.config import config  # Configurazione Enigma2
 
+# ========================
+# THREADING
+# ========================
+from threading import Timer, Lock as threading_Lock
 
 # Custom import for renderer
 PY3 = version_info[0] >= 3
@@ -231,6 +234,7 @@ logger.info("AGP MediaUtils initialized")
 # convtext.DEBUG = False  # Set to True for debugging
 
 # ================ END LOGGING CONFIGURATION ===============
+
 
 # ================ START GUI CONFIGURATION ===============
 
@@ -648,6 +652,58 @@ delete_old_files_if_low_disk_space(POSTER_FOLDER, min_free_space_mb=50, max_age_
 # ================ START MEMORY CONFIGURATION ================
 
 
+# ================ START SERVICE API CONFIGURATION ===============
+
+# Initialize API lock
+api_lock = threading_Lock()
+
+# --- Default Value---
+tmdb_api = "3c3efcf47c3577558812bb9d64019d65"
+thetvdb_api = "a99d487bb3426e5f3a60dea6d3d3c7ef"
+# thetvdb_api = 'D19315B88B2DE21F'
+omdb_api = "cb1d9f55"
+fanart_api = "6d231536dea4318a88cb2520ce89473b"
+
+# --- Dictionary for centralized management ---
+API_KEYS = {
+	"tmdb_api": tmdb_api,
+	"thetvdb_api": thetvdb_api,
+	"omdb_api": omdb_api,
+	"fanart_api": fanart_api,
+}
+
+
+def _load_api_keys():
+	"""Funzione interna che carica le chiavi all'avvio."""
+	try:
+		cur_skin = config.skin.primary_skin.value.replace('/skin.xml', '')
+		skin_path = Path(f"/usr/share/enigma2/{cur_skin}")
+
+		key_files = {
+			"tmdb_api": skin_path / "tmdb_api",
+			"thetvdb_api": skin_path / "thetvdb_api",
+			"omdb_api": skin_path / "omdb_api",
+			"fanart_api": skin_path / "fanart_api",
+		}
+
+		for key_name, file_path in key_files.items():
+			if file_path.exists():
+				with open(file_path, "r") as f:
+					API_KEYS[key_name] = f.read().strip()
+
+		# Update global variables for compatibility
+		globals().update(API_KEYS)
+		return True
+
+	except Exception as e:
+		print(f"[API Keys] Errore nel caricamento: {str(e)}")
+		return False
+
+
+_load_api_keys()
+
+
+# ================ END SERVICE API CONFIGURATION ================
 def MemClean():
 	try:
 		system('sync')

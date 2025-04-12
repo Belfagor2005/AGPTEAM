@@ -119,6 +119,8 @@ class AglareBackdropX(Renderer):
 		self.pstcanal = None
 		self.timer = eTimer()
 		self.timer.callback.append(self.showBackdrop)
+		self.max_channels = 200  # You can adjust this as needed
+		self.current_channels = 0  # Track number of channels processed
 
 	def applySkin(self, desktop, parent):
 		global SCAN_TIME
@@ -271,15 +273,15 @@ class AglareBackdropX(Renderer):
 
 	def waitBackdrop(self):
 		"""Wait for backdrop download to complete"""
-		"""
+
+		self.pstrNm = self.generateBackdropPath()
 		if not hasattr(self, 'pstrNm') or self.pstrNm is None:  # <-- CONTROLLO AGGIUNTO
 			self._log_error("pstrNm not initialized in waitBackdrop")
 			return
-		"""
+
 		if self.instance:
 			self.instance.hide()
 
-		self.pstrNm = self.generateBackdropPath()
 		if not self.pstrNm:
 			self.logBackdrop("[ERROR: waitBackdrop] Backdrop path is None")
 			return
@@ -380,7 +382,7 @@ class BackdropDB(AgbDownloadThread):
 
 class BackdropAutoDB(AgbDownloadThread):
 
-	def __init__(self, providers=None):
+	def __init__(self, providers=None, max_backdrop=1000):
 		super().__init__()
 		self.pstcanal = None
 		self.service_queue = []
@@ -395,6 +397,8 @@ class BackdropAutoDB(AgbDownloadThread):
 			"fanart": False,
 			"google": False
 		}
+		self.max_backdrops = max_backdrop
+		self.backdrop_download_count = 0
 		# Scheduled scan time (parsed from SCAN_TIME)
 		try:
 			hour, minute = map(int, SCAN_TIME.split(":"))
@@ -538,6 +542,10 @@ class BackdropAutoDB(AgbDownloadThread):
 	def _download_backdrop(self, canal):
 		"""Optimized backdrop downloader with fallback search providers and full error handling"""
 		try:
+			if self.backdrop_download_count >= self.max_backdrops:
+				self._log_debug("Backdrop download limit reached")
+				return
+
 			if not canal or len(canal) < 6:
 				self._log_debug("Invalid canal data")
 				return
@@ -546,7 +554,6 @@ class BackdropAutoDB(AgbDownloadThread):
 				self._log_debug("No provider is enabled for backdrop download")
 				return
 
-			# 1. Clean event name for TVDB
 			event_name = str(canal[5]) if canal[5] else ""
 			self.pstcanal = clean_for_tvdb(event_name) if event_name else None
 
@@ -554,7 +561,10 @@ class BackdropAutoDB(AgbDownloadThread):
 				self._log_debug(f"Invalid event name for: {canal[0]}")
 				return
 
-			# 2. Check if backdrop already exists
+			# Logga l'URL generato per il poster per il debug
+			# poster_url = f"http://image.tmdb.org/t/p/original/{self.pstcanal}.jpg"
+			# self._log_debug(f"Generated URL for poster: {poster_url}")
+
 			for ext in [".jpg", ".jpeg", ".png"]:
 				backdrop_path = join(BACKDROP_FOLDER, self.pstcanal + ext)
 				if exists(backdrop_path):
@@ -562,63 +572,41 @@ class BackdropAutoDB(AgbDownloadThread):
 					self._log(f"Backdrop already exists with extension {ext}, timestamp updated: {self.pstcanal}")
 					return
 
-			# Setup timer for timeout
-			self.download_timeout = False
-			self.download_timer = eTimer()
-			self.download_timer.callback.append(self._download_timeout)
-			self.download_timer.start(30000)  # 30 secondi timeout
-
-			# 3. Backdrop download from providers based on skin configuration
 			providers = []
+
 			if self.providers["tmdb"]:
-				providers.append(("TMDB", self.search_tmdb_backdrop))
+				providers.append(("TMDB", self.search_tmdb))
 			if self.providers["tvdb"]:
-				providers.append(("TVDB", self.search_tvdb_backdrop))
+				providers.append(("TVDB", self.search_tvdb))
 			if self.providers["fanart"]:
-				providers.append(("Fanart", self.search_fanart_backdrop))
+				providers.append(("Fanart", self.search_fanart))
 			if self.providers["imdb"]:
-				providers.append(("IMDB", self.search_imdb_backdrop))
+				providers.append(("IMDB", self.search_imdb))
 			if self.providers["google"]:
-				providers.append(("Google", self.search_google_backdrop))
+				providers.append(("Google", self.search_google))
 
 			downloaded = False
 			for provider_name, provider_func in providers:
 				try:
-					if self.download_timeout:
-						break
-
 					result = provider_func(backdrop_path, self.pstcanal, canal[4], canal[3], canal[0])
 					if not result or len(result) != 2:
 						continue
 
 					success, log = result
 					if success and log and "SUCCESS" in str(log).upper():
+						self.backdrop_download_count += 1
 						self._log(f"Backdrop downloaded from {provider_name}: {self.pstcanal}")
 						downloaded = True
 						break
 				except Exception as e:
 					self._log_error(f"Error with {provider_name}: {str(e)}")
 
-			# Cleanup timer
-			self.download_timer.stop()
-			del self.download_timer
-
-			if not downloaded and not self.download_timeout:
+			if not downloaded:
 				self._log_debug(f"Backdrop download failed for: {self.pstcanal}")
-			elif self.download_timeout:
-				self._log_error(f"Backdrop download timeout for: {self.pstcanal}")
 
 		except Exception as e:
-			if hasattr(self, 'download_timer'):
-				self.download_timer.stop()
-				del self.download_timer
 			self._log_error(f"CRITICAL ERROR in _download_backdrop: {str(e)}")
 			print_exc()
-
-	def _download_timeout(self):
-		"""Handler for download timeout"""
-		self.download_timeout = True
-		self._log_error("Download operation timed out")
 
 	def clean_old_backdrops(self):
 		"""Remove backdrops older than 30 days"""
@@ -660,7 +648,7 @@ def SearchBouquetTerrestrial():
 	return fallback
 
 
-def process_autobouquet(max_channels=200, allowed_types=None):
+def process_autobouquet(max_channels=1000, allowed_types=None):
 	"""
 	Process ALL TV bouquets extracting unique services, including the bouquets.tv file.
 
@@ -673,50 +661,40 @@ def process_autobouquet(max_channels=200, allowed_types=None):
 
 	service_pattern = compile(r'^#SERVICE (\d+):([^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+)')
 	unique_refs = OrderedDict()
-	processed_count = 0
 
-	# Process bouquets.tv first
-	bouquets_tv = "/etc/enigma2/bouquets.tv"
-	if exists(bouquets_tv):
+	bouquets = ["/etc/enigma2/bouquets.tv"]
+	if exists(bouquets[0]):
 		try:
-			with open(bouquets_tv, 'r', encoding='utf-8', errors='ignore') as f:
+			with open(bouquets[0], 'r', encoding='utf-8', errors='ignore') as f:
 				for line in f:
-					if processed_count >= max_channels:
-						break
-
+					if len(unique_refs) >= max_channels:
+						return list(unique_refs.keys())
 					if line.startswith("#SERVICE") and "FROM BOUQUET" not in line:
 						match = service_pattern.match(line.strip())
 						if match:
 							service_type, sref = match.groups()
 							if any(sref.startswith(t) for t in allowed_types):
-								unique_refs[sref] = None  # Use full service reference as key
-								processed_count += 1
+								normalized_ref = f"{service_type}:{sref.split(':')[0]}"
+								unique_refs[normalized_ref] = None
 		except Exception as e:
 			print(f"Error processing bouquets.tv: {e}")
 
-	# Process other bouquet files if we haven't reached the limit
-	if processed_count < max_channels:
-		for bouquet_file in glob("/etc/enigma2/*.tv"):
-			if bouquet_file == bouquets_tv:  # Skip already processed file
-				continue
+	for bouquet_file in glob("/etc/enigma2/*.tv"):
+		try:
+			with open(bouquet_file, 'r', encoding='utf-8', errors='ignore') as f:
+				for line in f:
+					if len(unique_refs) >= max_channels:
+						return list(unique_refs.keys())
+					match = service_pattern.match(line.strip())
+					if match:
+						service_type, sref = match.groups()
+						if any(sref.startswith(t) for t in allowed_types):
+							normalized_ref = f"{service_type}:{sref.split(':')[0]}"
+							unique_refs[normalized_ref] = None
+		except Exception as e:
+			print(f"Error processing {bouquet_file}: {e}")
+			continue
 
-			try:
-				with open(bouquet_file, 'r', encoding='utf-8', errors='ignore') as f:
-					for line in f:
-						if processed_count >= max_channels:
-							break
-
-						match = service_pattern.match(line.strip())
-						if match:
-							service_type, sref = match.groups()
-							if any(sref.startswith(t) for t in allowed_types) and sref not in unique_refs:
-								unique_refs[sref] = None
-								processed_count += 1
-			except Exception as e:
-				print(f"Error processing {bouquet_file}: {e}")
-				continue
-
-	print(f"[AutoBouquet] Found {len(unique_refs)} unique services in {len(glob('/etc/enigma2/*.tv'))} bouquets")
 	return list(unique_refs.keys())
 
 
