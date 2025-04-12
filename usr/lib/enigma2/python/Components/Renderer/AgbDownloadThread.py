@@ -658,25 +658,26 @@ class AgbDownloadThread(Thread):
 	def saveBackdrop(self, url, callback):
 		headers = {"User-Agent": choice(AGENTS)}
 		try:
-			# data = None
-			# response = request_agent.smart_request(url)
-			# response.raise_for_status()
-			# if response.status_code == 200:
-				# try:
-					# data = response.json()
-					# data = data
-					# # If the data is JSON, we can do something with it
-					# # E.g., you can process it before saving it, if necessary
-				# except ValueError as e:
-					# # If not JSON, continue with binary data
-					# print(f"Error decoding JSON: {e}")
+			"""
+			data = None
+			response = request_agent.smart_request(url)
+			response.raise_for_status()
+			if response.status_code == 200:
+				try:
+					data = response.json()
+					data = data
+					# If the data is JSON, we can do something with it
+					# E.g., you can process it before saving it, if necessary
+				except ValueError as e:
+					# If not JSON, continue with binary data
+					print(f"Error decoding JSON: {e}")
 
-				# # Write binary content to file
-				# with open(callback, "wb") as local_file:
-					# local_file.write(response.content)
-			# else:
-				# print(f"Unexpected status code: {response.status_code}")
-
+				# Write binary content to file
+				with open(callback, "wb") as local_file:
+					local_file.write(response.content)
+			else:
+				print(f"Unexpected status code: {response.status_code}")
+			"""
 			response = get(url, headers=headers, timeout=(3.05, 6))
 			response.raise_for_status()
 			# if response.status_code == 200:
@@ -765,7 +766,8 @@ class AgbDownloadThread(Thread):
 		cId = 100 * cId // lId
 		return cId
 
-    """
+
+"""
 	def PMATCH(self, textA, textB):
 		if not textA or not textB:
 			return 0
@@ -777,4 +779,4 @@ class AgbDownloadThread(Thread):
 		max_length = max(len(textA.replace(" ", "")), len(textB.replace(" ", "")))
 		match_percentage = (100 * common_chars) // max_length
 		return match_percentage
-    """
+"""
