@@ -559,26 +559,34 @@ class BackdropAutoDB(AgbDownloadThread):
 				backdrop_path = join(BACKDROP_FOLDER, self.pstcanal + ext)
 				if exists(backdrop_path):
 					utime(backdrop_path, (time(), time()))
-					self._log(f"Poster already exists with extension {ext}, timestamp updated: {self.pstcanal}")
+					self._log(f"Backdrop already exists with extension {ext}, timestamp updated: {self.pstcanal}")
 					return
+
+			# Setup timer for timeout
+			self.download_timeout = False
+			self.download_timer = eTimer()
+			self.download_timer.callback.append(self._download_timeout)
+			self.download_timer.start(30000)  # 30 secondi timeout
 
 			# 3. Backdrop download from providers based on skin configuration
 			providers = []
-
 			if self.providers["tmdb"]:
-				providers.append(("TMDB", self.search_tmdb))
+				providers.append(("TMDB", self.search_tmdb_backdrop))
 			if self.providers["tvdb"]:
-				providers.append(("TVDB", self.search_tvdb))
+				providers.append(("TVDB", self.search_tvdb_backdrop))
 			if self.providers["fanart"]:
-				providers.append(("Fanart", self.search_fanart))
+				providers.append(("Fanart", self.search_fanart_backdrop))
 			if self.providers["imdb"]:
-				providers.append(("IMDB", self.search_imdb))
+				providers.append(("IMDB", self.search_imdb_backdrop))
 			if self.providers["google"]:
-				providers.append(("Google", self.search_google))
+				providers.append(("Google", self.search_google_backdrop))
 
 			downloaded = False
 			for provider_name, provider_func in providers:
 				try:
+					if self.download_timeout:
+						break
+
 					result = provider_func(backdrop_path, self.pstcanal, canal[4], canal[3], canal[0])
 					if not result or len(result) != 2:
 						continue
@@ -591,12 +599,26 @@ class BackdropAutoDB(AgbDownloadThread):
 				except Exception as e:
 					self._log_error(f"Error with {provider_name}: {str(e)}")
 
-			if not downloaded:
+			# Cleanup timer
+			self.download_timer.stop()
+			del self.download_timer
+
+			if not downloaded and not self.download_timeout:
 				self._log_debug(f"Backdrop download failed for: {self.pstcanal}")
+			elif self.download_timeout:
+				self._log_error(f"Backdrop download timeout for: {self.pstcanal}")
 
 		except Exception as e:
+			if hasattr(self, 'download_timer'):
+				self.download_timer.stop()
+				del self.download_timer
 			self._log_error(f"CRITICAL ERROR in _download_backdrop: {str(e)}")
 			print_exc()
+
+	def _download_timeout(self):
+		"""Handler for download timeout"""
+		self.download_timeout = True
+		self._log_error("Download operation timed out")
 
 	def clean_old_backdrops(self):
 		"""Remove backdrops older than 30 days"""
