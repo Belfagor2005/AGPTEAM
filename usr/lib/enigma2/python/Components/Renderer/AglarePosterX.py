@@ -652,40 +652,50 @@ def process_autobouquet(max_channels=200, allowed_types=None):
 
 	service_pattern = compile(r'^#SERVICE (\d+):([^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+)')
 	unique_refs = OrderedDict()
+	processed_count = 0
 
-	bouquets = ["/etc/enigma2/bouquets.tv"]
-	if exists(bouquets[0]):
+	# Process bouquets.tv first
+	bouquets_tv = "/etc/enigma2/bouquets.tv"
+	if exists(bouquets_tv):
 		try:
-			with open(bouquets[0], 'r', encoding='utf-8', errors='ignore') as f:
+			with open(bouquets_tv, 'r', encoding='utf-8', errors='ignore') as f:
 				for line in f:
+					if processed_count >= max_channels:
+						break
+
 					if line.startswith("#SERVICE") and "FROM BOUQUET" not in line:
 						match = service_pattern.match(line.strip())
 						if match:
 							service_type, sref = match.groups()
 							if any(sref.startswith(t) for t in allowed_types):
-								normalized_ref = f"{service_type}:{sref.split(':')[0]}"
-								unique_refs[normalized_ref] = None
+								unique_refs[sref] = None  # Use full service reference as key
+								processed_count += 1
 		except Exception as e:
 			print(f"Error processing bouquets.tv: {e}")
 
-	for bouquet_file in glob("/etc/enigma2/*.tv"):
-		try:
-			with open(bouquet_file, 'r', encoding='utf-8', errors='ignore') as f:
-				for line in f:
-					if len(unique_refs) >= max_channels:
-						break
+	# Process other bouquet files if we haven't reached the limit
+	if processed_count < max_channels:
+		for bouquet_file in glob("/etc/enigma2/*.tv"):
+			if bouquet_file == bouquets_tv:  # Skip already processed file
+				continue
 
-					match = service_pattern.match(line.strip())
-					if match:
-						service_type, sref = match.groups()
-						if any(sref.startswith(t) for t in allowed_types):
-							normalized_ref = f"{service_type}:{sref.split(':')[0]}"
-							unique_refs[normalized_ref] = None
-		except Exception as e:
-			print(f"Error processing {bouquet_file}: {e}")
-			continue
+			try:
+				with open(bouquet_file, 'r', encoding='utf-8', errors='ignore') as f:
+					for line in f:
+						if processed_count >= max_channels:
+							break
 
-	print(f"[AutoBouquet] Trovati {len(unique_refs)} servizi univoci in {len(glob('/etc/enigma2/*.tv'))} bouquet")
+						match = service_pattern.match(line.strip())
+						if match:
+							service_type, sref = match.groups()
+							if any(sref.startswith(t) for t in allowed_types) and sref not in unique_refs:
+								unique_refs[sref] = None
+								processed_count += 1
+			except Exception as e:
+				print(f"Error processing {bouquet_file}: {e}")
+				continue
+
+	print(f"[AutoBouquet] Found {len(unique_refs)} unique services in {len(glob('/etc/enigma2/*.tv'))} bouquets")
 	return list(unique_refs.keys())
 
 
