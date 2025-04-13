@@ -61,7 +61,7 @@ epgcache = eEPGCache.getInstance()
 epgcache.load()
 pdb = LifoQueue()
 rw_mounts = ["/media/usb", "/media/hdd", "/media/mmc", "/media/sd"]
-extensions = [".jpg", ".jpeg", ".png"]
+extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
 autobouquet_file = None
 apdb = dict()
 SCAN_TIME = "02:00"
@@ -113,7 +113,7 @@ class AglareBackdropX(Renderer):
 		super().__init__()
 		self.nxts = 0
 		self.path = BACKDROP_FOLDER
-		self.extensions = [".jpg", ".jpeg", ".png"]
+		self.extensions = extensions
 		self.canal = [None] * 6
 		self.pstrNm = None
 		self.oldCanal = None
@@ -223,88 +223,54 @@ class AglareBackdropX(Renderer):
 			return
 
 		try:
-			# Avoid reloading the same backdrop multiple times
 			curCanal = "{}-{}".format(self.canal[1], self.canal[2])
+
 			if curCanal == self.oldCanal and self.pstrNm and exists(self.pstrNm):
 				print(f"Backdrop already loaded: {self.pstrNm}")
 				return
 
 			print(f"curCanal: {curCanal}, oldCanal: {self.oldCanal}")
-			backdrop_path = None
 			self.oldCanal = curCanal
-			self.pstcanal = clean_for_tvdb(self.canal[5]) if self.canal[5] else None
 
-			if not self.pstcanal:
-				print("Error: pstcanal is None, cannot proceed")
-				self.pstrNm = None
-				return
+			# Check if the Backdrop path is valid
+			if len(self.canal) > 5 and self.canal[5]:
+				# Clean the name and generate the backdrop path
+				self.pstcanal = clean_for_tvdb(self.canal[5]) if self.canal[5] else None
+				backdrop_path = self.generateBacdropPath()
+				print(f"Generated backdrop path: {backdrop_path}")
 
-			# Build the expected backdrop path and check if it's already loaded
-			self.extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']  # Assicurati che siano in ordine di preferenza
+				if backdrop_path:  # If a backdrop is found
+					print(f"Found backdrop: {backdrop_path}")
 
-			print(f"Checking for backdrop for event '{self.canal[2]}' with name: {self.pstcanal}")
-			for ext in self.extensions:
-				candidate = self.load_backdrop(self.pstcanal)  # join(self.path, self.pstcanal + ext)
-
-				if candidate is not None:
-					print(f"Checking file: {candidate}, exists: {exists(candidate)}")
-
-					if exists(candidate):  # Se il file esiste
-						print(f"Found backdrop: {candidate}")
-						backdrop_path = candidate  # Assegna il percorso del backdrop trovato
-
-						# Se il backdrop è già caricato
-						if self.pstrNm == backdrop_path:
-							print(f"Backdrop already loaded: {backdrop_path}")
-							return  # Backdrop già caricato
-
-						# Aggiorna il percorso del backdrop e mostralo
-						self.pstrNm = backdrop_path
-						print("[LOAD] Showing backdrop:", self.pstrNm)
-						utime(self.pstrNm, (time(), time()))  # Aggiorna il tempo di accesso
-						self.instance.hide()  # Nascondi l'istanza
-						self.timer.start(500, True)  # Avvia il timer
-
-						# Aggiorna oldCanal solo quando il backdrop viene caricato
-						self.oldCanal = self.canal[2]  # Aggiorna oldCanal con il nuovo evento
+					if self.pstrNm == backdrop_path:  # If the backdrop is already loaded
+						print(f"Backdrop already loaded: {backdrop_path}")
 						return
 
-			# Se non trovi il backdrop, metti in coda l'evento
-			if backdrop_path is None:
-				print(f"Error: Backdrop for event '{self.canal[2]}' not found. Queuing event.")
-				canal = self.canal[:]
-				pdb.put(canal)
-				self.runPosterThread()
+					# Update the backdrop path and display it
+					self.pstrNm = backdrop_path
+					print("[LOAD] Showing backdrop:", self.pstrNm)
+					utime(self.pstrNm, (time(), time()))  # Update access time
+					self.instance.hide()  # Hide the instance
+					self.timer.start(500, True)  # Start the timer
 
+					return
+				else:
+					print(f"Error: Backdrop for event '{self.canal[2]}' not found. Queuing event.")
+					canal = self.canal[:]
+					pdb.put(canal)  # Queue the event
+					self.runBackdropThread()
+			else:
+				print("Invalid canal data, skipping poster load.")
 		except Exception as e:
 			print(f"Error in backdrop display: {e}")
 			if self.instance:
 				self.instance.hide()
 			return
 
-	def load_backdrop(self, event_name):
-		# Check if backdrop has already been loaded
-		if event_name in self.loaded_backdrops:
-			print(f"Backdrop already loaded for event '{event_name}'")
-			return None  # Don't load again, just return None to avoid error
-
-		# List of possible extensions to check
-		extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
-		for ext in extensions:
-			backdrop_path = join(self.path, f"{event_name}{ext}")
-			print(f"Checking file: {backdrop_path}, exists: {exists(backdrop_path)}")
-			if exists(backdrop_path):
-				print(f"Found backdrop: {backdrop_path}")
-				self.loaded_backdrops.add(event_name)  # Mark as loaded
-				return backdrop_path  # Return valid backdrop path
-
-		# If no backdrop found, return None, relying on skin's internal fallback handling
-		print(f"Backdrop for event '{event_name}' not found. Using embedded fallback.")
-		return None  # Return None for fallback to work without errors
+	def generateBacdropPath(self):
 		"""Generate backdrop path from current channel data, checking for multiple image extensions"""
-		if len(self.canal) > 5 and self.canal[5]:
-			self.pstcanal = clean_for_tvdb(self.canal[5])
-			for ext in [".jpg", ".jpeg", ".png"]:
+		if self.pstcanal:  # Uses self.pstcanal instead of a parameter
+			for ext in self.extensions:
 				candidate = join(self.path, self.pstcanal + ext)
 				if exists(candidate):
 					return candidate
@@ -322,7 +288,7 @@ class AglareBackdropX(Renderer):
 	def showBackdrop(self):
 		"""Display the backdrop image"""
 
-		if not self.pstrNm or not self.checkPosterExistence(self.pstrNm):
+		if not self.pstrNm or not self.checkBackdropExistence(self.pstrNm):
 			self.instance.hide()
 			print('showBackdrop ide instance')
 			return
@@ -337,11 +303,12 @@ class AglareBackdropX(Renderer):
 		"""Wait for backdrop download to complete"""
 		self.pstrNm = self.generateBackdropPath()
 		if not hasattr(self, 'pstrNm') or self.pstrNm is None:
-			self._log_error("pstrNm not initialized in waitBackdrop")
+			print("Backdrop not found")
 			return
+		print(f"Backdrop found: {self.pstrNm}")
 
 		if not self.pstrNm:
-			self.logBackdrop("[ERROR: waitBackdrop] Backdrop path is None")
+			self._log_debug("[ERROR: waitBackdrop] Backdrop path is None")
 			return
 
 		loop = 180  # Maximum number of attempts
@@ -357,7 +324,7 @@ class AglareBackdropX(Renderer):
 		if found:
 			self.timer.start(10, True)
 
-	def logBackdrop(self, message):
+	def _log_debug(self, message):
 		"""Log debug message to file"""
 		try:
 			with open("/tmp/logBackdropX.log", "a") as w:
@@ -380,6 +347,7 @@ class BackdropDB(AgbDownloadThread):
 		super().__init__()
 		self.logdbg = None
 		self.pstcanal = None
+		self.extensions = extensions
 		self.service_pattern = compile(r'^#SERVICE (\d+):([^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+)')
 		default_providers = {
 			"tmdb": True,
@@ -409,10 +377,11 @@ class BackdropDB(AgbDownloadThread):
 				self._log_debug("No provider is enabled for backdrop download")
 				return
 
-			for ext in extensions:
+			for ext in self.extensions:
 				backdrop_path = join(BACKDROP_FOLDER, self.pstcanal + ext)
-				if exists(backdrop_path):
-					utime(backdrop_path, (time(), time()))
+				if self.is_valid_backdrop(backdrop_path):
+					utime(backdrop_path, (time(), time()))  # Update the timestamp to avoid re-downloading
+					self._log_debug(f"Backdrop already exists: {backdrop_path}")
 					return
 
 			# Create the list of enabled providers
@@ -447,6 +416,10 @@ class BackdropDB(AgbDownloadThread):
 			self._log_error(f"Processing error: {e}")
 			print_exc()
 
+	def is_valid_backdrop(self, backdrop_path):
+		"""Check if the backdrop file is valid (exists and has a valid size)"""
+		return exists(backdrop_path) and getsize(backdrop_path) > 100
+
 	def _log_debug(self, message):
 		"""Log debug message to file"""
 		try:
@@ -469,6 +442,7 @@ class BackdropAutoDB(AgbDownloadThread):
 	def __init__(self, providers=None, max_backdrops=1000):
 		super().__init__()
 		self.pstcanal = None
+		self.extensions = extensions
 		self.service_queue = []
 		self.last_scan = 0
 		self.apdb = OrderedDict()
@@ -587,6 +561,10 @@ class BackdropAutoDB(AgbDownloadThread):
 			return False
 		return parts[3:6] != ["0", "0", "0"]
 
+	def is_valid_backdrop(self, backdrop_path):
+		"""Check if the backdrop file is valid (exists and has a valid size)"""
+		return exists(backdrop_path) and getsize(backdrop_path) > 100
+
 	def _process_services(self):
 		"""Process all loaded services and download their backdrops"""
 		for service_ref in self.apdb.values():
@@ -652,10 +630,11 @@ class BackdropAutoDB(AgbDownloadThread):
 			# self._log_debug(f"Generated URL for backdrop: {backdrop_url}")
 
 			backdrop_path = None
-			for ext in extensions:
+			for ext in self.extensions:
 				backdrop_path = join(BACKDROP_FOLDER, self.pstcanal + ext)
-				if exists(backdrop_path):
-					utime(backdrop_path, (time(), time()))
+				if self.is_valid_backdrop(backdrop_path):
+					utime(backdrop_path, (time(), time()))  # Update the timestamp to avoid re-downloading
+					self._log_debug(f"Backdrop already exists: {backdrop_path}")
 					return
 
 			# Create the list of providers enabled for download
