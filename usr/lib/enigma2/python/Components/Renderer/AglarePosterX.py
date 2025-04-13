@@ -32,8 +32,8 @@ __copyright__ = "AGP Team"
 # Standard library imports
 from datetime import datetime
 from glob import glob
-from os import remove, utime, listdir, makedirs
-from os.path import join, exists, getmtime  # , isfile
+from os import remove, utime, makedirs
+from os.path import join, exists, getmtime
 from re import compile
 from threading import Thread
 from time import sleep, time
@@ -415,6 +415,7 @@ class PosterAutoDB(AgpDownloadThread):
 		self.log_file = "/tmp/agplog/PosterAutoDB.log"
 		if not exists("/tmp/agplog"):
 			makedirs("/tmp/agplog")
+		self.clean_old_logs()
 		self._log("=== INITIALIZATION COMPLETE ===")
 
 	def run(self):
@@ -544,7 +545,7 @@ class PosterAutoDB(AgpDownloadThread):
 		"""Optimized poster downloader with fallback search providers and full error handling"""
 		try:
 			if self.poster_download_count >= self.max_posters:
-				self._log_debug("Poster download limit reached")
+				# self._log_debug("Poster download limit reached")
 				return
 
 			if not canal or len(canal) < 6:
@@ -555,7 +556,6 @@ class PosterAutoDB(AgpDownloadThread):
 				self._log_debug("No provider is enabled for poster download")
 				return
 
-			# Estrarre il nome dell'evento per il poster
 			event_name = str(canal[5]) if canal[5] else ""
 			self.pstcanal = clean_for_tvdb(event_name) if event_name else None
 
@@ -567,7 +567,6 @@ class PosterAutoDB(AgpDownloadThread):
 			# poster_url = f"http://image.tmdb.org/t/p/original/{self.pstcanal}.jpg"
 			# self._log_debug(f"Generated URL for poster: {poster_url}")
 
-			# Verifica se il poster esiste già nella cartella
 			for ext in [".jpg", ".jpeg", ".png"]:
 				poster_path = join(POSTER_FOLDER, self.pstcanal + ext)
 				if exists(poster_path):
@@ -613,14 +612,20 @@ class PosterAutoDB(AgpDownloadThread):
 			self._log_error(f"CRITICAL ERROR in _download_poster: {str(e)}")
 			print_exc()
 
-	def clean_old_posters(self):
-		"""Remove posters older than 30 days"""
+	def clean_old_logs(self):
+		"""Delete log file if older than 30 days or larger than 5MB"""
 		try:
-			for f in listdir(POSTER_FOLDER):
-				if f.endswith('.jpg') and (time() - getmtime(join(POSTER_FOLDER, f)) > 2592000):
-					remove(join(POSTER_FOLDER, f))
+			if exists(self.log_file):
+				# Delete if older than 30 days
+				if time() - getmtime(self.log_file) > 2592000:
+					remove(self.log_file)
+					return
+
+				# Delete if larger than 5 MB
+				if getsize(self.log_file) > 5 * 1024 * 1024:
+					remove(self.log_file)
 		except Exception as e:
-			self._log_error(f"Error cleaning posters: {str(e)}")
+			print(f"Log cleanup error: {str(e)}")
 
 	def _log(self, message):
 		self._write_log("INFO", message)

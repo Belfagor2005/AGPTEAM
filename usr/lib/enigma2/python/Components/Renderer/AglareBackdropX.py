@@ -32,8 +32,8 @@ __copyright__ = "AGP Team"
 # Standard library imports
 from datetime import datetime
 from glob import glob
-from os import remove, utime, listdir, makedirs
-from os.path import join, exists, getmtime  # , isfile
+from os import remove, utime, makedirs
+from os.path import join, exists, getmtime
 from re import compile
 from threading import Thread
 from time import sleep, time
@@ -414,6 +414,7 @@ class BackdropAutoDB(AgbDownloadThread):
 		self.log_file = "/tmp/agplog/BackdropAutoDB.log"
 		if not exists("/tmp/agplog"):
 			makedirs("/tmp/agplog")
+		self.clean_old_logs()
 		self._log("=== INITIALIZATION COMPLETE ===")
 
 	def run(self):
@@ -543,11 +544,11 @@ class BackdropAutoDB(AgbDownloadThread):
 		"""Optimized backdrop downloader with fallback search providers and full error handling"""
 		try:
 			if self.backdrop_download_count >= self.max_backdrops:
-				self._log_debug("Backdrop download limit reached")
+				# self._log_debug("Backdrop download limit reached")
 				return
 
 			if not canal or len(canal) < 6:
-				self._log_debug("Invalid canal data")
+				# self._log_debug("Invalid canal data")
 				return
 
 			if not any(self.providers.values()):
@@ -561,7 +562,7 @@ class BackdropAutoDB(AgbDownloadThread):
 				self._log_debug(f"Invalid event name for: {canal[0]}")
 				return
 
-			# Logga l'URL generato per il poster per il debug
+			# Log the generated URL for the poster for debugging
 			# poster_url = f"http://image.tmdb.org/t/p/original/{self.pstcanal}.jpg"
 			# self._log_debug(f"Generated URL for poster: {poster_url}")
 
@@ -572,6 +573,7 @@ class BackdropAutoDB(AgbDownloadThread):
 					self._log(f"Backdrop already exists with extension {ext}, timestamp updated: {self.pstcanal}")
 					return
 
+			# Create the list of providers enabled for download
 			providers = []
 
 			if self.providers["tmdb"]:
@@ -586,6 +588,7 @@ class BackdropAutoDB(AgbDownloadThread):
 				providers.append(("Google", self.search_google))
 
 			downloaded = False
+			# Cycle through providers to find the poster
 			for provider_name, provider_func in providers:
 				try:
 					result = provider_func(backdrop_path, self.pstcanal, canal[4], canal[3], canal[0])
@@ -608,14 +611,20 @@ class BackdropAutoDB(AgbDownloadThread):
 			self._log_error(f"CRITICAL ERROR in _download_backdrop: {str(e)}")
 			print_exc()
 
-	def clean_old_backdrops(self):
-		"""Remove backdrops older than 30 days"""
+	def clean_old_logs(self):
+		"""Delete log file if older than 30 days or larger than 5MB"""
 		try:
-			for f in listdir(BACKDROP_FOLDER):
-				if f.endswith('.jpg') and (time() - getmtime(join(BACKDROP_FOLDER, f)) > 2592000):
-					remove(join(BACKDROP_FOLDER, f))
+			if exists(self.log_file):
+				# Delete if older than 30 days
+				if time() - getmtime(self.log_file) > 2592000:
+					remove(self.log_file)
+					return
+
+				# Delete if larger than 5 MB
+				if getsize(self.log_file) > 5 * 1024 * 1024:
+					remove(self.log_file)
 		except Exception as e:
-			self._log_error(f"Error cleaning backdrops: {str(e)}")
+			print(f"Log cleanup error: {str(e)}")
 
 	def _log(self, message):
 		self._write_log("INFO", message)
