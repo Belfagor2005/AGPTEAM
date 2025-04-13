@@ -60,7 +60,7 @@ epgcache = eEPGCache.getInstance()
 epgcache.load()
 pdb = LifoQueue()
 rw_mounts = ["/media/usb", "/media/hdd", "/media/mmc", "/media/sd"]
-extensions = [".jpg", ".jpeg", ".png"]
+extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
 autobouquet_file = None
 apdb = dict()
 SCAN_TIME = "00:00"
@@ -114,11 +114,13 @@ class AglarePosterX(Renderer):
 		super().__init__()
 		self.nxts = 0
 		self.path = POSTER_FOLDER
+		self.extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
 		self.canal = [None] * 6
 		self.pstrNm = None
 		self.oldCanal = None
 		self.logdbg = None
 		self.pstcanal = None
+		self.loaded_posters = set()
 		self.timer = eTimer()
 		self.timer.callback.append(self.showPoster)
 
@@ -191,34 +193,27 @@ class AglarePosterX(Renderer):
 				service_str = service.toString()
 				events = epgcache.lookupEvent(['IBDCTESX', (service_str, 0, -1, -1)])
 
-				# if events and len(events) > self.nxts:
-				event = events[self.nxts]
-				if len(event) >= 7:
-					service_name = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '')
-					self.canal[0] = service_name
-					self.canal[1] = event[1]
-					self.canal[2] = event[4]
-					self.canal[3] = event[5]
-					self.canal[4] = event[6]
-					self.canal[5] = self.canal[2]
+				# Check if self.nxts is within range
+				if events and self.nxts < len(events):
+					event = events[self.nxts]
+					if len(event) >= 7:
+						service_name = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '')
+						self.canal[0] = service_name
+						self.canal[1] = event[1]
+						self.canal[2] = event[4]
+						self.canal[3] = event[5]
+						self.canal[4] = event[6]
+						self.canal[5] = self.canal[2]
 
-					"""
-					# global autobouquet_file
-					if not globals().get('autobouquet_file') and service_name not in apdb:
-						apdb[service_name] = service_str
-					# if not getattr(modules[__name__], 'autobouquet_file', False) and service_name not in apdb:
-						# apdb[service_name] = service_str
-					"""
-
-					if not autobouquet_file and service_name not in apdb:
-						apdb[service_name] = service_str
+						if not autobouquet_file and service_name not in apdb:
+							apdb[service_name] = service_str
+					else:
+						print("Error: event tuple too short (len < 7)")
 				else:
-					print("Error in service handling: event tuple too short")
-				# else:
-					# print("Error in service handling: events list empty or nxts out of range")
-
+					print(f"Error: nxts {self.nxts} is out of range for events list of length {len(events) if events else 0}")
+					return
 		except Exception as e:
-			print(f"Error (service): {e}")
+			print(f"Error in service handling: {e}, Service: {service}, nxts: {self.nxts}, what: {what}")
 			if self.instance:
 				self.instance.hide()
 			return
@@ -229,37 +224,84 @@ class AglarePosterX(Renderer):
 			return
 
 		try:
+			# Avoid reloading the same poster multiple times
 			curCanal = "{}-{}".format(self.canal[1], self.canal[2])
-			if curCanal == self.oldCanal:
+			if curCanal == self.oldCanal and self.pstrNm and exists(self.pstrNm):
+				print(f"Poster already loaded: {self.pstrNm}")
 				return
 
-			if self.instance:
-				self.instance.hide()
-
+			print(f"curCanal: {curCanal}, oldCanal: {self.oldCanal}")
+			poster_path = None
 			self.oldCanal = curCanal
 			self.pstcanal = clean_for_tvdb(self.canal[5]) if self.canal[5] else None
+
 			if not self.pstcanal:
+				print("Error: pstcanal is None, cannot proceed")
 				self.pstrNm = None
 				return
 
-			self.pstrNm = None
-			self.pstcanal = self.pstrNm
-			for ext in extensions:
-				self.pstrNm = join(self.path, self.pstcanal + ext)
-				if exists(self.pstrNm):
-					utime(self.pstrNm, (time(), time()))  # Update the poster's timestamp
-					self.instance.hide()
-					self.timer.start(10, True)
-				else:
-					canal = self.canal[:]
-					pdb.put(canal)
-					self.runPosterThread()
+			# Build the expected poster path and check if it's already loaded
+			self.extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']  # Assicurati che siano in ordine di preferenza
+
+			print(f"Checking for poster for event '{self.canal[2]}' with name: {self.pstcanal}")
+			for ext in self.extensions:
+				candidate = self.load_poster(self.pstcanal)  # join(self.path, self.pstcanal + ext)
+
+				if candidate is not None:
+					print(f"Checking file: {candidate}, exists: {exists(candidate)}")
+
+					if exists(candidate):  # Se il file esiste
+						print(f"Found poster: {candidate}")
+						poster_path = candidate  # Assegna il percorso del poster trovato
+
+						# Se il poster è già caricato
+						if self.pstrNm == poster_path:
+							print(f"Poster already loaded: {poster_path}")
+							return  # Poster già caricato
+
+						# Aggiorna il percorso del poster e mostralo
+						self.pstrNm = poster_path
+						print("[LOAD] Showing poster:", self.pstrNm)
+						utime(self.pstrNm, (time(), time()))  # Aggiorna il tempo di accesso
+						self.instance.hide()  # Nascondi l'istanza
+						self.timer.start(500, True)  # Avvia il timer
+
+						# Aggiorna oldCanal solo quando il poster viene caricato
+						self.oldCanal = self.canal[2]  # Aggiorna oldCanal con il nuovo evento
+						return
+
+			# Se non trovi il poster, metti in coda l'evento
+			if poster_path is None:
+				print(f"Error: Poster for event '{self.canal[2]}' not found. Queuing event.")
+				canal = self.canal[:]
+				pdb.put(canal)
+				self.runPosterThread()
 
 		except Exception as e:
 			print(f"Error in poster display: {e}")
 			if self.instance:
 				self.instance.hide()
 			return
+
+	def load_poster(self, event_name):
+		# Check if poster has already been loaded
+		if event_name in self.loaded_posters:
+			print(f"Poster already loaded for event '{event_name}'")
+			return None  # Don't load again, just return None to avoid error
+
+		# List of possible extensions to check
+		extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
+		for ext in extensions:
+			poster_path = join(self.path, f"{event_name}{ext}")
+			print(f"Checking file: {poster_path}, exists: {exists(poster_path)}")
+			if exists(poster_path):
+				print(f"Found poster: {poster_path}")
+				self.loaded_posters.add(event_name)  # Mark as loaded
+				return poster_path  # Return valid poster path
+
+		# If no poster found, return None, relying on skin's internal fallback handling
+		print(f"Poster for event '{event_name}' not found. Using embedded fallback.")
+		return None  # Return None for fallback to work without errors
 
 	def generatePosterPath(self):
 		"""Generate poster path from current channel data, checking for multiple image extensions"""
@@ -283,19 +325,13 @@ class AglarePosterX(Renderer):
 	def showPoster(self):
 		"""Display the poster image"""
 
-		if self.instance:
-			print('showPoster ide instance if self')
-			self.instance.hide()
-		"""
-		if not self.instance:
-			return
-		"""
 		if not self.pstrNm or not self.checkPosterExistence(self.pstrNm):
 			self.instance.hide()
 			print('showPoster ide instance')
 			return
 
 		print(f"[LOAD] Showing poster: {self.pstrNm}")
+		self.instance.hide()
 		self.instance.setPixmap(loadJPG(self.pstrNm))
 		self.instance.setScale(1)
 		self.instance.show()

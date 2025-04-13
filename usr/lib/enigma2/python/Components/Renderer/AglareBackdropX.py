@@ -113,11 +113,13 @@ class AglareBackdropX(Renderer):
 		super().__init__()
 		self.nxts = 0
 		self.path = BACKDROP_FOLDER
+		self.extensions = [".jpg", ".jpeg", ".png"]
 		self.canal = [None] * 6
 		self.pstrNm = None
 		self.oldCanal = None
 		self.logdbg = None
 		self.pstcanal = None
+		self.loaded_backdrops = set()
 		self.timer = eTimer()
 		self.timer.callback.append(self.showBackdrop)
 
@@ -190,34 +192,27 @@ class AglareBackdropX(Renderer):
 				service_str = service.toString()
 				events = epgcache.lookupEvent(['IBDCTESX', (service_str, 0, -1, -1)])
 
-				# if events and len(events) > self.nxts:
-				event = events[self.nxts]
-				if len(event) >= 7:
-					service_name = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '')
-					self.canal[0] = service_name
-					self.canal[1] = event[1]
-					self.canal[2] = event[4]
-					self.canal[3] = event[5]
-					self.canal[4] = event[6]
-					self.canal[5] = self.canal[2]
+				# Check if self.nxts is within range
+				if events and self.nxts < len(events):
+					event = events[self.nxts]
+					if len(event) >= 7:
+						service_name = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '')
+						self.canal[0] = service_name
+						self.canal[1] = event[1]
+						self.canal[2] = event[4]
+						self.canal[3] = event[5]
+						self.canal[4] = event[6]
+						self.canal[5] = self.canal[2]
 
-					"""
-					# global autobouquet_file
-					if not globals().get('autobouquet_file') and service_name not in apdb:
-						apdb[service_name] = service_str
-					# if not getattr(modules[__name__], 'autobouquet_file', False) and service_name not in apdb:
-						# apdb[service_name] = service_str
-					"""
-
-					if not autobouquet_file and service_name not in apdb:
-						apdb[service_name] = service_str
+						if not autobouquet_file and service_name not in apdb:
+							apdb[service_name] = service_str
+					else:
+						print("Error: event tuple too short (len < 7)")
 				else:
-					print("Error in service handling: event tuple too short")
-				# else:
-					# print("Error in service handling: events list empty or nxts out of range")
-
+					print(f"Error: nxts {self.nxts} is out of range for events list of length {len(events) if events else 0}")
+					return
 		except Exception as e:
-			print(f"Error (service): {e}")
+			print(f"Error in service handling: {e}, Service: {service}, nxts: {self.nxts}, what: {what}")
 			if self.instance:
 				self.instance.hide()
 			return
@@ -228,31 +223,58 @@ class AglareBackdropX(Renderer):
 			return
 
 		try:
+			# Avoid reloading the same backdrop multiple times
 			curCanal = "{}-{}".format(self.canal[1], self.canal[2])
-			if curCanal == self.oldCanal:
+			if curCanal == self.oldCanal and self.pstrNm and exists(self.pstrNm):
+				print(f"Backdrop already loaded: {self.pstrNm}")
 				return
 
-			if self.instance:
-				self.instance.hide()
-
+			print(f"curCanal: {curCanal}, oldCanal: {self.oldCanal}")
+			backdrop_path = None
 			self.oldCanal = curCanal
 			self.pstcanal = clean_for_tvdb(self.canal[5]) if self.canal[5] else None
+
 			if not self.pstcanal:
+				print("Error: pstcanal is None, cannot proceed")
 				self.pstrNm = None
 				return
 
-			self.pstrNm = None
-			self.pstcanal = self.pstrNm
-			for ext in extensions:
-				self.pstrNm = join(self.path, self.pstcanal + ext)
-				if exists(self.pstrNm):
-					utime(self.pstrNm, (time(), time()))  # Update the backdrop's timestamp
-					self.instance.hide()
-					self.timer.start(10, True)
-				else:
-					canal = self.canal[:]
-					pdb.put(canal)
-					self.runBackdropThread()
+			# Build the expected backdrop path and check if it's already loaded
+			self.extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']  # Assicurati che siano in ordine di preferenza
+
+			print(f"Checking for backdrop for event '{self.canal[2]}' with name: {self.pstcanal}")
+			for ext in self.extensions:
+				candidate = self.load_backdrop(self.pstcanal)  # join(self.path, self.pstcanal + ext)
+
+				if candidate is not None:
+					print(f"Checking file: {candidate}, exists: {exists(candidate)}")
+
+					if exists(candidate):  # Se il file esiste
+						print(f"Found backdrop: {candidate}")
+						backdrop_path = candidate  # Assegna il percorso del backdrop trovato
+
+						# Se il backdrop è già caricato
+						if self.pstrNm == backdrop_path:
+							print(f"Backdrop already loaded: {backdrop_path}")
+							return  # Backdrop già caricato
+
+						# Aggiorna il percorso del backdrop e mostralo
+						self.pstrNm = backdrop_path
+						print("[LOAD] Showing backdrop:", self.pstrNm)
+						utime(self.pstrNm, (time(), time()))  # Aggiorna il tempo di accesso
+						self.instance.hide()  # Nascondi l'istanza
+						self.timer.start(500, True)  # Avvia il timer
+
+						# Aggiorna oldCanal solo quando il backdrop viene caricato
+						self.oldCanal = self.canal[2]  # Aggiorna oldCanal con il nuovo evento
+						return
+
+			# Se non trovi il backdrop, metti in coda l'evento
+			if backdrop_path is None:
+				print(f"Error: Backdrop for event '{self.canal[2]}' not found. Queuing event.")
+				canal = self.canal[:]
+				pdb.put(canal)
+				self.runPosterThread()
 
 		except Exception as e:
 			print(f"Error in backdrop display: {e}")
@@ -260,7 +282,25 @@ class AglareBackdropX(Renderer):
 				self.instance.hide()
 			return
 
-	def generateBackdropPath(self):
+	def load_backdrop(self, event_name):
+		# Check if backdrop has already been loaded
+		if event_name in self.loaded_backdrops:
+			print(f"Backdrop already loaded for event '{event_name}'")
+			return None  # Don't load again, just return None to avoid error
+
+		# List of possible extensions to check
+		extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
+		for ext in extensions:
+			backdrop_path = join(self.path, f"{event_name}{ext}")
+			print(f"Checking file: {backdrop_path}, exists: {exists(backdrop_path)}")
+			if exists(backdrop_path):
+				print(f"Found backdrop: {backdrop_path}")
+				self.loaded_backdrops.add(event_name)  # Mark as loaded
+				return backdrop_path  # Return valid backdrop path
+
+		# If no backdrop found, return None, relying on skin's internal fallback handling
+		print(f"Backdrop for event '{event_name}' not found. Using embedded fallback.")
+		return None  # Return None for fallback to work without errors
 		"""Generate backdrop path from current channel data, checking for multiple image extensions"""
 		if len(self.canal) > 5 and self.canal[5]:
 			self.pstcanal = clean_for_tvdb(self.canal[5])
@@ -282,19 +322,13 @@ class AglareBackdropX(Renderer):
 	def showBackdrop(self):
 		"""Display the backdrop image"""
 
-		if self.instance:
-			print('showBackdrop ide instance if self')
-			self.instance.hide()
-		"""
-		if not self.instance:
-			return
-		"""
-		if not self.pstrNm or not self.checkBackdropExistence(self.pstrNm):
+		if not self.pstrNm or not self.checkPosterExistence(self.pstrNm):
 			self.instance.hide()
 			print('showBackdrop ide instance')
 			return
 
 		print(f"[LOAD] Showing backdrop: {self.pstrNm}")
+		self.instance.hide()
 		self.instance.setPixmap(loadJPG(self.pstrNm))
 		self.instance.setScale(1)
 		self.instance.show()
