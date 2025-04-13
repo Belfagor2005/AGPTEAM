@@ -600,7 +600,7 @@ class PosterAutoDB(AgpDownloadThread):
 					success, log = result
 					if success and log and "SUCCESS" in str(log).upper():
 						self.poster_download_count += 1
-						self._log(f"Poster downloaded from {provider_name}: {self.pstcanal}")
+						# self._log(f"Poster downloaded from {provider_name}: {self.pstcanal}")
 						downloaded = True
 						break
 				except Exception as e:

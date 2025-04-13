@@ -29,16 +29,17 @@ from __future__ import absolute_import, print_function
 __author__ = "Lululla"
 __copyright__ = "AGP Team"
 
-# Standard library
-# # import Agp_apikeys
-# from os.path import exists
+# Standard library imports
 from Components.config import config
 from pathlib import Path
 from threading import Lock
+
+# Initialize thread lock for API access synchronization
 api_lock = Lock()
 
 # ================ START SERVICE API CONFIGURATION ===============
-# --- Dictionary for centralized management ---
+
+# Default API keys (fallback values)
 API_KEYS = {
 	"tmdb_api": "3c3efcf47c3577558812bb9d64019d65",
 	"omdb_api": "cb1d9f55",
@@ -47,63 +48,57 @@ API_KEYS = {
 }
 
 
-# --- Helper function to set up API keys ---
-
-
 def setup_api_keys():
 	"""
-	Helper function to set up API keys.
-	The user can either:
-	1. Manually enter their API keys in the code.
-	2. Provide the API keys via files stored in a specific directory.
+	Configures API keys for the AGP system with flexible loading options.
 
-	Instructions:
-	1. To use the first method, directly replace the default values in the API_KEYS dictionary:
+	There are two methods to provide API keys:
 
+	1. Direct Configuration (Recommended for development):
+	   Simply replace the default values in the API_KEYS dictionary above.
+
+	   Example:
 	   API_KEYS = {
-		   "tmdb_api": "YOUR_TMDB_API_KEY",
-		   "omdb_api": "YOUR_OMDB_API_KEY",
-		   "thetvdb_api": "YOUR_THETVDB_API_KEY",
-		   "fanart_api": "YOUR_FANART_API_KEY",
+		   "tmdb_api": "your_tmdb_key_here",
+		   "omdb_api": "your_omdb_key_here",
+		   ...
 	   }
 
-	2. To use the second method, create a file for each API key with the following naming convention:
-	   - "tmdb_api" for the TMDB API key.
-	   - "omdb_api" for the OMDB API key.
-	   - "thetvdb_api" for the TVDB API key.
-	   - "fanart_api" for the Fanart API key.
+	2. File-Based Configuration (Recommended for production):
+	   Create individual files for each API key in the skin directory:
+	   - /usr/share/enigma2/<skin_name>/tmdb_api
+	   - /usr/share/enigma2/<skin_name>/omdb_api
+	   - etc.
 
-	   Each file should contain the respective API key as a plain text string.
-	   These files should be stored in the following directory:
-	   - /usr/share/enigma2/<skin_name>/
+	   Each file should contain only the API key as plain text.
 
-	   For example:
-	   - /usr/share/enigma2/default_skin/tmdb_api contains the TMDB API key.
-
-	Notes:
-	- If you choose the file method, ensure that the file names match exactly with the keys in the API_KEYS dictionary.
-	- The system will load the API keys from the files automatically if they exist, otherwise, it will fall back to the hardcoded default keys.
+	Note: File-based configuration takes precedence over direct configuration.
 	"""
 	pass
 
 
-# --- Code management ---
-
-
-my_cur_skin = False
-cur_skin = config.skin.primary_skin.value.replace("/skin.xml", "")
-
-
 def _load_api_keys():
-	"""Internal function that loads API keys at startup."""
+	"""
+	Internal function that loads API keys from configuration files.
+
+	This function:
+	1. Locates the current skin directory
+	2. Checks for API key files
+	3. Updates the API_KEYS dictionary with found keys
+	4. Falls back to defaults if files aren't found
+
+	Returns:
+		bool: True if any keys were loaded successfully, False otherwise
+	"""
 	try:
 		cur_skin = config.skin.primary_skin.value.replace("/skin.xml", "")
 		skin_path = Path(f"/usr/share/enigma2/{cur_skin}")
 
 		if not skin_path.exists():
-			print(f"[API Keys] Skin path not found: {skin_path}")
+			print(f"[API Config] Skin path not found: {skin_path}")
 			return False
 
+		# Map API key names to their corresponding file paths
 		key_files = {
 			"tmdb_api": skin_path / "tmdb_api",
 			"thetvdb_api": skin_path / "thetvdb_api",
@@ -111,22 +106,31 @@ def _load_api_keys():
 			"fanart_api": skin_path / "fanart_api",
 		}
 
+		keys_loaded = False
+
 		for key_name, file_path in key_files.items():
 			if file_path.exists():
-				with open(file_path, "r") as f:
-					API_KEYS[key_name] = f.read().strip()
+				try:
+					with open(file_path, "r") as f:
+						API_KEYS[key_name] = f.read().strip()
+					print(f"[API Config] Loaded {key_name} from {file_path}")
+					keys_loaded = True
+				except Exception as e:
+					print(f"[API Config] Error reading {file_path}: {str(e)}")
 			else:
-				print(f"[API Keys] Warning: {key_name} file not found at {file_path}")
+				print(f"[API Config] Using default key for {key_name}")
 
+		# Update global namespace with current API keys
 		globals().update(API_KEYS)
-		return True
+		return keys_loaded
 
 	except Exception as e:
-		print(f"[API Keys] Error loading keys: {str(e)}")
+		print(f"[API Config] Critical error loading keys: {str(e)}")
 		return False
 
 
-_load_api_keys()
-
+# Initialize API keys during module import
+if not _load_api_keys():
+	print("[API Config] Using default API keys")
 
 # ================ END SERVICE API CONFIGURATION ================

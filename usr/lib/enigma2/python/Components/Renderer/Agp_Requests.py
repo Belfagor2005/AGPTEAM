@@ -33,10 +33,10 @@ from collections import namedtuple
 from random import choices
 from requests.adapters import HTTPAdapter
 
-# User Agent Structure with Percentage Distribution
+# Define User Agent structure with percentage distribution
 UserAgent = namedtuple('UserAgent', ['ua', 'weight'])
 
-# List updated to March 2025 with real distribution
+# Updated list of user agents with real-world distribution as of March 2025
 USER_AGENTS_2025 = [
 	UserAgent(ua="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.10 Safari/605.1.1", weight=43.03),
 	UserAgent(ua="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.3", weight=21.05),
@@ -54,20 +54,26 @@ USER_AGENTS_2025 = [
 
 
 class RequestAgent:
-	"""Gestione avanzata degli User Agent con distribuzione percentuale"""
+	"""Advanced User Agent management with percentage-based distribution"""
 
 	def __init__(self):
+		"""Initialize the RequestAgent with default settings"""
 		self.agents = USER_AGENTS_2025
 		self.weights = [ua.weight for ua in self.agents]
 		self.session = None
-		self.timeout_connect = 3.05
-		self.timeout_read = 10
-		self.max_retries = 2
-		self.pool_connections = 3,
-		self.pool_maxsize = 3
+		self.timeout_connect = 3.05  # Connection timeout in seconds
+		self.timeout_read = 10       # Read timeout in seconds
+		self.max_retries = 2        # Maximum number of retries
+		self.pool_connections = 3   # Number of connection pools
+		self.pool_maxsize = 3       # Maximum size of connection pool
 
 	def get_random_ua(self):
-		"""Restituisce un user agent casuale rispettando la distribuzione reale"""
+		"""
+		Get a random user agent while respecting real-world distribution
+
+		Returns:
+			str: A randomly selected user agent string
+		"""
 		return choices(
 			population=[ua.ua for ua in self.agents],
 			weights=self.weights,
@@ -75,10 +81,19 @@ class RequestAgent:
 		)[0]
 
 	def create_session(self, retries=2, backoff_factor=0.5):
-		"""Crea una sessione requests configurata"""
+		"""
+		Create and configure a requests session
+
+		Args:
+			retries: Number of retries for failed requests
+			backoff_factor: Backoff factor for retries
+
+		Returns:
+			requests.Session: Configured session object
+		"""
 		self.session = requests.Session()
 
-		# Configuring adapters with retries
+		# Configure HTTP adapters with retry settings
 		adapter = HTTPAdapter(
 			max_retries=self.max_retries,
 			pool_connections=self.pool_connections,
@@ -87,7 +102,7 @@ class RequestAgent:
 		self.session.mount('http://', adapter)
 		self.session.mount('https://', adapter)
 
-		# Advanced Header
+		# Set advanced headers for the session
 		self.session.headers.update({
 			'User-Agent': self.get_random_ua(),
 			'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -105,28 +120,43 @@ class RequestAgent:
 		return self.session
 
 	def smart_request(self, url, method='GET', **kwargs):
+		"""
+		Make an intelligent HTTP request with built-in error handling
+
+		Args:
+			url: Target URL for the request
+			method: HTTP method (GET, POST, etc.)
+			**kwargs: Additional arguments for requests
+
+		Returns:
+			requests.Response: Response object
+
+		Raises:
+			requests.exceptions.RequestException: If request fails
+		"""
 		kwargs.setdefault('timeout', (self.timeout_connect, self.timeout_read))
 		if not self.session:
 			self.create_session()
 
 		try:
-			# print(f"Session active: {self.session is not None}")
+
 			response = self.session.request(method, url, **kwargs)
-			# print(f"response = self.session.request: {response}")
+
 			response.raise_for_status()
-			# print(f"response: {response}")
+
 			return response
 		except requests.exceptions.RequestException as e:
 			print(f"Request failed: {str(e)}")
 			raise
 
 
-# Preconfigured Global Instance
+# Preconfigured global instance for convenience
 request_agent = RequestAgent()
 
 
 """
-# For single session request
+Example usage for single session request:
+
 from .Agp_Requests import request_agent
 
 try:
@@ -137,12 +167,13 @@ except Exception as e:
 """
 
 """
-# personally session
+Example usage for personal session:
+
 from .Agp_Requests import RequestAgent
 custom_agent = RequestAgent()
 session = custom_agent.create_session(retries=5)
 
-# Us session for many request
+# Use session for multiple requests
 response1 = session.get('https://api.example.com/data1')
 response2 = session.get('https://api.example.com/data2')
 """

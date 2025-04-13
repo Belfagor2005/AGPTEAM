@@ -3,26 +3,26 @@
 from __future__ import absolute_import, print_function
 """
 #########################################################
-#                                                       #
-#  AGP - Advanced Graphics Renderer                     #
-#  Version: 3.5.0                                       #
+#														#
+#  AGP - Advanced Graphics Renderer						#
+#  Version: 3.5.0										#
 #  Created by Lululla (https://github.com/Belfagor2005) #
-#  License: CC BY-NC-SA 4.0                             #
-#  https://creativecommons.org/licenses/by-nc-sa/4.0    #
-#                                                       #
-#  Last Modified: "15:14 - 20250401"                    #
-#                                                       #
-#  Credits:                                             #
-#  - Original concept by Lululla                        #
-#  - TMDB API integration                               #
-#  - TVDB API integration                               #
-#  - OMDB API integration                               #
-#  - Advanced caching system                            #
-#                                                       #
-#  Usage of this code without proper attribution        #
-#  is strictly prohibited.                              #
-#  For modifications and redistribution,                #
-#  please maintain this credit header.                  #
+#  License: CC BY-NC-SA 4.0								#
+#  https://creativecommons.org/licenses/by-nc-sa/4.0	#
+#														#
+#  Last Modified: "15:14 - 20250401"					#
+#														#
+#  Credits:												#
+#  - Original concept by Lululla						#
+#  - TMDB API integration								#
+#  - TVDB API integration								#
+#  - OMDB API integration								#
+#  - Advanced caching system							#
+#														#
+#  Usage of this code without proper attribution		#
+#  is strictly prohibited.								#
+#  For modifications and redistribution,				#
+#  please maintain this credit header.					#
 #########################################################
 """
 __author__ = "Lululla"
@@ -31,7 +31,7 @@ __copyright__ = "AGP Team"
 # ========================
 # SYSTEM IMPORTS
 # ========================
-# import platform      # Info sistema operativo
+# Import platform for OS information (currently commented out)
 from sys import version_info, version, stdout
 from os import (
 	makedirs,
@@ -42,7 +42,7 @@ from os import (
 	W_OK,
 	system
 )
-from os.path import (  # Utilities path
+from os.path import (  # Path manipulation utilities
 	join,
 	exists,
 	isfile,
@@ -52,8 +52,8 @@ from os.path import (  # Utilities path
 	basename,
 
 )
-from pathlib import Path  # Management path object-oriented
-import glob              # Search file pattern
+from pathlib import Path  # Object-oriented path handling
+import glob				 # Pattern-based file searching
 
 # ========================
 # IMPORTS FOR LOGGING
@@ -65,8 +65,6 @@ from logging import (
 	INFO,
 	Formatter,
 	StreamHandler,
-	# Handler,
-	# FileHandler
 )
 from logging.handlers import RotatingFileHandler
 
@@ -77,22 +75,22 @@ from time import ctime
 from datetime import datetime, timedelta
 import time
 # ========================
-# IMPORTS FOR WORD PROCESSING
+# IMPORTS FOR TEXT PROCESSING
 # ========================
-import unicodedata      # Gestione caratteri Unicode
-from re import sub, IGNORECASE  # Regular expressions
+import unicodedata
+from re import sub, IGNORECASE
 
 # ========================
 # ENIGMA SPECIFIC IMPORTS
 # ========================
-from Components.config import config  # Configurazione Enigma2
+from Components.config import config
 
 # ========================
 # THREADING
 # ========================
 from threading import Timer, Lock as threading_Lock
 
-# Custom import for renderer
+# Check Python version
 PY3 = version_info[0] >= 3
 
 
@@ -100,16 +98,17 @@ PY3 = version_info[0] >= 3
 class ColorLogger:
 	"""Enhanced logger with colored output for better visibility"""
 	COLORS = {
-		'DEBUG': '\033[94m',     # Blue
-		'INFO': '\033[92m',      # Green
-		'WARNING': '\033[93m',   # Yellow
-		'ERROR': '\033[91m',     # Red
-		'CRITICAL': '\033[91m',  # Red
-		'RESET': '\033[0m'       # Reset
+		'DEBUG': '\033[94m',	 # Blue
+		'INFO': '\033[92m',		 # Green
+		'WARNING': '\033[93m',	 # Yellow
+		'ERROR': '\033[91m',	 # Red
+		'CRITICAL': '\033[91m',	 # Red
+		'RESET': '\033[0m'		 # Reset color
 	}
 
 	@classmethod
 	def log(cls, level, message):
+		"""Log message with colored output"""
 		color = cls.COLORS.get(level, '')
 		print(f"{color}[{level}] {message}{cls.COLORS['RESET']}")
 
@@ -132,15 +131,16 @@ def setup_logging(log_file='/tmp/agplog/agp_utils.log', max_log_size=5, backup_c
 	class ColoredFormatter(Formatter):
 		"""Custom formatter with colored output"""
 		COLORS = {
-			'DEBUG': '\033[36m',     # Cyan
-			'INFO': '\033[32m',      # Green
-			'WARNING': '\033[33m',   # Yellow
-			'ERROR': '\033[31m',     # Red
-			'CRITICAL': '\033[41m',  # Red background
-			'RESET': '\033[0m'       # Reset
+			'DEBUG': '\033[36m',	 # Cyan
+			'INFO': '\033[32m',		 # Green
+			'WARNING': '\033[33m',	 # Yellow
+			'ERROR': '\033[31m',	 # Red
+			'CRITICAL': '\033[41m',	 # Red background
+			'RESET': '\033[0m'		 # Reset color
 		}
 
 		def format(self, record):
+			"""Format log record with color"""
 			levelname = record.levelname
 			if levelname in self.COLORS:
 				record.levelname = (f"{self.COLORS[levelname]}{levelname}"
@@ -200,7 +200,7 @@ def cleanup_old_logs(log_file, max_days=7):
 	"""Delete log files older than max_days"""
 	cutoff = datetime.now() - timedelta(days=max_days)
 
-	for f in glob.glob(f"{log_file}*"):  # Also captures rotated files (e.g. agp_utils.log.1)
+	for f in glob.glob(f"{log_file}*"):	 # Also captures rotated files (e.g. agp_utils.log.1)
 		if isfile(f):
 			file_time = datetime.fromtimestamp(getmtime(f))
 			if file_time < cutoff:
@@ -220,11 +220,11 @@ def schedule_log_cleanup(interval_hours=12):
 
 
 schedule_log_cleanup()
-# interval_hours            Total Seconds       Equivalent
-#    1 (hour)                    3.600               1h
-#    12 (hours)                 43.200               12h
-#    24 (hours)                 86.400              1 Day
-#    72 (hours)                 259.200             3 Days
+# interval_hours			Total Seconds		Equivalent
+#	 1 (hour)					 3.600				 1h
+#	 12 (hours)					43.200				 12h
+#	 24 (hours)					86.400				1 Day
+#	 72 (hours)					259.200				3 Days
 
 logger = setup_logging()
 logger.info("AGP MediaUtils initialized")
@@ -248,7 +248,7 @@ nobackdrop = join("/usr/share/enigma2", cur_skin, "nobackdrop.png")
 
 # Active services configuration
 ACTIVE_SERVICES = [
-	'_search_tmdb',  # Main service
+	'_search_tmdb',	 # Main service
 	'_search_tvdb',
 	'_search_omdb'
 ]
@@ -264,23 +264,23 @@ except:
 # BACKDROP CONFIGURATION (shared)
 # ========================
 BACKDROP_SIZES = [
-	"original",  # Highest quality
-	"w1920",     # Full HD
-	"w1280",     # HD ready
-	"w780",      # Default recommendation
-	"w500",      # Fallback
-	"w300"       # Low bandwidth
+	"original",	 # Highest quality
+	"w1920",	 # Full HD
+	"w1280",	 # HD ready
+	"w780",		 # Default recommendation
+	"w500",		 # Fallback
+	"w300"		 # Low bandwidth
 ]
 
-MIN_BACKDROP_WIDTH = 500  # px
-MAX_ORIGINAL_SIZE = 10    # MB
+MIN_BACKDROP_WIDTH = 500  # Minimum width in pixels
+MAX_ORIGINAL_SIZE = 10	  # Maximum file size in MB
 
 
 def verify_backdrop_integrity(self):
-	"""Verifica che la cartella e la cache siano sincronizzate"""
+	"""Verify that folder and cache are synchronized"""
 	missing_files = 0
 
-	# Controlla ogni entry nella cache
+	# Check each cache entry
 	for title, entry in list(self.cache.cache.items()):
 		if not exists(entry['path']):
 			logger.warning(f"Missing file: {entry['path']}")
@@ -289,7 +289,7 @@ def verify_backdrop_integrity(self):
 
 	if missing_files:
 		logger.info(f"Cleaned {missing_files} invalid cache entries")
-		self.cache._async_save()  # Salva le modifiche
+		self.cache._async_save()
 # validate_backdrop_folder()
 
 # ================ END GUI CONFIGURATION ===============
@@ -303,25 +303,33 @@ except ImportError:
 	logger.warning("convtext not found, using fallback")
 
 	def convtext(x):
-		return x  # Fallback function
+		"""Fallback text conversion function"""
+		return x
 
 
 def clean_epg_text(text):
-	"""Centralized text cleaning for both classes"""
+	"""Centralized text cleaning for EPG data"""
 	if not text:
 		return ""
 	text = str(text).replace('\xc2\x86', '').replace('\xc2\x87', '')
 	return text.encode('utf-8', 'ignore') if not PY3 else text
 
 
-# filename cleaner
-
 def clean_filename(title):
-	"""Sanitize title for use as filename (handles special chars and accents)"""
+	"""
+	Sanitize title for use as filename
+	Handles special characters and accents
+
+	Args:
+		title: Original title string
+
+	Returns:
+		str: Cleaned filename-safe string
+	"""
 	if not title:
 		return "no_title"
 
-	# Handle unicode conversion for Python 2/3
+	# Handle unicode conversion for Python 2/3 compatibility
 	if version_info[0] == 2:
 		if isinstance(title, str):
 			title = title.decode('utf-8', 'ignore')
@@ -334,16 +342,25 @@ def clean_filename(title):
 	title = title.encode('ascii', 'ignore').decode('ascii')
 
 	# Remove special characters and normalize
-	title = sub(r'[^\w\s-]', '_', title)  # Sostituisce caratteri speciali con _
-	title = sub(r'[\s-]+', '_', title)    # Sostituisce spazi e - con _
-	title = sub(r'_+', '_', title)        # Riduce multipli _ a uno solo
-	title = title.strip('_')              # Rimuove _ all'inizio/fine
+	title = sub(r'[^\w\s-]', '_', title)  # Replace special chars with _
+	title = sub(r'[\s-]+', '_', title)	  # Replace spaces and - with _
+	title = sub(r'_+', '_', title)		  # Reduce multiple _ to single
+	title = title.strip('_')			  # Remove _ from start/end
 
-	return title.lower()[:100]  # Limita a 100 caratteri
+	return title.lower()[:100]	# Limit to 100 chars
 
 
 def clean_for_tvdb_optimized(title):
-	"""Optimized version for fast title cleaning"""
+	"""
+	Optimized version for fast title cleaning
+	Removes common articles and patterns for better API matching
+
+	Args:
+		title: Original title string
+
+	Returns:
+		str: Cleaned title ready for TVDB API
+	"""
 	if not title:
 		return ""
 
@@ -370,12 +387,20 @@ def clean_for_tvdb_optimized(title):
 
 	return title
 
-# Uso in `_fill_from_event` o `_fill_from_service`
+# Used in `_fill_from_event` o `_fill_from_service`
 # normalized_name = clean_for_tvdb_optimized(event_name)
 
 
 def clean_for_tvdb(title):
-	"""Prepare title for API searches"""
+	"""
+	Prepare title for API searches with comprehensive cleaning
+
+	Args:
+		title: Original title string
+
+	Returns:
+		str: Cleaned title ready for TVDB API
+	"""
 	if not title:
 		return ""
 
@@ -407,12 +432,19 @@ def clean_for_tvdb(title):
 
 def check_disk_space(path, min_space_mb, media_type=None, purge_strategy="oldest_first"):
 	"""
-	Advanced version with automatic purge
+	Check disk space and optionally purge old files if needed
+
 	Args:
-		purge_strategy: "oldest_first" o "largest_first"
+		path: Path to check
+		min_space_mb: Minimum required space in MB
+		media_type: Type of media for logging
+		purge_strategy: "oldest_first" or "largest_first"
+
+	Returns:
+		bool: True if enough space is available
 	"""
 	try:
-		# Fallback a /tmp if the path does not exist
+		# Fallback to /tmp if path don't exist
 		if not exists(path):
 			path = "/tmp"
 
@@ -442,10 +474,19 @@ def check_disk_space(path, min_space_mb, media_type=None, purge_strategy="oldest
 
 def free_up_space(path, min_space_mb, media_type, strategy="oldest_first"):
 	"""
-	Differentiated purging by media type
+	Free up space by deleting old files based on strategy
+
+	Args:
+		path: Path to clean up
+		min_space_mb: Target free space in MB
+		media_type: Type of media for logging
+		strategy: Deletion strategy ("oldest_first" or "largest_first")
+
+	Returns:
+		bool: True if target space was achieved
 	"""
 	try:
-		# 1. File collection with metadata
+		# 1. Collect files with metadata
 		files = []
 		for f in listdir(path):
 			filepath = join(path, f)
@@ -456,11 +497,11 @@ def free_up_space(path, min_space_mb, media_type, strategy="oldest_first"):
 					"mtime": getmtime(filepath)
 				})
 
-		# 2. Sorting by strategy
+		# 2. Sort files by strategy
 		if strategy == "oldest_first":
-			files.sort(key=lambda x: x["mtime"])  # First old
+			files.sort(key=lambda x: x["mtime"])  # Oldest first
 		else:  # largest_first
-			files.sort(key=lambda x: x["size"], reverse=True)  # The biggest ones first
+			files.sort(key=lambda x: x["size"], reverse=True)  # Largest first
 
 		# 3. Selective purge
 		freed_mb = 0
@@ -489,22 +530,29 @@ def free_up_space(path, min_space_mb, media_type, strategy="oldest_first"):
 
 def validate_media_path(path, media_type, min_space_mb=None):
 	"""
-	Validates and prepares a media storage path with comprehensive checks.
-	Integrates with the custom ColorLogger system.
+	Validate and prepare a media storage path with comprehensive checks
 
 	Args:
-		path: Path to validate (str)
-		media_type: Media type for logging ('poster'|'backdrop')
-		min_space_mb: Minimum required space in MB (int/float or None to skip check)
+		path: Path to validate
+		media_type: Media type for logging
+		min_space_mb: Minimum required space
 
 	Returns:
-		str: Validated path (original or fallback to /tmp)
+		str: Validated path (original or fallback)
 	"""
-
 	def _log(message, level='info'):
-		"""Internal wrapper for consistent logging with ColorLogger"""
-		log_method = getattr(logger, level.lower())
-		log_method(f"[MediaPath/{media_type}] {message}")
+		"""Internal logging wrapper"""
+		# Define the log method based on level
+		if level.lower() == 'debug':
+			logger.debug(f"[MediaPath/{media_type}] {message}")
+		elif level.lower() == 'warning':
+			logger.warning(f"[MediaPath/{media_type}] {message}")
+		elif level.lower() == 'error':
+			logger.error(f"[MediaPath/{media_type}] {message}")
+		elif level.lower() == 'critical':
+			logger.critical(f"[MediaPath/{media_type}] {message}")
+		else:  # default to info
+			logger.info(f"[MediaPath/{media_type}] {message}")
 
 	try:
 		start_time = time()
@@ -551,13 +599,14 @@ def validate_media_path(path, media_type, min_space_mb=None):
 
 
 class MediaStorage:
+	"""Centralized media storage management"""
 	def __init__(self):
 		self.logger = logger
 		self.poster_folder = self._init_storage('poster')
 		self.backdrop_folder = self._init_storage('backdrop')
 
 	def _get_mount_points(self, media_type):
-		"""Restituisce i punti di mount in base al tipo di media"""
+		"""Get potential storage locations based on media type"""
 		return [
 			("/media/usb", f"/media/usb/{media_type}"),
 			("/media/hdd", f"/media/hdd/{media_type}"),
@@ -570,7 +619,7 @@ class MediaStorage:
 		]
 
 	def _check_disk_space(self, path, min_space=50):
-		"""Verifica spazio disponibile (50MB minimo)"""
+		"""Check available disk space (50MB minimum)"""
 		try:
 			stat = statvfs(path)
 			return (stat.f_bavail * stat.f_frsize) / (1024 * 1024) > min_space
@@ -578,7 +627,7 @@ class MediaStorage:
 			return False
 
 	def _init_storage(self, media_type):
-		"""Inizializza la cartella di storage"""
+		"""Initialize storage folder"""
 		for base_path, folder in self._get_mount_points(media_type):
 			if exists(base_path) and access(base_path, W_OK):
 				if self._check_disk_space(base_path):
@@ -604,7 +653,7 @@ class MediaStorage:
 try:
 	media_config = MediaStorage()
 	POSTER_FOLDER = media_config.poster_folder
-	BACKDROP_FOLDER = media_config.backdrop_folder  # <-- Questo già esiste
+	BACKDROP_FOLDER = media_config.backdrop_folder
 except Exception as e:
 	logger.critical(f"MediaStorage initialization failed: {str(e)}")
 	raise
@@ -612,22 +661,24 @@ except Exception as e:
 
 def delete_old_files_if_low_disk_space(POSTER_FOLDER, min_free_space_mb=50, max_age_days=30):
 	"""
-	Elimina i file più vecchi se lo spazio disponibile nel disco è inferiore a min_free_space_mb.
-	:param POSTER_FOLDER: la cartella in cui cercare i file da eliminare.
-	:param min_free_space_mb: spazio minimo (in MB) che deve essere disponibile prima di eliminare i file.
-	:param max_age_days: il numero di giorni oltre i quali i file verranno eliminati.
+	Delete old files if disk space is below threshold
+
+	Args:
+		POSTER_FOLDER: Folder to clean
+		min_free_space_mb: Minimum required free space in MB
+		max_age_days: Maximum age of files to keep
 	"""
 	try:
 		from shutil import disk_usage
 		total, used, free = disk_usage(POSTER_FOLDER)
-		free_space_mb = free / (1024 ** 2)  # Converti in MB
+		free_space_mb = free / (1024 ** 2)	# Convert to MB
 
 		if free_space_mb < min_free_space_mb:
 			print(f"Low disk space: {free_space_mb:.2f} MB available. Deleting old files...")
 
 			current_time = time()
 
-			age_limit = max_age_days * 86400  # 86400 è il numero di secondi in un giorno
+			age_limit = max_age_days * 86400  # Seconds in a day
 
 			for filename in listdir(POSTER_FOLDER):
 				file_path = join(POSTER_FOLDER, filename)
@@ -649,22 +700,35 @@ delete_old_files_if_low_disk_space(POSTER_FOLDER, min_free_space_mb=50, max_age_
 
 # ================ END MEDIASTORAGE CONFIGURATION ===============
 
+
 # ================ START MEMORY CONFIGURATION ================
 
+def MemClean():
+	"""Clear system memory caches"""
+	try:
+		system('sync')	# Flush filesystem buffers
+		system('echo 1 > /proc/sys/vm/drop_caches')	 # Clear pagecache
+		system('echo 2 > /proc/sys/vm/drop_caches')	 # Clear dentries and inodes
+		system('echo 3 > /proc/sys/vm/drop_caches')	 # Clear all caches
+	except:
+		pass
+
+# ================ END MEMORY CONFIGURATION ================
 
 # ================ START SERVICE API CONFIGURATION ===============
 
-# Initialize API lock
+
+# Initialize API lock for thread safety
 api_lock = threading_Lock()
 
-# --- Default Value---
+# Default API keys
 tmdb_api = "3c3efcf47c3577558812bb9d64019d65"
 thetvdb_api = "a99d487bb3426e5f3a60dea6d3d3c7ef"
 # thetvdb_api = 'D19315B88B2DE21F'
 omdb_api = "cb1d9f55"
 fanart_api = "6d231536dea4318a88cb2520ce89473b"
 
-# --- Dictionary for centralized management ---
+# Centralized API key management
 API_KEYS = {
 	"tmdb_api": tmdb_api,
 	"thetvdb_api": thetvdb_api,
@@ -674,11 +738,12 @@ API_KEYS = {
 
 
 def _load_api_keys():
-	"""Funzione interna che carica le chiavi all'avvio."""
+	"""Load API keys from skin configuration files"""
 	try:
 		cur_skin = config.skin.primary_skin.value.replace('/skin.xml', '')
 		skin_path = Path(f"/usr/share/enigma2/{cur_skin}")
 
+		# Map API keys to their respective files
 		key_files = {
 			"tmdb_api": skin_path / "tmdb_api",
 			"thetvdb_api": skin_path / "thetvdb_api",
@@ -686,31 +751,23 @@ def _load_api_keys():
 			"fanart_api": skin_path / "fanart_api",
 		}
 
+		# Load each key file if it exists
 		for key_name, file_path in key_files.items():
 			if file_path.exists():
 				with open(file_path, "r") as f:
 					API_KEYS[key_name] = f.read().strip()
 
-		# Update global variables for compatibility
+		# Update global variables for backward compatibility
 		globals().update(API_KEYS)
 		return True
 
 	except Exception as e:
-		print(f"[API Keys] Errore nel caricamento: {str(e)}")
+		print(f"[API Keys] Loading error: {str(e)}")
 		return False
 
 
+# Initialize API keys
 _load_api_keys()
 
 
 # ================ END SERVICE API CONFIGURATION ================
-def MemClean():
-	try:
-		system('sync')
-		system('echo 1 > /proc/sys/vm/drop_caches')
-		system('echo 2 > /proc/sys/vm/drop_caches')
-		system('echo 3 > /proc/sys/vm/drop_caches')
-	except:
-		pass
-
-# ================= END MEMORY CONFIGURATION =================
