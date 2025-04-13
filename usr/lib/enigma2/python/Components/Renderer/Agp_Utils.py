@@ -3,26 +3,26 @@
 from __future__ import absolute_import, print_function
 """
 #########################################################
-#														#
-#  AGP - Advanced Graphics Renderer						#
-#  Version: 3.5.0										#
+#                                                       #
+#  AGP - Advanced Graphics Renderer                     #
+#  Version: 3.5.0                                       #
 #  Created by Lululla (https://github.com/Belfagor2005) #
-#  License: CC BY-NC-SA 4.0								#
-#  https://creativecommons.org/licenses/by-nc-sa/4.0	#
-#														#
-#  Last Modified: "15:14 - 20250401"					#
-#														#
-#  Credits:												#
-#  - Original concept by Lululla						#
-#  - TMDB API integration								#
-#  - TVDB API integration								#
-#  - OMDB API integration								#
-#  - Advanced caching system							#
-#														#
-#  Usage of this code without proper attribution		#
-#  is strictly prohibited.								#
-#  For modifications and redistribution,				#
-#  please maintain this credit header.					#
+#  License: CC BY-NC-SA 4.0                             #
+#  https://creativecommons.org/licenses/by-nc-sa/4.0    #
+#                                                       #
+#  Last Modified: "15:14 - 20250401"                    #
+#                                                       #
+#  Credits:                                             #
+#  - Original concept by Lululla                        #
+#  - TMDB API integration                               #
+#  - TVDB API integration                               #
+#  - OMDB API integration                               #
+#  - Advanced caching system                            #
+#                                                       #
+#  Usage of this code without proper attribution        #
+#  is strictly prohibited.                              #
+#  For modifications and redistribution,                #
+#  please maintain this credit header.                  #
 #########################################################
 """
 __author__ = "Lululla"
@@ -53,7 +53,7 @@ from os.path import (  # Path manipulation utilities
 
 )
 from pathlib import Path  # Object-oriented path handling
-import glob				 # Pattern-based file searching
+import glob              # Pattern-based file searching
 
 # ========================
 # IMPORTS FOR LOGGING
@@ -98,12 +98,12 @@ PY3 = version_info[0] >= 3
 class ColorLogger:
 	"""Enhanced logger with colored output for better visibility"""
 	COLORS = {
-		'DEBUG': '\033[94m',	 # Blue
-		'INFO': '\033[92m',		 # Green
-		'WARNING': '\033[93m',	 # Yellow
-		'ERROR': '\033[91m',	 # Red
-		'CRITICAL': '\033[91m',	 # Red
-		'RESET': '\033[0m'		 # Reset color
+		'DEBUG': '\033[94m',     # Blue
+		'INFO': '\033[92m',      # Green
+		'WARNING': '\033[93m',   # Yellow
+		'ERROR': '\033[91m',     # Red
+		'CRITICAL': '\033[91m',  # Red
+		'RESET': '\033[0m'       # Reset color
 	}
 
 	@classmethod
@@ -131,12 +131,12 @@ def setup_logging(log_file='/tmp/agplog/agp_utils.log', max_log_size=5, backup_c
 	class ColoredFormatter(Formatter):
 		"""Custom formatter with colored output"""
 		COLORS = {
-			'DEBUG': '\033[36m',	 # Cyan
-			'INFO': '\033[32m',		 # Green
-			'WARNING': '\033[33m',	 # Yellow
-			'ERROR': '\033[31m',	 # Red
-			'CRITICAL': '\033[41m',	 # Red background
-			'RESET': '\033[0m'		 # Reset color
+			'DEBUG': '\033[36m',     # Cyan
+			'INFO': '\033[32m',      # Green
+			'WARNING': '\033[33m',   # Yellow
+			'ERROR': '\033[31m',     # Red
+			'CRITICAL': '\033[41m',  # Red background
+			'RESET': '\033[0m'       # Reset color
 		}
 
 		def format(self, record):
@@ -200,7 +200,7 @@ def cleanup_old_logs(log_file, max_days=7):
 	"""Delete log files older than max_days"""
 	cutoff = datetime.now() - timedelta(days=max_days)
 
-	for f in glob.glob(f"{log_file}*"):	 # Also captures rotated files (e.g. agp_utils.log.1)
+	for f in glob.glob(f"{log_file}*"):  # Also captures rotated files (e.g. agp_utils.log.1)
 		if isfile(f):
 			file_time = datetime.fromtimestamp(getmtime(f))
 			if file_time < cutoff:
@@ -220,11 +220,11 @@ def schedule_log_cleanup(interval_hours=12):
 
 
 schedule_log_cleanup()
-# interval_hours			Total Seconds		Equivalent
-#	 1 (hour)					 3.600				 1h
-#	 12 (hours)					43.200				 12h
-#	 24 (hours)					86.400				1 Day
-#	 72 (hours)					259.200				3 Days
+# interval_hours            Total Seconds       Equivalent
+#    1 (hour)                    3.600               1h
+#    12 (hours)                 43.200               12h
+#    24 (hours)                 86.400              1 Day
+#    72 (hours)                 259.200             3 Days
 
 logger = setup_logging()
 logger.info("AGP MediaUtils initialized")
@@ -248,7 +248,7 @@ nobackdrop = join("/usr/share/enigma2", cur_skin, "nobackdrop.png")
 
 # Active services configuration
 ACTIVE_SERVICES = [
-	'_search_tmdb',	 # Main service
+	'_search_tmdb',  # Main service
 	'_search_tvdb',
 	'_search_omdb'
 ]
@@ -264,16 +264,16 @@ except:
 # BACKDROP CONFIGURATION (shared)
 # ========================
 BACKDROP_SIZES = [
-	"original",	 # Highest quality
-	"w1920",	 # Full HD
-	"w1280",	 # HD ready
-	"w780",		 # Default recommendation
-	"w500",		 # Fallback
-	"w300"		 # Low bandwidth
+	"original",  # Highest quality
+	"w1920",     # Full HD
+	"w1280",     # HD ready
+	"w780",      # Default recommendation
+	"w500",      # Fallback
+	"w300"       # Low bandwidth
 ]
 
 MIN_BACKDROP_WIDTH = 500  # Minimum width in pixels
-MAX_ORIGINAL_SIZE = 10	  # Maximum file size in MB
+MAX_ORIGINAL_SIZE = 10    # Maximum file size in MB
 
 
 def verify_backdrop_integrity(self):
@@ -343,11 +343,11 @@ def clean_filename(title):
 
 	# Remove special characters and normalize
 	title = sub(r'[^\w\s-]', '_', title)  # Replace special chars with _
-	title = sub(r'[\s-]+', '_', title)	  # Replace spaces and - with _
-	title = sub(r'_+', '_', title)		  # Reduce multiple _ to single
-	title = title.strip('_')			  # Remove _ from start/end
+	title = sub(r'[\s-]+', '_', title)    # Replace spaces and - with _
+	title = sub(r'_+', '_', title)        # Reduce multiple _ to single
+	title = title.strip('_')              # Remove _ from start/end
 
-	return title.lower()[:100]	# Limit to 100 chars
+	return title.lower()[:100]  # Limit to 100 chars
 
 
 def clean_for_tvdb_optimized(title):
@@ -604,6 +604,7 @@ class MediaStorage:
 		self.logger = logger
 		self.poster_folder = self._init_storage('poster')
 		self.backdrop_folder = self._init_storage('backdrop')
+		self.imovie_folder = self._init_storage('imovie')
 
 	def _get_mount_points(self, media_type):
 		"""Get potential storage locations based on media type"""
@@ -654,6 +655,7 @@ try:
 	media_config = MediaStorage()
 	POSTER_FOLDER = media_config.poster_folder
 	BACKDROP_FOLDER = media_config.backdrop_folder
+	IMOVIE_FOLDER = media_config.imovie_folder
 except Exception as e:
 	logger.critical(f"MediaStorage initialization failed: {str(e)}")
 	raise
@@ -671,7 +673,7 @@ def delete_old_files_if_low_disk_space(POSTER_FOLDER, min_free_space_mb=50, max_
 	try:
 		from shutil import disk_usage
 		total, used, free = disk_usage(POSTER_FOLDER)
-		free_space_mb = free / (1024 ** 2)	# Convert to MB
+		free_space_mb = free / (1024 ** 2)  # Convert to MB
 
 		if free_space_mb < min_free_space_mb:
 			print(f"Low disk space: {free_space_mb:.2f} MB available. Deleting old files...")
@@ -706,10 +708,10 @@ delete_old_files_if_low_disk_space(POSTER_FOLDER, min_free_space_mb=50, max_age_
 def MemClean():
 	"""Clear system memory caches"""
 	try:
-		system('sync')	# Flush filesystem buffers
-		system('echo 1 > /proc/sys/vm/drop_caches')	 # Clear pagecache
-		system('echo 2 > /proc/sys/vm/drop_caches')	 # Clear dentries and inodes
-		system('echo 3 > /proc/sys/vm/drop_caches')	 # Clear all caches
+		system('sync')  # Flush filesystem buffers
+		system('echo 1 > /proc/sys/vm/drop_caches')  # Clear pagecache
+		system('echo 2 > /proc/sys/vm/drop_caches')  # Clear dentries and inodes
+		system('echo 3 > /proc/sys/vm/drop_caches')  # Clear all caches
 	except:
 		pass
 
