@@ -61,6 +61,7 @@ epgcache = eEPGCache.getInstance()
 epgcache.load()
 pdb = LifoQueue()
 rw_mounts = ["/media/usb", "/media/hdd", "/media/mmc", "/media/sd"]
+extensions = [".jpg", ".jpeg", ".png"]
 autobouquet_file = None
 apdb = dict()
 SCAN_TIME = "02:00"
@@ -240,15 +241,18 @@ class AglareBackdropX(Renderer):
 				self.pstrNm = None
 				return
 
-			self.pstrNm = join(self.path, self.pstcanal + ".jpg")
+			self.pstrNm = None
 			self.pstcanal = self.pstrNm
-			if exists(self.pstrNm):
-				self.instance.hide()
-				self.timer.start(10, True)
-			else:
-				canal = self.canal[:]
-				pdb.put(canal)
-				self.runBackdropThread()
+			for ext in extensions:
+				self.pstrNm = join(self.path, self.pstcanal + ext)
+				if exists(self.pstrNm):
+					utime(self.pstrNm, (time(), time()))  # Update the backdrop's timestamp
+					self.instance.hide()
+					self.timer.start(10, True)
+				else:
+					canal = self.canal[:]
+					pdb.put(canal)
+					self.runBackdropThread()
 
 		except Exception as e:
 			print(f"Error in backdrop display: {e}")
@@ -257,10 +261,13 @@ class AglareBackdropX(Renderer):
 			return
 
 	def generateBackdropPath(self):
-		"""Generate backdrop path from current channel data"""
+		"""Generate backdrop path from current channel data, checking for multiple image extensions"""
 		if len(self.canal) > 5 and self.canal[5]:
 			self.pstcanal = clean_for_tvdb(self.canal[5])
-			return join(self.path, str(self.pstcanal) + ".jpg")
+			for ext in [".jpg", ".jpeg", ".png"]:
+				candidate = join(self.path, self.pstcanal + ext)
+				if exists(candidate):
+					return candidate
 		return None
 
 	# @lru_cache(maxsize=150)
@@ -276,28 +283,24 @@ class AglareBackdropX(Renderer):
 		"""Display the backdrop image"""
 
 		if self.instance:
-			print('showPoster ide instance if self')
+			print('showBackdrop ide instance if self')
 			self.instance.hide()
 		"""
 		if not self.instance:
 			return
 		"""
-		if not self.pstrNm or not self.checkPosterExistence(self.pstrNm):
+		if not self.pstrNm or not self.checkBackdropExistence(self.pstrNm):
 			self.instance.hide()
-			print('showPoster ide instance')
+			print('showBackdrop ide instance')
 			return
 
-		print(f"[LOAD] Showing poster: {self.pstrNm}")
+		print(f"[LOAD] Showing backdrop: {self.pstrNm}")
 		self.instance.setPixmap(loadJPG(self.pstrNm))
 		self.instance.setScale(1)
 		self.instance.show()
 
 	def waitBackdrop(self):
 		"""Wait for backdrop download to complete"""
-		self.pstrNm = self.generateBackdropPath()
-		if not hasattr(self, 'pstrNm') or self.pstrNm is None:  # <-- CONTROLLO AGGIUNTO
-			self._log_error("pstrNm not initialized in waitBackdrop")
-			return
 		self.pstrNm = self.generateBackdropPath()
 		if not hasattr(self, 'pstrNm') or self.pstrNm is None:
 			self._log_error("pstrNm not initialized in waitBackdrop")
@@ -372,11 +375,11 @@ class BackdropDB(AgbDownloadThread):
 				self._log_debug("No provider is enabled for backdrop download")
 				return
 
-			backdrop_path = join(BACKDROP_FOLDER, f"{self.pstcanal}.jpg")  # fix: dwn_backdrop era usato ma non definito
-
-			if exists(backdrop_path):
-				utime(backdrop_path, (time(), time()))
-				return
+			for ext in extensions:
+				backdrop_path = join(BACKDROP_FOLDER, self.pstcanal + ext)
+				if exists(backdrop_path):
+					utime(backdrop_path, (time(), time()))
+					return
 
 			# Create the list of enabled providers
 			providers = []
@@ -614,11 +617,11 @@ class BackdropAutoDB(AgbDownloadThread):
 			# backdrop_url = f"http://image.tmdb.org/t/p/original/{self.pstcanal}.jpg"
 			# self._log_debug(f"Generated URL for backdrop: {backdrop_url}")
 
-			for ext in [".jpg", ".jpeg", ".png"]:
+			backdrop_path = None
+			for ext in extensions:
 				backdrop_path = join(BACKDROP_FOLDER, self.pstcanal + ext)
 				if exists(backdrop_path):
 					utime(backdrop_path, (time(), time()))
-					# self._log(f"Backdrop already exists with extension {ext}, timestamp updated: {self.pstcanal}")
 					return
 
 			# Create the list of providers enabled for download

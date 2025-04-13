@@ -60,6 +60,7 @@ epgcache = eEPGCache.getInstance()
 epgcache.load()
 pdb = LifoQueue()
 rw_mounts = ["/media/usb", "/media/hdd", "/media/mmc", "/media/sd"]
+extensions = [".jpg", ".jpeg", ".png"]
 autobouquet_file = None
 apdb = dict()
 SCAN_TIME = "00:00"
@@ -241,15 +242,18 @@ class AglarePosterX(Renderer):
 				self.pstrNm = None
 				return
 
-			self.pstrNm = join(self.path, self.pstcanal + ".jpg")
+			self.pstrNm = None
 			self.pstcanal = self.pstrNm
-			if exists(self.pstrNm):
-				self.instance.hide()
-				self.timer.start(10, True)
-			else:
-				canal = self.canal[:]
-				pdb.put(canal)
-				self.runPosterThread()
+			for ext in extensions:
+				self.pstrNm = join(self.path, self.pstcanal + ext)
+				if exists(self.pstrNm):
+					utime(self.pstrNm, (time(), time()))  # Update the poster's timestamp
+					self.instance.hide()
+					self.timer.start(10, True)
+				else:
+					canal = self.canal[:]
+					pdb.put(canal)
+					self.runPosterThread()
 
 		except Exception as e:
 			print(f"Error in poster display: {e}")
@@ -258,10 +262,13 @@ class AglarePosterX(Renderer):
 			return
 
 	def generatePosterPath(self):
-		"""Generate poster path from current channel data"""
+		"""Generate poster path from current channel data, checking for multiple image extensions"""
 		if len(self.canal) > 5 and self.canal[5]:
 			self.pstcanal = clean_for_tvdb(self.canal[5])
-			return join(self.path, str(self.pstcanal) + ".jpg")
+			for ext in [".jpg", ".jpeg", ".png"]:
+				candidate = join(self.path, self.pstcanal + ext)
+				if exists(candidate):
+					return candidate
 		return None
 
 	# @lru_cache(maxsize=150)
@@ -295,10 +302,6 @@ class AglarePosterX(Renderer):
 
 	def waitPoster(self):
 		"""Wait for poster download to complete"""
-		self.pstrNm = self.generatePosterPath()
-		if not hasattr(self, 'pstrNm') or self.pstrNm is None:  # <-- CONTROLLO AGGIUNTO
-			self._log_error("pstrNm not initialized in waitPoster")
-			return
 		self.pstrNm = self.generatePosterPath()
 		if not hasattr(self, 'pstrNm') or self.pstrNm is None:
 			self._log_error("pstrNm not initialized in waitPoster")
@@ -373,11 +376,11 @@ class PosterDB(AgpDownloadThread):
 				self._log_debug("No provider is enabled for poster download")
 				return
 
-			poster_path = join(POSTER_FOLDER, f"{self.pstcanal}.jpg")  # fix: dwn_poster era usato ma non definito
-
-			if exists(poster_path):
-				utime(poster_path, (time(), time()))
-				return
+			for ext in extensions:
+				poster_path = join(POSTER_FOLDER, self.pstcanal + ext)
+				if exists(poster_path):
+					utime(poster_path, (time(), time()))
+					return
 
 			# Create the list of enabled providers
 			providers = []
@@ -615,11 +618,11 @@ class PosterAutoDB(AgpDownloadThread):
 			# poster_url = f"http://image.tmdb.org/t/p/original/{self.pstcanal}.jpg"
 			# self._log_debug(f"Generated URL for poster: {poster_url}")
 
-			for ext in [".jpg", ".jpeg", ".png"]:
+			poster_path = None
+			for ext in extensions:
 				poster_path = join(POSTER_FOLDER, self.pstcanal + ext)
 				if exists(poster_path):
-					utime(poster_path, (time(), time()))  # Update the poster's timestamp
-					# self._log(f"Poster already exists with extension {ext}, timestamp updated: {self.pstcanal}")
+					utime(poster_path, (time(), time()))
 					return
 
 			# Create the list of providers enabled for download

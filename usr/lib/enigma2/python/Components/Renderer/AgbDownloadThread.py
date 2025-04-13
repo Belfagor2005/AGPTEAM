@@ -3,27 +3,27 @@
 from __future__ import absolute_import, print_function
 """
 #########################################################
-#														#
-#  AGP - Advanced Graphics Renderer						#
-#  Version: 3.5.0										#
+#                                                       #
+#  AGP - Advanced Graphics Renderer                     #
+#  Version: 3.5.0                                       #
 #  Created by Lululla (https://github.com/Belfagor2005) #
-#  License: CC BY-NC-SA 4.0								#
-#  https://creativecommons.org/licenses/by-nc-sa/4.0	#
-#  from original code by @digiteng 2021					#
-#														#
-#  Last Modified: "15:14 - 20250401"					#
-#														#
-#  Credits:												#
-#  - Original concept by Lululla						#
-#  - TMDB API integration								#
-#  - TVDB API integration								#
-#  - OMDB API integration								#
-#  - Advanced caching system							#
-#														#
-#  Usage of this code without proper attribution		#
-#  is strictly prohibited.								#
-#  For modifications and redistribution,				#
-#  please maintain this credit header.					#
+#  License: CC BY-NC-SA 4.0                             #
+#  https://creativecommons.org/licenses/by-nc-sa/4.0    #
+#  from original code by @digiteng 2021                 #
+#                                                       #
+#  Last Modified: "15:14 - 20250401"                    #
+#                                                       #
+#  Credits:                                             #
+#  - Original concept by Lululla                        #
+#  - TMDB API integration                               #
+#  - TVDB API integration                               #
+#  - OMDB API integration                               #
+#  - Advanced caching system                            #
+#                                                       #
+#  Usage of this code without proper attribution        #
+#  is strictly prohibited.                              #
+#  For modifications and redistribution,                #
+#  please maintain this credit header.                  #
 #########################################################
 """
 __author__ = "Lululla"
@@ -51,7 +51,7 @@ from Components.config import config
 
 # Local imports
 from .Agp_lib import PY3, quoteEventName
-from .Agp_apikeys import tmdb_api, thetvdb_api, fanart_api	# , omdb_api
+from .Agp_apikeys import tmdb_api, thetvdb_api, fanart_api  # , omdb_api
 
 
 try:
@@ -147,15 +147,16 @@ isz = "w780"
   "original"
 ]
 ## Add Supported Image Sizes (in Pixels)
-# API NAME	=	WEB NAME		   MIN Pixel	MAX Pixel	  Aspect Ratio
-# poster	= Poster ............  500 x 750   2000 x 3000	 1.50	 (1x1.5)
-# poster	= Poster TV Season ..  400 x 578   2000 x 3000	 1.50	 (1x1.5)
-# backdrop	= Backdrop .......... 1280 x 720   3840 x 2160	 1.77778 (16x9)
-# still		= Backdrop Episode ..  400 x 225   3840 x 2160	 1.77778 (16x9)
-# profile	= Person Profile ....  300 x 450   2000 x 3000	 1.50	 (1x1.5)
-# Logo PNG	= Production/Networks  500 x 1	   2000 x 2000	 n/a
-# Logo SVG	= Production/Networks  500 x 1	   Vector File	 n/a
+# API NAME  =   WEB NAME           MIN Pixel    MAX Pixel     Aspect Ratio
+# poster    = Poster ............  500 x 750   2000 x 3000   1.50    (1x1.5)
+# poster    = Poster TV Season ..  400 x 578   2000 x 3000   1.50    (1x1.5)
+# backdrop  = Backdrop .......... 1280 x 720   3840 x 2160   1.77778 (16x9)
+# still     = Backdrop Episode ..  400 x 225   3840 x 2160   1.77778 (16x9)
+# profile   = Person Profile ....  300 x 450   2000 x 3000   1.50    (1x1.5)
+# Logo PNG  = Production/Networks  500 x 1     2000 x 2000   n/a
+# Logo SVG  = Production/Networks  500 x 1     Vector File   n/a
 '''
+
 
 class AgbDownloadThread(Thread):
 	def __init__(self):
@@ -424,7 +425,7 @@ class AgbDownloadThread(Thread):
 				imdb = list(imdb)
 				imdb[1] = self.UNAC(imdb[1])  # Title
 				tmp = findall(r'aka <i>"(.*?)"</i>', imdb[4])
-				imdb[4] = self.UNAC(tmp[0]) if tmp else self.UNAC(imdb[4])	# AKA
+				imdb[4] = self.UNAC(tmp[0]) if tmp else self.UNAC(imdb[4])  # AKA
 
 				# Extract image URL
 				backdrop_match = search(r"(.*?)._V1_.*?.jpg", imdb[0])
@@ -800,8 +801,8 @@ class AgbDownloadThread(Thread):
 		string = sub(r"u0026", "&", string)
 		string = sub(r"u003d", "=", string)
 		string = sub(r'[\u0300-\u036f]', '', string)  # Remove accents
-		string = sub(r"[,!?\.\"]", ' ', string)		  # Replace punctuation with space
-		string = sub(r'\s+', ' ', string)			  # Collapse multiple spaces
+		string = sub(r"[,!?\.\"]", ' ', string)       # Replace punctuation with space
+		string = sub(r'\s+', ' ', string)             # Collapse multiple spaces
 		return string.strip()
 
 	def PMATCH(self, textA, textB):

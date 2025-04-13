@@ -3,27 +3,27 @@
 from __future__ import absolute_import, print_function
 """
 #########################################################
-#														#
-#  AGP - Advanced Graphics Renderer						#
-#  Version: 3.5.0										#
+#                                                       #
+#  AGP - Advanced Graphics Renderer                     #
+#  Version: 3.5.0                                       #
 #  Created by Lululla (https://github.com/Belfagor2005) #
-#  License: CC BY-NC-SA 4.0								#
-#  https://creativecommons.org/licenses/by-nc-sa/4.0	#
-#  from original code by @digiteng 2021					#
-#														#
-#  Last Modified: "15:14 - 20250401"					#
-#														#
-#  Credits:												#
-#  - Original concept by Lululla						#
-#  - TMDB API integration								#
-#  - TVDB API integration								#
-#  - OMDB API integration								#
-#  - Advanced caching system							#
-#														#
-#  Usage of this code without proper attribution		#
-#  is strictly prohibited.								#
-#  For modifications and redistribution,				#
-#  please maintain this credit header.					#
+#  License: CC BY-NC-SA 4.0                             #
+#  https://creativecommons.org/licenses/by-nc-sa/4.0    #
+#  from original code by @digiteng 2021                 #
+#                                                       #
+#  Last Modified: "15:14 - 20250401"                    #
+#                                                       #
+#  Credits:                                             #
+#  - Original concept by Lululla                        #
+#  - TMDB API integration                               #
+#  - TVDB API integration                               #
+#  - OMDB API integration                               #
+#  - Advanced caching system                            #
+#                                                       #
+#  Usage of this code without proper attribution        #
+#  is strictly prohibited.                              #
+#  For modifications and redistribution,                #
+#  please maintain this credit header.                  #
 #########################################################
 """
 __author__ = "Lululla"
@@ -51,7 +51,7 @@ from Components.config import config
 
 # Local imports
 from .Agp_lib import PY3, quoteEventName
-from .Agp_apikeys import tmdb_api, thetvdb_api, fanart_api	# , omdb_api
+from .Agp_apikeys import tmdb_api, thetvdb_api, fanart_api  # , omdb_api
 
 
 try:
@@ -147,14 +147,14 @@ isz = "w780"
   "original"
 ]
 ## Add Supported Image Sizes (in Pixels)
-# API NAME	=	WEB NAME		   MIN Pixel	MAX Pixel	  Aspect Ratio
-# poster	= Poster ............  500 x 750   2000 x 3000	 1.50	 (1x1.5)
-# poster	= Poster TV Season ..  400 x 578   2000 x 3000	 1.50	 (1x1.5)
-# backdrop	= Backdrop .......... 1280 x 720   3840 x 2160	 1.77778 (16x9)
-# still		= Backdrop Episode ..  400 x 225   3840 x 2160	 1.77778 (16x9)
-# profile	= Person Profile ....  300 x 450   2000 x 3000	 1.50	 (1x1.5)
-# Logo PNG	= Production/Networks  500 x 1	   2000 x 2000	 n/a
-# Logo SVG	= Production/Networks  500 x 1	   Vector File	 n/a
+# API NAME  =   WEB NAME           MIN Pixel    MAX Pixel     Aspect Ratio
+# poster    = Poster ............  500 x 750   2000 x 3000   1.50    (1x1.5)
+# poster    = Poster TV Season ..  400 x 578   2000 x 3000   1.50    (1x1.5)
+# backdrop  = Backdrop .......... 1280 x 720   3840 x 2160   1.77778 (16x9)
+# still     = Backdrop Episode ..  400 x 225   3840 x 2160   1.77778 (16x9)
+# profile   = Person Profile ....  300 x 450   2000 x 3000   1.50    (1x1.5)
+# Logo PNG  = Production/Networks  500 x 1     2000 x 2000   n/a
+# Logo SVG  = Production/Networks  500 x 1     Vector File   n/a
 '''
 
 
@@ -202,7 +202,7 @@ class AgpDownloadThread(Thread):
 
 	def downloadData2(self, data):
 		if isinstance(data, bytes):
-			data = data.decode('utf-8')	 # Ensure the data is in a proper string format
+			data = data.decode('utf-8')  # Ensure the data is in a proper string format
 		data_json = data if isinstance(data, dict) else loads(data)
 
 		if 'results' in data_json:
@@ -247,7 +247,7 @@ class AgpDownloadThread(Thread):
 			series_nb = -1
 			chkType, fd = self.checkType(shortdesc, fulldesc)
 			title_safe = title
-			self.title_safe = title_safe.replace('+', ' ')	# Sostituisce '+' con uno spazio
+			self.title_safe = title_safe.replace('+', ' ')  # Sostituisce '+' con uno spazio
 			year = findall(r'19\d{2}|20\d{2}', fd)
 			if len(year) > 0:
 				year = year[0]
@@ -263,7 +263,7 @@ class AgpDownloadThread(Thread):
 			# # Decommentato per eventuali banner (se necessario)
 			# series_banners = re.findall(r'<banner>(.*?)</banner>', url_read)
 			# if series_banners:
-			#	  series_banners = 'https://thetvdb.com' + series_banners
+			#     series_banners = 'https://thetvdb.com' + series_banners
 
 			i = 0
 			for iseries_year in series_year:
@@ -553,7 +553,7 @@ class AgpDownloadThread(Thread):
 
 	def extract_channel(self, get_name):
 		get_channel = findall(r'(?:streaming|replay)?[ ]+sur[ ]+(.*?)[ ]+molotov.tv', get_name) or \
-					  findall(r'regarder[ ]+(.*?)[ ]+en', get_name)
+			findall(r'regarder[ ]+(.*?)[ ]+en', get_name)
 		return self.UNAC(get_channel[0]).replace(' ', '') if get_channel else None
 
 	def handle_poster_result(self, molotov_table, headers, dwn_poster, platform):
@@ -695,8 +695,8 @@ class AgpDownloadThread(Thread):
 		string = sub(r"u0026", "&", string)
 		string = sub(r"u003d", "=", string)
 		string = sub(r'[\u0300-\u036f]', '', string)  # Remove accents
-		string = sub(r"[,!?\.\"]", ' ', string)		  # Replace punctuation with space
-		string = sub(r'\s+', ' ', string)			  # Collapse multiple spaces
+		string = sub(r"[,!?\.\"]", ' ', string)       # Replace punctuation with space
+		string = sub(r'\s+', ' ', string)             # Collapse multiple spaces
 		return string.strip()
 
 	def PMATCH(self, textA, textB):

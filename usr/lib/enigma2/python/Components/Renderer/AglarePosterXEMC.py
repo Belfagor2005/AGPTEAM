@@ -33,7 +33,7 @@ __copyright__ = "AGP Team"
 from Components.config import config
 from os import utime
 from os.path import exists, join
-from re import findall
+from re import findall, IGNORECASE
 from time import sleep, time
 from queue import LifoQueue
 from threading import Thread
@@ -114,9 +114,15 @@ class PosterDBEMC(AgpDownloadThread):
 				self._log_debug("No provider is enabled for poster download")
 				return
 
-			poster_path = join(IMOVIE_FOLDER, f"{self.pstcanal}.jpg")  # fix: dwn_poster era usato ma non definito
+			def find_existing_poster():
+				for ext in [".jpg", ".jpeg", ".png"]:
+					path = join(IMOVIE_FOLDER, self.pstcanal + ext)
+					if exists(path):
+						return path
+				return None
 
-			if exists(poster_path):
+			poster_path = find_existing_poster()
+			if poster_path:
 				utime(poster_path, (time(), time()))
 				return
 
@@ -213,7 +219,9 @@ class AglarePosterXEMC(Renderer):
 		if what[0] == self.CHANGED_CLEAR:
 			self.instance.hide()
 			return
-		self.canal = [None, None, None, None, None, None]
+
+		self.canal = [None] * 6
+
 		try:
 			if isinstance(self.source, ServiceEvent):
 				self.canal[0] = None
@@ -222,33 +230,40 @@ class AglarePosterXEMC(Renderer):
 				self.canal[2] = event_name
 				self.canal[3] = self.source.event.getExtendedDescription()
 				self.canal[4] = self.source.event.getShortDescription()
-				self.canal[5] = self.source.service.getPath().split(".ts")[0] + ".jpg"
+				image_path = self.source.service.getPath().split(".ts")[0]
 			elif isinstance(self.source, CurrentService):
-				self.canal[5] = self.source.getCurrentServiceReference().getPath().split(".ts")[0] + ".jpg"
+				image_path = self.source.getCurrentServiceReference().getPath().split(".ts")[0]
 			else:
 				if self.instance:
 					self.instance.hide()
 				return
+
+			self.canal[5] = None
+			for ext in [".jpg", ".jpeg", ".png"]:
+				full_path = image_path + ext
+				if exists(full_path):
+					self.canal[5] = full_path
+					break
 
 		except Exception as e:
 			print("Error (service processing):", str(e))
 			if self.instance:
 				self.instance.hide()
 			return
-		try:
-			match = findall(r".*? - (.*?) - (.*?).jpg", self.canal[5])
-			if match and len(match[0]) > 1:
-				self.canal[0] = match[0][0].strip()
-				if not self.canal[2]:
-					self.canal[2] = match[0][1].strip()
 
-			self._log_debug("Service: {} - {} => {}".format(self.canal[0], self.canal[2], self.canal[5]))
+		try:
 			if self.canal[5]:
+				match = findall(r".*? - (.*?) - (.*?)\.(jpg|jpeg|png)$", self.canal[5], IGNORECASE)
+				if match and len(match[0]) > 1:
+					self.canal[0] = match[0][0].strip()
+					if not self.canal[2]:
+						self.canal[2] = match[0][1].strip()
+
+				self._log_debug("Service: {} - {} => {}".format(self.canal[0], self.canal[2], self.canal[5]))
 				self.timer.start(10, True)
 			elif self.canal[0] and self.canal[2]:
 				canal = self.canal[:]
 				pdbemc.put(canal)
-				# start_new_thread(self.waitPoster, ())
 				self.runPosterThread()
 			else:
 				self._log_debug("Not detected...")
@@ -260,10 +275,13 @@ class AglarePosterXEMC(Renderer):
 				self.instance.hide()
 
 	def generatePosterPath(self):
-		"""Generate poster path from current channel data"""
+		"""Generate poster path from current channel data, checking for multiple image extensions"""
 		if len(self.canal) > 5 and self.canal[5]:
 			self.pstcanal = clean_for_tvdb(self.canal[5])
-			return join(self.path, str(self.pstcanal) + ".jpg")
+			for ext in [".jpg", ".jpeg", ".png"]:
+				candidate = join(self.path, self.pstcanal + ext)
+				if exists(candidate):
+					return candidate
 		return None
 
 	# @lru_cache(maxsize=150)
@@ -298,16 +316,12 @@ class AglarePosterXEMC(Renderer):
 	def waitPoster(self):
 		"""Wait for poster download to complete"""
 		self.pstrNm = self.generatePosterPath()
-		if not hasattr(self, 'pstrNm') or self.pstrNm is None:  # <-- CONTROLLO AGGIUNTO
-			self._log_error("pstrNm not initialized in waitPoster")
-			return
-		self.pstrNm = self.generatePosterPath()
 		if not hasattr(self, 'pstrNm') or self.pstrNm is None:
 			self._log_error("waitPosterXEMC pstrNm not initialized in waitPoster")
 			return
 
 		if not self.pstrNm:
-			self.logPoster("[ERROR: waitPosterXEMC] Poster path is None")
+			self._log_debug("[ERROR: waitPosterXEMC] Poster path is None")
 			return
 
 		loop = 180  # Maximum number of attempts
