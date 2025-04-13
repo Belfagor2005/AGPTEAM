@@ -227,14 +227,20 @@ class AgpDownloadThread(Thread):
 							year = each['release_date'].split("-")[0]
 						elif media_type == "serie" and 'first_air_date' in each and each['first_air_date']:
 							year = each['first_air_date'].split("-")[0]
+
 						title = each.get('name', each.get('title', ''))
-						backdrop = "http://image.tmdb.org/t/p/original" + (each.get('backdrop_path') or '')
-						poster = "http://image.tmdb.org/t/p/original" + (each.get('poster_path') or '')
+
+						backdrop_path = each.get('backdrop_path')
+						poster_path = each.get('poster_path')
+
+						backdrop = "http://image.tmdb.org/t/p/original" + backdrop_path if backdrop_path else ""
+						poster = "http://image.tmdb.org/t/p/original" + poster_path if poster_path else ""
+
 						rating = str(each.get('vote_average', 0))
 						show_title = title
 						if year:
 							show_title = "{} ({})".format(title, year)
-						if poster:
+						if isinstance(poster, str) and poster.strip() != "":
 							callInThread(self.savePoster, poster, self.dwn_poster)
 							# if exists(self.dwn_poster):
 							return True, "[SUCCESS poster: tmdb] title {} [poster{}-backdrop{}] => year{} => rating{} => showtitle{}".format(title, poster, backdrop, year, rating, show_title)
@@ -659,34 +665,18 @@ class AgpDownloadThread(Thread):
 	def savePoster(self, url, callback):
 		headers = {"User-Agent": choice(AGENTS)}
 		try:
-			"""
-			data = None
-			response = request_agent.smart_request(url)
-			response.raise_for_status()
-			if response.status_code == 200:
-				try:
-					data = response.json()
-					data = data
-					# If the data is JSON, we can do something with it
-					# E.g., you can process it before saving it, if necessary
-				except ValueError as e:
-					# If not JSON, continue with binary data
-					print(f"Error decoding JSON: {e}")
+			if not url or url.strip().endswith("/original"):
+				return None
 
-				# Write binary content to file
-				with open(callback, "wb") as local_file:
-					local_file.write(response.content)
-			else:
-				print(f"Unexpected status code: {response.status_code}")
-			"""
 			response = get(url, headers=headers, timeout=(3.05, 6))
 			response.raise_for_status()
-			# if response.status_code == 200:
-			with open(callback, "wb") as local_file:
-				local_file.write(response.content)
+
+			if response.status_code == 200:
+				with open(callback, "wb") as local_file:
+					local_file.write(response.content)
 
 		except RequestException as error:
-			print(f"ERROR in module 'download': {str(error)}")
+			print("ERROR in module 'download': Error:{} Url:{} Callback:{}".format(str(error), url, callback))
 
 		return callback
 

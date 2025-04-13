@@ -162,8 +162,8 @@ class AglarePosterX(Renderer):
 			self.instance.hide()
 			return
 
-		if self.instance:
-			self.instance.hide()
+		# if self.instance:
+			# self.instance.hide()
 		servicetype = None
 		try:
 			service = None
@@ -227,6 +227,9 @@ class AglarePosterX(Renderer):
 			curCanal = "{}-{}".format(self.canal[1], self.canal[2])
 			if curCanal == self.oldCanal:
 				return
+				
+			if self.instance:
+				self.instance.hide()
 
 			self.oldCanal = curCanal
 			self.pstcanal = clean_for_tvdb(self.canal[5])
@@ -237,6 +240,8 @@ class AglarePosterX(Renderer):
 			if exists(self.pstcanal):
 				self.timer.start(10, True)
 			else:
+				# if self.instance:
+					# self.instance.hide()
 				canal = self.canal[:]
 				pdb.put(canal)
 				self.runPosterThread()
@@ -276,14 +281,15 @@ class AglarePosterX(Renderer):
 
 	def waitPoster(self):
 		"""Wait for poster download to complete"""
-
+		if self.pstcanal is None:
+			return
 		self.pstrNm = self.generatePosterPath()
-		if not hasattr(self, 'pstrNm') or self.pstrNm is None:  # <-- CONTROLLO AGGIUNTO
+		if not hasattr(self, 'pstrNm') or self.pstrNm is None:
 			self._log_error("pstrNm not initialized in waitPoster")
 			return
 
-		if self.instance:
-			self.instance.hide()
+		# if self.instance:
+			# self.instance.hide()
 
 		if not self.pstrNm:
 			self.logPoster("[ERROR: waitPoster] Poster path is None")

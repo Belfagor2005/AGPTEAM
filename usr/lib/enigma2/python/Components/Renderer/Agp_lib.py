@@ -391,7 +391,7 @@ def convtext(text=''):
 		text = sanitize_filename(text)
 		# text = text.replace(' ', '-')
 		text = sub(r'-+', '-', text)
-		print('text safe:', text.capitalize())
+		# print('text safe:', text.capitalize())
 		return text.capitalize()
 
 	except Exception as e:
