@@ -85,18 +85,18 @@ or put tag -->  path="/media/hdd/backdrop"
 """
 ADVANCED CONFIGURATIONS:
 <widget source="ServiceEvent" render="AglareBackdropX"
-	   nexts="1"
-	   position="1202,672"
-	   size="200,300"
-	   cornerRadius="20"
-	   zPosition="95"
-	   path="/path/to/custom_folder"  <!-- Opzionale -->
-	   service.tmdb="true"            <!-- Abilita TMDB -->
-	   service.tvdb="false"           <!-- Disabilita TVDB -->
-	   service.imdb="false"           <!-- Disabilita IMDB -->
-	   service.fanart="false"         <!-- Disabilita Fanart -->
-	   service.google="false"         <!-- Disabilita Google -->
-	   scan_time="02:00"              <!-- Imposta l'ora di avvio per il download dei backdrop -->
+	nexts="1"
+	position="1202,672"
+	size="200,300"
+	cornerRadius="20"
+	zPosition="95"
+	path="/path/to/custom_folder"	<!-- Opzionale -->
+	service.tmdb="true"				<!-- Abilita TMDB -->
+	service.tvdb="false"			<!-- Disabilita TVDB -->
+	service.imdb="false"			<!-- Disabilita IMDB -->
+	service.fanart="false"			<!-- Disabilita Fanart -->
+	service.google="false"			<!-- Disabilita Google -->
+	scan_time="02:00"				<!-- Set the start time for backdrop download -->
 />
 """
 
@@ -595,7 +595,7 @@ class BackdropAutoDB(AgbDownloadThread):
 					success, log = result
 					if success and log and "SUCCESS" in str(log).upper():
 						self.backdrop_download_count += 1
-						# self._log(f"Backdrop downloaded from {provider_name}: {self.pstcanal}")
+						self._log(f"Backdrop downloaded from {provider_name}: {self.pstcanal}")
 						downloaded = True
 						break
 				except Exception as e:

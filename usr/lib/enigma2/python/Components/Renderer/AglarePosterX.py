@@ -86,18 +86,18 @@ Use:
 """
 ADVANCED CONFIGURATIONS:
 <widget source="ServiceEvent" render="AglarePosterX"
-	   nexts="1"
-	   position="1202,672"
-	   size="200,300"
-	   cornerRadius="20"
-	   zPosition="95"
-	   path="/path/to/custom_folder"  <!-- Opzionale -->
-	   service.tmdb="true"            <!-- Abilita TMDB -->
-	   service.tvdb="false"           <!-- Disabilita TVDB -->
-	   service.imdb="false"           <!-- Disabilita IMDB -->
-	   service.fanart="false"         <!-- Disabilita Fanart -->
-	   service.google="false"         <!-- Disabilita Google -->
-	   scan_time="00:00"              <!-- Imposta l'ora di avvio per il download dei poster -->
+	nexts="1"
+	position="1202,672"
+	size="200,300"
+	cornerRadius="20"
+	zPosition="95"
+	path="/path/to/custom_folder"   <!-- Optional -->
+	service.tmdb="true"             <!-- Enable TMDB -->
+	service.tvdb="false"            <!-- Disable TVDB -->
+	service.imdb="false"            <!-- Disable IMDB -->
+	service.fanart="false"          <!-- Disable Fanart -->
+	service.google="false"          <!-- Disable Google -->
+	scan_time="00:00"               <!-- Set the start time for poster download -->
 />
 """
 
@@ -563,7 +563,7 @@ class PosterAutoDB(AgpDownloadThread):
 				self._log_debug(f"Invalid event name for: {canal[0]}")
 				return
 
-			# Logga l'URL generato per il poster per il debug
+			# Log the generated URL for the poster for debugging
 			# poster_url = f"http://image.tmdb.org/t/p/original/{self.pstcanal}.jpg"
 			# self._log_debug(f"Generated URL for poster: {poster_url}")
 
@@ -571,11 +571,11 @@ class PosterAutoDB(AgpDownloadThread):
 			for ext in [".jpg", ".jpeg", ".png"]:
 				poster_path = join(POSTER_FOLDER, self.pstcanal + ext)
 				if exists(poster_path):
-					utime(poster_path, (time(), time()))  # Aggiorna il timestamp del poster
+					utime(poster_path, (time(), time()))  # Update the poster's timestamp
 					self._log(f"Poster already exists with extension {ext}, timestamp updated: {self.pstcanal}")
 					return
 
-			# Crea la lista dei provider abilitati per il download
+			# Create the list of providers enabled for download
 			providers = []
 
 			if self.providers["tmdb"]:
@@ -590,7 +590,7 @@ class PosterAutoDB(AgpDownloadThread):
 				providers.append(("Google", self.search_google))
 
 			downloaded = False
-			# Cicla attraverso i provider per cercare il poster
+			# Cycle through providers to find the poster
 			for provider_name, provider_func in providers:
 				try:
 					result = provider_func(poster_path, self.pstcanal, canal[4], canal[3], canal[0])
@@ -600,7 +600,7 @@ class PosterAutoDB(AgpDownloadThread):
 					success, log = result
 					if success and log and "SUCCESS" in str(log).upper():
 						self.poster_download_count += 1
-						# self._log(f"Poster downloaded from {provider_name}: {self.pstcanal}")
+						self._log(f"Poster downloaded from {provider_name}: {self.pstcanal}")
 						downloaded = True
 						break
 				except Exception as e:
