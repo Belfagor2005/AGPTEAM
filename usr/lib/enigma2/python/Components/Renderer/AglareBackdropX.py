@@ -33,7 +33,7 @@ __copyright__ = "AGP Team"
 from datetime import datetime
 from glob import glob
 from os import remove, utime, makedirs
-from os.path import join, exists, getmtime
+from os.path import join, exists, getmtime, getsize
 from re import compile
 from threading import Thread
 from time import sleep, time
@@ -161,6 +161,8 @@ class AglareBackdropX(Renderer):
 			self.instance.hide()
 			return
 
+		if self.instance:
+			self.instance.hide()
 		servicetype = None
 		try:
 			service = None
@@ -559,7 +561,7 @@ class BackdropAutoDB(AgbDownloadThread):
 			self.pstcanal = clean_for_tvdb(event_name) if event_name else None
 
 			if not self.pstcanal:
-				self._log_debug(f"Invalid event name for: {canal[0]}")
+				# self._log_debug(f"Invalid event name for: {canal[0]}")
 				return
 
 			# Log the generated URL for the poster for debugging
@@ -570,7 +572,7 @@ class BackdropAutoDB(AgbDownloadThread):
 				backdrop_path = join(BACKDROP_FOLDER, self.pstcanal + ext)
 				if exists(backdrop_path):
 					utime(backdrop_path, (time(), time()))
-					self._log(f"Backdrop already exists with extension {ext}, timestamp updated: {self.pstcanal}")
+					# self._log(f"Backdrop already exists with extension {ext}, timestamp updated: {self.pstcanal}")
 					return
 
 			# Create the list of providers enabled for download
@@ -594,11 +596,11 @@ class BackdropAutoDB(AgbDownloadThread):
 					result = provider_func(backdrop_path, self.pstcanal, canal[4], canal[3], canal[0])
 					if not result or len(result) != 2:
 						continue
-
 					success, log = result
 					if success and log and "SUCCESS" in str(log).upper():
-						self.backdrop_download_count += 1
-						self._log(f"Backdrop downloaded from {provider_name}: {self.pstcanal}")
+						if not exists(backdrop_path):
+							self.backdrop_download_count += 1
+							self._log(f"Backdrop downloaded from {provider_name}: {self.pstcanal}")
 						downloaded = True
 						break
 				except Exception as e:

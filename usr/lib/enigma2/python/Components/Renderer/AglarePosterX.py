@@ -33,7 +33,7 @@ __copyright__ = "AGP Team"
 from datetime import datetime
 from glob import glob
 from os import remove, utime, makedirs
-from os.path import join, exists, getmtime
+from os.path import join, exists, getmtime, getsize
 from re import compile
 from threading import Thread
 from time import sleep, time
@@ -162,6 +162,8 @@ class AglarePosterX(Renderer):
 			self.instance.hide()
 			return
 
+		if self.instance:
+			self.instance.hide()
 		servicetype = None
 		try:
 			service = None
@@ -560,7 +562,7 @@ class PosterAutoDB(AgpDownloadThread):
 			self.pstcanal = clean_for_tvdb(event_name) if event_name else None
 
 			if not self.pstcanal:
-				self._log_debug(f"Invalid event name for: {canal[0]}")
+				# self._log_debug(f"Invalid event name for: {canal[0]}")
 				return
 
 			# Log the generated URL for the poster for debugging
@@ -598,8 +600,9 @@ class PosterAutoDB(AgpDownloadThread):
 
 					success, log = result
 					if success and log and "SUCCESS" in str(log).upper():
-						self.poster_download_count += 1
-						self._log(f"Poster downloaded from {provider_name}: {self.pstcanal}")
+						if not exists(poster_path):
+							self.poster_download_count += 1
+							self._log(f"Poster downloaded from {provider_name}: {self.pstcanal}")
 						downloaded = True
 						break
 				except Exception as e:
