@@ -120,8 +120,6 @@ class AglarePosterX(Renderer):
 		self.pstcanal = None
 		self.timer = eTimer()
 		self.timer.callback.append(self.showPoster)
-		self.max_channels = 200  # You can adjust this as needed
-		self.current_channels = 0  # Track number of channels processed
 
 	def applySkin(self, desktop, parent):
 		global SCAN_TIME
@@ -162,9 +160,6 @@ class AglarePosterX(Renderer):
 			self.instance.hide()
 			return
 
-		# if self.instance:
-			# self.instance.hide()
-
 		servicetype = None
 		try:
 			service = None
@@ -195,34 +190,34 @@ class AglarePosterX(Renderer):
 				service_str = service.toString()
 				events = epgcache.lookupEvent(['IBDCTESX', (service_str, 0, -1, -1)])
 
-				if events and len(events) > self.nxts:
-					event = events[self.nxts]
-					if len(event) >= 7:
-						service_name = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '')
-						self.canal[0] = service_name
-						self.canal[1] = event[1]
-						self.canal[2] = event[4]
-						self.canal[3] = event[5]
-						self.canal[4] = event[6]
-						self.canal[5] = self.canal[2]
+				# if events and len(events) > self.nxts:
+				event = events[self.nxts]
+				if len(event) >= 7:
+					service_name = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '')
+					self.canal[0] = service_name
+					self.canal[1] = event[1]
+					self.canal[2] = event[4]
+					self.canal[3] = event[5]
+					self.canal[4] = event[6]
+					self.canal[5] = self.canal[2]
 
-						"""
-						# global autobouquet_file
-						if not globals().get('autobouquet_file') and service_name not in apdb:
-							apdb[service_name] = service_str
-						# if not getattr(modules[__name__], 'autobouquet_file', False) and service_name not in apdb:
-							# apdb[service_name] = service_str
-						"""
+					"""
+					# global autobouquet_file
+					if not globals().get('autobouquet_file') and service_name not in apdb:
+						apdb[service_name] = service_str
+					# if not getattr(modules[__name__], 'autobouquet_file', False) and service_name not in apdb:
+						# apdb[service_name] = service_str
+					"""
 
-						if not autobouquet_file and service_name not in apdb:
-							apdb[service_name] = service_str
-					else:
-						print("Error in service handling: event tuple too short")
+					if not autobouquet_file and service_name not in apdb:
+						apdb[service_name] = service_str
 				else:
-					print("Error in service handling: events list empty or nxts out of range")
+					print("Error in service handling: event tuple too short")
+				# else:
+					# print("Error in service handling: events list empty or nxts out of range")
 
 		except Exception as e:
-			print("Error in service handling: " + str(e))
+			print(f"Error (service): {e}")
 			if self.instance:
 				self.instance.hide()
 			return
@@ -234,20 +229,22 @@ class AglarePosterX(Renderer):
 
 		try:
 			curCanal = "{}-{}".format(self.canal[1], self.canal[2])
+			if curCanal == self.oldCanal:
+				return
 
 			if self.instance:
 				self.instance.hide()
 
-			if curCanal == self.oldCanal:
+			self.oldCanal = curCanal
+			self.pstcanal = clean_for_tvdb(self.canal[5]) if self.canal[5] else None
+			if not self.pstcanal:
+				self.pstrNm = None
 				return
 
-			self.oldCanal = curCanal
-			self.pstcanal = clean_for_tvdb(self.canal[5])
-			if self.pstcanal is not None:
-				self.pstrNm = join(self.path, str(self.pstcanal) + ".jpg")
-				self.pstcanal = self.pstrNm
-
-			if exists(self.pstcanal):
+			self.pstrNm = join(self.path, self.pstcanal + ".jpg")
+			self.pstcanal = self.pstrNm
+			if exists(self.pstrNm):
+				self.instance.hide()
 				self.timer.start(10, True)
 			else:
 				canal = self.canal[:]
@@ -278,26 +275,34 @@ class AglarePosterX(Renderer):
 
 	def showPoster(self):
 		"""Display the poster image"""
+
 		if self.instance:
+			print('showPoster ide instance if self')
 			self.instance.hide()
-		self.pstrNm = self.generatePosterPath()
-		if self.pstrNm and self.checkPosterExistence(self.pstrNm):
-			print(f"[LOAD] Showing poster: {self.pstrNm}")
-			self.instance.setPixmap(loadJPG(self.pstrNm))
-			self.instance.setScale(1)
-			self.instance.show()
+		"""
+		if not self.instance:
+			return
+		"""
+		if not self.pstrNm or not self.checkPosterExistence(self.pstrNm):
+			self.instance.hide()
+			print('showPoster ide instance')
+			return
+
+		print(f"[LOAD] Showing poster: {self.pstrNm}")
+		self.instance.setPixmap(loadJPG(self.pstrNm))
+		self.instance.setScale(1)
+		self.instance.show()
 
 	def waitPoster(self):
 		"""Wait for poster download to complete"""
-		if self.pstcanal is None:
+		self.pstrNm = self.generatePosterPath()
+		if not hasattr(self, 'pstrNm') or self.pstrNm is None:  # <-- CONTROLLO AGGIUNTO
+			self._log_error("pstrNm not initialized in waitPoster")
 			return
 		self.pstrNm = self.generatePosterPath()
 		if not hasattr(self, 'pstrNm') or self.pstrNm is None:
 			self._log_error("pstrNm not initialized in waitPoster")
 			return
-
-		# if self.instance:
-			# self.instance.hide()
 
 		if not self.pstrNm:
 			self.logPoster("[ERROR: waitPoster] Poster path is None")
@@ -319,8 +324,8 @@ class AglarePosterX(Renderer):
 	def _log_debug(self, message):
 		"""Log debug message to file"""
 		try:
-			with open("/tmp/agplog/AglarePosterX.log", "a") as f:
-				f.write(f"{datetime.now()}: {message}\n")
+			with open("/tmp/agplog/AglarePosterX.log", "a") as w:
+				w.write(f"{datetime.now()}: {message}\n")
 		except Exception as e:
 			print(f"Logging error: {e}")
 
@@ -335,11 +340,19 @@ class AglarePosterX(Renderer):
 
 class PosterDB(AgpDownloadThread):
 	"""Handles poster downloading and database management"""
-	def __init__(self):
+	def __init__(self, providers=None):
 		super().__init__()
 		self.logdbg = None
 		self.pstcanal = None
 		self.service_pattern = compile(r'^#SERVICE (\d+):([^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+)')
+		default_providers = {
+			"tmdb": True,
+			"tvdb": False,
+			"imdb": False,
+			"fanart": False,
+			"google": False
+		}
+		self.providers = {**default_providers, **(providers or {})}
 
 	def run(self):
 		"""Main processing loop"""
@@ -356,25 +369,43 @@ class PosterDB(AgpDownloadThread):
 				print(f"Invalid channel name: {canal[0]}")
 				return
 
-			dwn_poster = join(POSTER_FOLDER, f"{self.pstcanal}.jpg")
-
-			if exists(dwn_poster):
-				utime(dwn_poster, (time(), time()))
+			if not any(self.providers.values()):
+				self._log_debug("No provider is enabled for poster download")
 				return
 
-			search_engines = [
-				self.search_tmdb,
-				self.search_tvdb,
-				self.search_fanart,
-				self.search_imdb,
-				self.search_google
-			]
+			poster_path = join(POSTER_FOLDER, f"{self.pstcanal}.jpg")  # fix: dwn_poster era usato ma non definito
 
-			for engine in search_engines:
-				success, log = engine(dwn_poster, self.pstcanal, canal[4], canal[3], canal[0])
-				self._log_debug(log)
-				if success:
-					break
+			if exists(poster_path):
+				utime(poster_path, (time(), time()))
+				return
+
+			# Create the list of enabled providers
+			providers = []
+			if self.providers.get("tmdb"):
+				providers.append(("TMDB", self.search_tmdb))
+			if self.providers.get("tvdb"):
+				providers.append(("TVDB", self.search_tvdb))
+			if self.providers.get("fanart"):
+				providers.append(("Fanart", self.search_fanart))
+			if self.providers.get("imdb"):
+				providers.append(("IMDB", self.search_imdb))
+			if self.providers.get("google"):
+				providers.append(("Google", self.search_google))
+
+			for provider_name, provider_func in providers:
+				try:
+					result = provider_func(poster_path, self.pstcanal, canal[4], canal[3], canal[0])
+					if not result or len(result) != 2:
+						continue
+
+					success, log = result
+					self._log_debug(f"{provider_name}: {log}")  # fix: log anche se fallisce
+
+					if success:
+						break
+				except Exception as e:
+					self._log_error(f"Error with engine {provider_name}: {str(e)}")
+					continue
 
 		except Exception as e:
 			self._log_error(f"Processing error: {e}")
@@ -407,13 +438,14 @@ class PosterAutoDB(AgpDownloadThread):
 		self.apdb = OrderedDict()
 		self.max_retries = 3
 		self.current_retry = 0
-		self.providers = providers or {
+		default_providers = {
 			"tmdb": True,
 			"tvdb": False,
 			"imdb": False,
 			"fanart": False,
 			"google": False
 		}
+		self.providers = {**default_providers, **(providers or {})}
 		self.max_posters = max_posters
 		self.poster_download_count = 0
 		# Scheduled scan time (parsed from SCAN_TIME)
@@ -587,7 +619,7 @@ class PosterAutoDB(AgpDownloadThread):
 				poster_path = join(POSTER_FOLDER, self.pstcanal + ext)
 				if exists(poster_path):
 					utime(poster_path, (time(), time()))  # Update the poster's timestamp
-					self._log(f"Poster already exists with extension {ext}, timestamp updated: {self.pstcanal}")
+					# self._log(f"Poster already exists with extension {ext}, timestamp updated: {self.pstcanal}")
 					return
 
 			# Create the list of providers enabled for download

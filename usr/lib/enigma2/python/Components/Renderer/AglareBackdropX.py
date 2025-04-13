@@ -119,8 +119,6 @@ class AglareBackdropX(Renderer):
 		self.pstcanal = None
 		self.timer = eTimer()
 		self.timer.callback.append(self.showBackdrop)
-		self.max_channels = 200  # You can adjust this as needed
-		self.current_channels = 0  # Track number of channels processed
 
 	def applySkin(self, desktop, parent):
 		global SCAN_TIME
@@ -191,34 +189,34 @@ class AglareBackdropX(Renderer):
 				service_str = service.toString()
 				events = epgcache.lookupEvent(['IBDCTESX', (service_str, 0, -1, -1)])
 
-				if events and len(events) > self.nxts:
-					event = events[self.nxts]
-					if len(event) >= 7:
-						service_name = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '')
-						self.canal[0] = service_name
-						self.canal[1] = event[1]
-						self.canal[2] = event[4]
-						self.canal[3] = event[5]
-						self.canal[4] = event[6]
-						self.canal[5] = self.canal[2]
+				# if events and len(events) > self.nxts:
+				event = events[self.nxts]
+				if len(event) >= 7:
+					service_name = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '')
+					self.canal[0] = service_name
+					self.canal[1] = event[1]
+					self.canal[2] = event[4]
+					self.canal[3] = event[5]
+					self.canal[4] = event[6]
+					self.canal[5] = self.canal[2]
 
-						"""
-						# global autobouquet_file
-						if not globals().get('autobouquet_file') and service_name not in apdb:
-							apdb[service_name] = service_str
-						# if not getattr(modules[__name__], 'autobouquet_file', False) and service_name not in apdb:
-							# apdb[service_name] = service_str
-						"""
+					"""
+					# global autobouquet_file
+					if not globals().get('autobouquet_file') and service_name not in apdb:
+						apdb[service_name] = service_str
+					# if not getattr(modules[__name__], 'autobouquet_file', False) and service_name not in apdb:
+						# apdb[service_name] = service_str
+					"""
 
-						if not autobouquet_file and service_name not in apdb:
-							apdb[service_name] = service_str
-					else:
-						print("Error in service handling: event tuple too short")
+					if not autobouquet_file and service_name not in apdb:
+						apdb[service_name] = service_str
 				else:
-					print("Error in service handling: events list empty or nxts out of range")
+					print("Error in service handling: event tuple too short")
+				# else:
+					# print("Error in service handling: events list empty or nxts out of range")
 
 		except Exception as e:
-			print("Error in service handling: " + str(e))
+			print(f"Error (service): {e}")
 			if self.instance:
 				self.instance.hide()
 			return
@@ -230,18 +228,22 @@ class AglareBackdropX(Renderer):
 
 		try:
 			curCanal = "{}-{}".format(self.canal[1], self.canal[2])
-			if self.instance:
-				self.instance.hide()					
 			if curCanal == self.oldCanal:
 				return
 
-			self.oldCanal = curCanal
-			self.pstcanal = clean_for_tvdb(self.canal[5])
-			if self.pstcanal is not None:
-				self.pstrNm = join(self.path, str(self.pstcanal) + ".jpg")
-				self.pstcanal = self.pstrNm
+			if self.instance:
+				self.instance.hide()
 
-			if exists(self.pstcanal):
+			self.oldCanal = curCanal
+			self.pstcanal = clean_for_tvdb(self.canal[5]) if self.canal[5] else None
+			if not self.pstcanal:
+				self.pstrNm = None
+				return
+
+			self.pstrNm = join(self.path, self.pstcanal + ".jpg")
+			self.pstcanal = self.pstrNm
+			if exists(self.pstrNm):
+				self.instance.hide()
 				self.timer.start(10, True)
 			else:
 				canal = self.canal[:]
@@ -272,25 +274,34 @@ class AglareBackdropX(Renderer):
 
 	def showBackdrop(self):
 		"""Display the backdrop image"""
+
 		if self.instance:
+			print('showPoster ide instance if self')
 			self.instance.hide()
-		self.pstrNm = self.generateBackdropPath()
-		if self.pstrNm and self.checkBackdropExistence(self.pstrNm):
-			print(f"[LOAD] Showing backdrop: {self.pstrNm}")
-			self.instance.setPixmap(loadJPG(self.pstrNm))
-			self.instance.setScale(1)
-			self.instance.show()
+		"""
+		if not self.instance:
+			return
+		"""
+		if not self.pstrNm or not self.checkPosterExistence(self.pstrNm):
+			self.instance.hide()
+			print('showPoster ide instance')
+			return
+
+		print(f"[LOAD] Showing poster: {self.pstrNm}")
+		self.instance.setPixmap(loadJPG(self.pstrNm))
+		self.instance.setScale(1)
+		self.instance.show()
 
 	def waitBackdrop(self):
 		"""Wait for backdrop download to complete"""
-
 		self.pstrNm = self.generateBackdropPath()
 		if not hasattr(self, 'pstrNm') or self.pstrNm is None:  # <-- CONTROLLO AGGIUNTO
 			self._log_error("pstrNm not initialized in waitBackdrop")
 			return
-
-		if self.instance:
-			self.instance.hide()
+		self.pstrNm = self.generateBackdropPath()
+		if not hasattr(self, 'pstrNm') or self.pstrNm is None:
+			self._log_error("pstrNm not initialized in waitBackdrop")
+			return
 
 		if not self.pstrNm:
 			self.logBackdrop("[ERROR: waitBackdrop] Backdrop path is None")
@@ -328,11 +339,19 @@ class AglareBackdropX(Renderer):
 
 class BackdropDB(AgbDownloadThread):
 	"""Handles backdrop downloading and database management"""
-	def __init__(self):
+	def __init__(self, providers=None):
 		super().__init__()
 		self.logdbg = None
 		self.pstcanal = None
 		self.service_pattern = compile(r'^#SERVICE (\d+):([^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+)')
+		default_providers = {
+			"tmdb": True,
+			"tvdb": False,
+			"imdb": False,
+			"fanart": False,
+			"google": False
+		}
+		self.providers = {**default_providers, **(providers or {})}
 
 	def run(self):
 		"""Main processing loop"""
@@ -349,28 +368,46 @@ class BackdropDB(AgbDownloadThread):
 				print(f"Invalid channel name: {canal[0]}")
 				return
 
-			dwn_backdrop = join(BACKDROP_FOLDER, f"{self.pstcanal}.jpg")
-
-			if exists(dwn_backdrop):
-				utime(dwn_backdrop, (time(), time()))
+			if not any(self.providers.values()):
+				self._log_debug("No provider is enabled for backdrop download")
 				return
 
-			search_engines = [
-				self.search_tmdb,
-				self.search_tvdb,
-				self.search_fanart,
-				self.search_imdb,
-				self.search_google
-			]
+			backdrop_path = join(BACKDROP_FOLDER, f"{self.pstcanal}.jpg")  # fix: dwn_backdrop era usato ma non definito
 
-			for engine in search_engines:
-				success, log = engine(dwn_backdrop, self.pstcanal, canal[4], canal[3], canal[0])
-				self._log_debug(log)
-				if success:
-					break
+			if exists(backdrop_path):
+				utime(backdrop_path, (time(), time()))
+				return
+
+			# Create the list of enabled providers
+			providers = []
+			if self.providers.get("tmdb"):
+				providers.append(("TMDB", self.search_tmdb))
+			if self.providers.get("tvdb"):
+				providers.append(("TVDB", self.search_tvdb))
+			if self.providers.get("fanart"):
+				providers.append(("Fanart", self.search_fanart))
+			if self.providers.get("imdb"):
+				providers.append(("IMDB", self.search_imdb))
+			if self.providers.get("google"):
+				providers.append(("Google", self.search_google))
+
+			for provider_name, provider_func in providers:
+				try:
+					result = provider_func(backdrop_path, self.pstcanal, canal[4], canal[3], canal[0])
+					if not result or len(result) != 2:
+						continue
+
+					success, log = result
+					self._log_debug(f"{provider_name}: {log}")  # fix: log anche se fallisce
+
+					if success:
+						break
+				except Exception as e:
+					self._log_error(f"Error with engine {provider_name}: {str(e)}")
+					continue
 
 		except Exception as e:
-			self.logDB(f"Processing error: {e}")
+			self._log_error(f"Processing error: {e}")
 			print_exc()
 
 	def _log_debug(self, message):
@@ -392,7 +429,7 @@ class BackdropDB(AgbDownloadThread):
 
 class BackdropAutoDB(AgbDownloadThread):
 
-	def __init__(self, providers=None, max_backdrop=1000):
+	def __init__(self, providers=None, max_backdrops=1000):
 		super().__init__()
 		self.pstcanal = None
 		self.service_queue = []
@@ -400,14 +437,15 @@ class BackdropAutoDB(AgbDownloadThread):
 		self.apdb = OrderedDict()
 		self.max_retries = 3
 		self.current_retry = 0
-		self.providers = providers or {
+		default_providers = {
 			"tmdb": True,
 			"tvdb": False,
 			"imdb": False,
 			"fanart": False,
 			"google": False
 		}
-		self.max_backdrops = max_backdrop
+		self.providers = {**default_providers, **(providers or {})}
+		self.max_backdrops = max_backdrops
 		self.backdrop_download_count = 0
 		# Scheduled scan time (parsed from SCAN_TIME)
 		try:
@@ -572,9 +610,9 @@ class BackdropAutoDB(AgbDownloadThread):
 				# self._log_debug(f"Invalid event name for: {canal[0]}")
 				return
 
-			# Log the generated URL for the poster for debugging
-			# poster_url = f"http://image.tmdb.org/t/p/original/{self.pstcanal}.jpg"
-			# self._log_debug(f"Generated URL for poster: {poster_url}")
+			# Log the generated URL for the backdrop for debugging
+			# backdrop_url = f"http://image.tmdb.org/t/p/original/{self.pstcanal}.jpg"
+			# self._log_debug(f"Generated URL for backdrop: {backdrop_url}")
 
 			for ext in [".jpg", ".jpeg", ".png"]:
 				backdrop_path = join(BACKDROP_FOLDER, self.pstcanal + ext)
@@ -598,12 +636,13 @@ class BackdropAutoDB(AgbDownloadThread):
 				providers.append(("Google", self.search_google))
 
 			downloaded = False
-			# Cycle through providers to find the poster
+			# Cycle through providers to find the backdrop
 			for provider_name, provider_func in providers:
 				try:
 					result = provider_func(backdrop_path, self.pstcanal, canal[4], canal[3], canal[0])
 					if not result or len(result) != 2:
 						continue
+
 					success, log = result
 					if success and log and "SUCCESS" in str(log).upper():
 						if not exists(backdrop_path):
