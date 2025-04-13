@@ -164,6 +164,7 @@ class AglarePosterX(Renderer):
 
 		# if self.instance:
 			# self.instance.hide()
+
 		servicetype = None
 		try:
 			service = None
@@ -194,26 +195,34 @@ class AglarePosterX(Renderer):
 				service_str = service.toString()
 				events = epgcache.lookupEvent(['IBDCTESX', (service_str, 0, -1, -1)])
 
-				service_name = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '')
-				self.canal[0] = service_name
-				self.canal[1] = events[self.nxts][1]
-				self.canal[2] = events[self.nxts][4]
-				self.canal[3] = events[self.nxts][5]
-				self.canal[4] = events[self.nxts][6]
-				self.canal[5] = self.canal[2]
+				if events and len(events) > self.nxts:
+					event = events[self.nxts]
+					if len(event) >= 7:
+						service_name = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '')
+						self.canal[0] = service_name
+						self.canal[1] = event[1]
+						self.canal[2] = event[4]
+						self.canal[3] = event[5]
+						self.canal[4] = event[6]
+						self.canal[5] = self.canal[2]
 
-				"""
-				# global autobouquet_file
-				if not globals().get('autobouquet_file') and service_name not in apdb:
-					apdb[service_name] = service_str
-				# if not getattr(modules[__name__], 'autobouquet_file', False) and service_name not in apdb:
-					# apdb[service_name] = service_str
-				"""
-				if not autobouquet_file and service_name not in apdb:
-					apdb[service_name] = service_str
+						"""
+						# global autobouquet_file
+						if not globals().get('autobouquet_file') and service_name not in apdb:
+							apdb[service_name] = service_str
+						# if not getattr(modules[__name__], 'autobouquet_file', False) and service_name not in apdb:
+							# apdb[service_name] = service_str
+						"""
+
+						if not autobouquet_file and service_name not in apdb:
+							apdb[service_name] = service_str
+					else:
+						print("Error in service handling: event tuple too short")
+				else:
+					print("Error in service handling: events list empty or nxts out of range")
 
 		except Exception as e:
-			print(f"Error in service handling: {e}")
+			print("Error in service handling: " + str(e))
 			if self.instance:
 				self.instance.hide()
 			return
@@ -225,11 +234,12 @@ class AglarePosterX(Renderer):
 
 		try:
 			curCanal = "{}-{}".format(self.canal[1], self.canal[2])
-			if curCanal == self.oldCanal:
-				return
-				
+
 			if self.instance:
 				self.instance.hide()
+
+			if curCanal == self.oldCanal:
+				return
 
 			self.oldCanal = curCanal
 			self.pstcanal = clean_for_tvdb(self.canal[5])
@@ -240,8 +250,6 @@ class AglarePosterX(Renderer):
 			if exists(self.pstcanal):
 				self.timer.start(10, True)
 			else:
-				# if self.instance:
-					# self.instance.hide()
 				canal = self.canal[:]
 				pdb.put(canal)
 				self.runPosterThread()

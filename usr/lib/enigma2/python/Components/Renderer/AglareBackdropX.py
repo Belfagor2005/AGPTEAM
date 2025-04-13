@@ -90,13 +90,13 @@ ADVANCED CONFIGURATIONS:
 	size="200,300"
 	cornerRadius="20"
 	zPosition="95"
-	path="/path/to/custom_folder"	<!-- Opzionale -->
-	service.tmdb="true"				<!-- Abilita TMDB -->
-	service.tvdb="false"			<!-- Disabilita TVDB -->
-	service.imdb="false"			<!-- Disabilita IMDB -->
-	service.fanart="false"			<!-- Disabilita Fanart -->
-	service.google="false"			<!-- Disabilita Google -->
-	scan_time="02:00"				<!-- Set the start time for backdrop download -->
+	path="/path/to/custom_folder"   <!-- Opzionale -->
+	service.tmdb="true"             <!-- Abilita TMDB -->
+	service.tvdb="false"            <!-- Disabilita TVDB -->
+	service.imdb="false"            <!-- Disabilita IMDB -->
+	service.fanart="false"          <!-- Disabilita Fanart -->
+	service.google="false"          <!-- Disabilita Google -->
+	scan_time="02:00"               <!-- Set the start time for backdrop download -->
 />
 """
 
@@ -161,8 +161,6 @@ class AglareBackdropX(Renderer):
 			self.instance.hide()
 			return
 
-		if self.instance:
-			self.instance.hide()
 		servicetype = None
 		try:
 			service = None
@@ -193,26 +191,34 @@ class AglareBackdropX(Renderer):
 				service_str = service.toString()
 				events = epgcache.lookupEvent(['IBDCTESX', (service_str, 0, -1, -1)])
 
-				service_name = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '')
-				self.canal[0] = service_name
-				self.canal[1] = events[self.nxts][1]
-				self.canal[2] = events[self.nxts][4]
-				self.canal[3] = events[self.nxts][5]
-				self.canal[4] = events[self.nxts][6]
-				self.canal[5] = self.canal[2]
+				if events and len(events) > self.nxts:
+					event = events[self.nxts]
+					if len(event) >= 7:
+						service_name = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '')
+						self.canal[0] = service_name
+						self.canal[1] = event[1]
+						self.canal[2] = event[4]
+						self.canal[3] = event[5]
+						self.canal[4] = event[6]
+						self.canal[5] = self.canal[2]
 
-				"""
-				# global autobouquet_file
-				if not globals().get('autobouquet_file') and service_name not in apdb:
-					apdb[service_name] = service_str
-				# if not getattr(modules[__name__], 'autobouquet_file', False) and service_name not in apdb:
-					# apdb[service_name] = service_str
-				"""
-				if not autobouquet_file and service_name not in apdb:
-					apdb[service_name] = service_str
+						"""
+						# global autobouquet_file
+						if not globals().get('autobouquet_file') and service_name not in apdb:
+							apdb[service_name] = service_str
+						# if not getattr(modules[__name__], 'autobouquet_file', False) and service_name not in apdb:
+							# apdb[service_name] = service_str
+						"""
+
+						if not autobouquet_file and service_name not in apdb:
+							apdb[service_name] = service_str
+					else:
+						print("Error in service handling: event tuple too short")
+				else:
+					print("Error in service handling: events list empty or nxts out of range")
 
 		except Exception as e:
-			print(f"Error in service handling: {e}")
+			print("Error in service handling: " + str(e))
 			if self.instance:
 				self.instance.hide()
 			return
@@ -224,6 +230,8 @@ class AglareBackdropX(Renderer):
 
 		try:
 			curCanal = "{}-{}".format(self.canal[1], self.canal[2])
+			if self.instance:
+				self.instance.hide()					
 			if curCanal == self.oldCanal:
 				return
 
