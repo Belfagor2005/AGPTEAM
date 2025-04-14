@@ -3,27 +3,27 @@
 from __future__ import absolute_import, print_function
 """
 #########################################################
-#                                                       #
-#  AGP - Advanced Graphics Renderer                     #
-#  Version: 3.5.0                                       #
+#														#
+#  AGP - Advanced Graphics Renderer						#
+#  Version: 3.5.0										#
 #  Created by Lululla (https://github.com/Belfagor2005) #
-#  License: CC BY-NC-SA 4.0                             #
-#  https://creativecommons.org/licenses/by-nc-sa/4.0    #
-#                                                       #
-#  Last Modified: "15:14 - 20250401"                    #
-#                                                       #
-#  Credits:                                             #
-#   by base code from digiteng 2022                     #
-#  - Original concept by Lululla                        #
-#  - TMDB API integration                               #
-#  - TVDB API integration                               #
-#  - OMDB API integration                               #
-#  - Advanced caching system                            #
-#                                                       #
-#  Usage of this code without proper attribution        #
-#  is strictly prohibited.                              #
-#  For modifications and redistribution,                #
-#  please maintain this credit header.                  #
+#  License: CC BY-NC-SA 4.0								#
+#  https://creativecommons.org/licenses/by-nc-sa/4.0	#
+#														#
+#  Last Modified: "15:14 - 20250401"					#
+#														#
+#  Credits:												#
+#	by base code from digiteng 2022						#
+#  - Original concept by Lululla						#
+#  - TMDB API integration								#
+#  - TVDB API integration								#
+#  - OMDB API integration								#
+#  - Advanced caching system							#
+#														#
+#  Usage of this code without proper attribution		#
+#  is strictly prohibited.								#
+#  For modifications and redistribution,				#
+#  please maintain this credit header.					#
 #########################################################
 """
 __author__ = "Lululla"
@@ -53,7 +53,7 @@ import NavigationInstance
 
 # Local imports
 from Components.Renderer.AgbDownloadThread import AgbDownloadThread
-from .Agp_Utils import BACKDROP_FOLDER, clean_for_tvdb, logger  # , nobackdrop
+from .Agp_Utils import BACKDROP_FOLDER, clean_for_tvdb, logger	# , nobackdrop
 
 
 # Constants and global variables
@@ -80,7 +80,7 @@ Use:
 # for epg, event
 <widget source="Event" render="AglareBackdropX" position="100,100" size="680,1000" />
 <widget source="Event" render="AglareBackdropX" position="100,100" size="680,1000" nexts="2" />
-or put tag -->  path="/media/hdd/backdrop"
+or put tag -->	path="/media/hdd/backdrop"
 """
 
 """
@@ -91,13 +91,13 @@ ADVANCED CONFIGURATIONS:
 	size="200,300"
 	cornerRadius="20"
 	zPosition="95"
-	path="/path/to/custom_folder"   <!-- Opzionale -->
-	service.tmdb="true"             <!-- Abilita TMDB -->
-	service.tvdb="false"            <!-- Disabilita TVDB -->
-	service.imdb="false"            <!-- Disabilita IMDB -->
-	service.fanart="false"          <!-- Disabilita Fanart -->
-	service.google="false"          <!-- Disabilita Google -->
-	scan_time="02:00"               <!-- Set the start time for backdrop download -->
+	path="/path/to/custom_folder"	<!-- Opzionale -->
+	service.tmdb="true"				<!-- Abilita TMDB -->
+	service.tvdb="false"			<!-- Disabilita TVDB -->
+	service.imdb="false"			<!-- Disabilita IMDB -->
+	service.fanart="false"			<!-- Disabilita Fanart -->
+	service.google="false"			<!-- Disabilita Google -->
+	scan_time="02:00"				<!-- Set the start time for backdrop download -->
 />
 """
 
@@ -256,9 +256,9 @@ class AglareBackdropX(Renderer):
 			# Try to search for the Backdrop
 			for ext in self.extensions:
 				candidate = join(self.path, self.pstcanal + ext)
-				logger.info(f"Checking Backdrop path: {candidate}")  # Log the path being checked
+				logger.info(f"Checking Backdrop path: {candidate}")	 # Log the path being checked
 				if exists(candidate):
-					logger.info(f"Found Backdrop at: {candidate}")  # Log the found Backdrop path
+					logger.info(f"Found Backdrop at: {candidate}")	# Log the found Backdrop path
 					# Cache the found Backdrop path
 					if not hasattr(self, '_loaded_backdrops'):
 						self._loaded_backdrops = {}
@@ -307,14 +307,14 @@ class AglareBackdropX(Renderer):
 			self._log_debug("[ERROR: waitBackdrop] Backdrop path is None")
 			return
 
-		loop = 180  # Maximum number of attempts
+		loop = 180	# Maximum number of attempts
 		found = False
 		logger.info(f"[WAIT] Checking for backdrop: {self.pstrNm}")
 		while loop > 0:
 			if self.pstrNm and self.checkBackdropExistence(self.pstrNm):
 				found = True
 				break
-			logger.info(f"[WAIT] Attempting to find Backdrop... (remaining tries: {loop})")  # Add more logging
+			logger.info(f"[WAIT] Attempting to find Backdrop... (remaining tries: {loop})")	 # Add more logging
 			sleep(0.5)
 			loop -= 1
 
@@ -396,8 +396,8 @@ class BackdropDB(AgbDownloadThread):
 			for ext in self.extensions:
 				backdrop_path = join(BACKDROP_FOLDER, self.pstcanal + ext)
 				if self.is_valid_backdrop(backdrop_path):
-					utime(backdrop_path, (time(), time()))  # Update the timestamp to avoid re-downloading
-					self._log_debug(f"Backdrop already exists: {backdrop_path}")
+					utime(backdrop_path, (time(), time()))	# Update the timestamp to avoid re-downloading
+					# self._log_debug(f"Backdrop already exists: {backdrop_path}")
 					return
 
 			for provider_name, provider_func in self.provider_engines:
@@ -407,7 +407,7 @@ class BackdropDB(AgbDownloadThread):
 						continue
 
 					success, log = result
-					self._log_debug(f"{provider_name}: {log}")  # fix: log anche se fallisce
+					# self._log_debug(f"{provider_name}: {log}")	# fix: log anche se fallisce
 
 					if success:
 						break
@@ -574,7 +574,7 @@ class BackdropAutoDB(AgbDownloadThread):
 			try:
 				events = epgcache.lookupEvent(['IBDCTESX', (service_ref, 0, -1, 1440)])
 				if not events:
-					self._log_debug(f"No EPG data for service: {service_ref}")
+					# self._log_debug(f"No EPG data for service: {service_ref}")
 					continue
 
 				for evt in events:
@@ -636,8 +636,8 @@ class BackdropAutoDB(AgbDownloadThread):
 			for ext in self.extensions:
 				backdrop_path = join(BACKDROP_FOLDER, self.pstcanal + ext)
 				if self.is_valid_backdrop(backdrop_path):
-					utime(backdrop_path, (time(), time()))  # Update the timestamp to avoid re-downloading
-					self._log_debug(f"Backdrop already exists: {backdrop_path}")
+					utime(backdrop_path, (time(), time()))	# Update the timestamp to avoid re-downloading
+					# self._log_debug(f"Backdrop already exists: {backdrop_path}")
 					return
 
 			# Create the list of providers enabled for download

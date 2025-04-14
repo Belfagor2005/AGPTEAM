@@ -40,7 +40,7 @@ from unicodedata import normalize
 
 # Third-party libraries
 from PIL import Image
-from requests import get, Session  # , exceptions, codes
+from requests import get, codes, Session  # , exceptions
 from requests.exceptions import RequestException
 from requests.adapters import HTTPAdapter, Retry
 from twisted.internet.reactor import callInThread
@@ -106,8 +106,6 @@ elif screenwidth.width() <= 1920:
 	isz = isz.replace(isz, "342,514")
 else:
 	isz = isz.replace(isz, "780,1170")
-
-
 """
 🖼️ Poster:
 "w92", "w154", "w185", "w342", "w500", "w780", "original"
@@ -125,14 +123,14 @@ else:
 "w45", "w92", "w154", "w185", "w300", "w500", "original"
 
 📐 Consigli sulle dimensioni (in pixel)
-Tipo	          Dimensioni consigliate	Aspetto
-Poster	            500x750 → 2000x3000	    1.5 (2:3)
-Poster TV Season	400x578 → 2000x3000 	1.5 (2:3)
-Backdrop	        1280x720 → 3840x2160	1.777 (16:9)
-Still (episodio)	400x225 → 3840x2160	    1.777 (16:9)
-Profile	            300x450 → 2000x3000	    1.5 (2:3)
-Logo PNG	        500x1 → 2000x2000	    Variabile
-Logo SVG	        500x1 → vettoriale	    Variabile
+Tipo              Dimensioni consigliate    Aspetto
+Poster              500x750 → 2000x3000     1.5 (2:3)
+Poster TV Season    400x578 → 2000x3000     1.5 (2:3)
+Backdrop            1280x720 → 3840x2160    1.777 (16:9)
+Still (episodio)    400x225 → 3840x2160     1.777 (16:9)
+Profile             300x450 → 2000x3000     1.5 (2:3)
+Logo PNG            500x1 → 2000x2000       Variabile
+Logo SVG            500x1 → vettoriale      Variabile
 """
 
 
@@ -161,26 +159,31 @@ class AgpDownloadThread(Thread):
 	def search_tmdb(self, dwn_poster, title, shortdesc, fulldesc, channel=None):
 		try:
 			self.dwn_poster = dwn_poster
-			title_safe = title.replace('+', ' ')  # Clean the title for the query
-			url = f"https://api.themoviedb.org/3/search/multi?api_key={tmdb_api}&language={lng}&query={title_safe}"
+			self.title_safe = title.replace("+", " ")
+			url = "https://api.themoviedb.org/3/search/multi?api_key={}&language={}&query={}".format(
+				tmdb_api, lng, self.title_safe
+			)
 			retries = Retry(total=1, backoff_factor=1)
 			adapter = HTTPAdapter(max_retries=retries)
 			http = Session()
 			http.mount("http://", adapter)
 			http.mount("https://", adapter)
+			headers = {"User-Agent": choice(AGENTS)}
 
-			headers = {"User-Agent": choice(AGENTS)}  # Random user-agent from AGENTS list
 			response = http.get(url, headers=headers, timeout=(10, 20), verify=False)
 			response.raise_for_status()
 
-			if response.status_code == 200:
-				data = response.json()
-				return self.downloadData2(data)
+			if response.status_code == codes.ok:
+				try:
+					data = response.json()
+					return self.downloadData2(data)
+				except ValueError as e:
+					logger.error("TMDb response decode error: " + str(e))
+					return False, "Errore nel parsing della risposta TMDb"
 			else:
-				return False, f"Errore durante la ricerca su TMDb: {response.status_code}"
-
+				return False, "Errore durante la richiesta a TMDb: {}".format(response.status_code)
 		except RequestException as e:
-			logger.error(f"Errore nella ricerca TMDb: {e}")
+			logger.error("TMDb search error: " + str(e))
 			return False, "Errore durante la ricerca su TMDb"
 
 	def downloadData2(self, data):
@@ -230,7 +233,7 @@ class AgpDownloadThread(Thread):
 			series_nb = -1
 			chkType, fd = self.checkType(shortdesc, fulldesc)
 			title_safe = title
-			self.title_safe = title_safe.replace('+', ' ')  # Sostituisce '+' con uno spazio
+			self.title_safe = title_safe.replace('+', ' ')
 			year = findall(r'19\d{2}|20\d{2}', fd)
 			if len(year) > 0:
 				year = year[0]
@@ -242,12 +245,11 @@ class AgpDownloadThread(Thread):
 			series_id = findall(r'<seriesid>(.*?)</seriesid>', url_read)
 			series_name = findall(r'<SeriesName>(.*?)</SeriesName>', url_read)
 			series_year = findall(r'<FirstAired>(19\d{2}|20\d{2})-\d{2}-\d{2}</FirstAired>', url_read)
-
-			# # Decommentato per eventuali banner (se necessario)
-			# series_banners = re.findall(r'<banner>(.*?)</banner>', url_read)
+			'''
+			# series_banners = findall(r'<banner>(.*?)</banner>', url_read)
 			# if series_banners:
-			#     series_banners = 'https://thetvdb.com' + series_banners
-
+				# series_banners = 'https://thetvdb.com' + series_banners
+			'''
 			i = 0
 			for iseries_year in series_year:
 				if year == '':
@@ -275,118 +277,104 @@ class AgpDownloadThread(Thread):
 					url_read = get(url_tvdb).text
 					poster = findall(r'<poster>(.*?)</poster>', url_read)
 					url_poster = "https://artworks.thetvdb.com/banners/{}".format(poster[0])
-
 					if poster is not None and poster[0]:
 						callInThread(self.savePoster, url_poster, self.dwn_poster)
-						# logger.info(f"[SUCCESS : tvdb] {self.title_safe} [{chkType}-{year}] => {url_tvdbg} => {url_tvdb} => {url_poster}")
 						return True, f"[SUCCESS : tvdb] {self.title_safe} [{chkType}-{year}] => {url_tvdbg} => {url_tvdb} => {url_poster}"
-
-					# logger.info(f"[SKIP : tvdb] {self.title_safe} [{chkType}-{year}] => {url_tvdbg} (Not found)")
 					return False, f"[SKIP : tvdb] {self.title_safe} [{chkType}-{year}] => {url_tvdbg} (Not found)"
-
 			else:
-				# logger.info(f"[SKIP : tvdb] {self.title_safe} [{chkType}-{year}] => {url_tvdbg} (Not found)")
 				return False, f"[SKIP : tvdb] {self.title_safe} [{chkType}-{year}] => {url_tvdbg} (Not found)"
 
 		except Exception as e:
 			if exists(dwn_poster):
 				remove(dwn_poster)
-			# logger.error(f"[ERROR : tvdb] {title} => {url_tvdbg} ({str(e)})")
 			return False, f"[ERROR : tvdb] {title} => {url_tvdbg} ({str(e)})"
 
 	def search_fanart(self, dwn_poster, title, shortdesc, fulldesc, channel=None):
 		try:
-			year = None
+			year = ""
 			url_maze = ""
 			url_fanart = ""
-			url_poster = None
-			id = "-"
-			title_safe = title
-			self.title_safe = title_safe.replace('+', ' ')
+			tvmaze_id = "-"
+			self.title_safe = title.replace("+", " ")
 			chkType, fd = self.checkType(shortdesc, fulldesc)
 
 			try:
-				if findall(r'19\d{2}|20\d{2}', self.title_safe):
-					year = findall(r'19\d{2}|20\d{2}', fd)[1]
-				else:
-					year = findall(r'19\d{2}|20\d{2}', fd)[0]
-			except:
-				year = ''
+				matches = findall(r"19\d{2}|20\d{2}", fd)
+				if matches:
+					year = matches[1] if len(matches) > 1 else matches[0]
+			except Exception:
 				pass
 
 			try:
 				url_maze = "http://api.tvmaze.com/singlesearch/shows?q={}".format(self.title_safe)
-				mj = get(url_maze).json()
-				id = (mj['externals']['thetvdb'])
+				resp = get(url_maze, timeout=5)
+				resp.raise_for_status()
+				mj = resp.json()
+				tvmaze_id = mj.get("externals", {}).get("thetvdb", "-")
 			except Exception as err:
-				logger.error('Error:', err)
+				logger.error("TVMaze error: " + str(err))
 
 			try:
 				m_type = 'tv'
-				url_fanart = "https://webservice.fanart.tv/v3/{}/{}?api_key={}".format(m_type, id, fanart_api)
+				url_fanart = "https://webservice.fanart.tv/v3/{}/{}?api_key={}".format(m_type, tvmaze_id, fanart_api)
 				fjs = get(url_fanart, verify=False, timeout=5).json()
-				try:
+				url = ""
+				if "tvposter" in fjs and fjs["tvposter"]:
 					url = (fjs['tvposter'][0]['url'])
-				except:
+				elif "movieposter" in fjs and fjs["movieposter"]:
 					url = (fjs['movieposter'][0]['url'])
 
-				url_poster = get(url).json()
-				if url_poster and url_poster != 'null' or url_poster is not None or url_poster != '':
-					callInThread(self.savePoster, url_poster, dwn_poster)
-					# logger.info(f"[SUCCESS poster: fanart] {self.title_safe} [{chkType}-{year}] => {url_maze} => {url_fanart} => {url_poster}")
-					return True, f"[SUCCESS poster: fanart] {self.title_safe} [{chkType}-{year}] => {url_maze} => {url_fanart} => {url_poster}"
-
-				# logger.info(f"[SKIP : fanart] {self.title_safe} [{chkType}-{year}] => {url_fanart} (Not found)")
-				return False, f"[SKIP : fanart] {self.title_safe} [{chkType}-{year}] => {url_fanart} (Not found)"
+				if url:
+					callInThread(self.savePoster, url, dwn_poster)
+					msg = "[SUCCESS backdrop: fanart] {} [{}-{}] => {} => {} => {}".format(
+						self.title_safe, chkType, year, url_maze, url_fanart, url
+					)
+					# logger.info("Fanart match: " + msg)
+					return True, msg
+				else:
+					return False, f"[SKIP : fanart] {self.title_safe} [{chkType}-{year}] => {url_fanart} (Not found)"
 			except Exception as e:
-				logger.error(e)
+				return False, "[ERROR : fanart] {} [{}-{}] => {} ({})".format(self.title_safe, chkType, year, url_maze, str(e))
 
 		except Exception as e:
+			print(e)
 			if exists(dwn_poster):
 				remove(dwn_poster)
-			logger.error(f"[ERROR : fanart] {self.title_safe} [{chkType}-{year}] => {url_fanart} ({str(e)})")
 			return False, f"[ERROR : fanart] {self.title_safe} [{chkType}-{year}]"
 
 	def search_imdb(self, dwn_poster, title, shortdesc, fulldesc, channel=None):
 		try:
 			self.dwn_poster = dwn_poster
-			url_poster = None
+			self.title_safe = title.replace("+", " ")
 			chkType, fd = self.checkType(shortdesc, fulldesc)
-			title_safe = title
-			self.title_safe = title_safe.replace('+', ' ')
-			aka = findall(r'\((.*?)\)', fd)
-			if len(aka) > 1 and not aka[1].isdigit():
-				aka = aka[1]
-			elif len(aka) > 0 and not aka[0].isdigit():
-				aka = aka[0]
-			else:
-				aka = None
-			if aka:
-				paka = self.UNAC(aka)
-			else:
-				paka = ''
-			year = findall(r'19\d{2}|20\d{2}', fd)
-			if len(year) > 0:
-				year = year[0]
-			else:
-				year = ''
-			imsg = ''
-			url_mimdb = ''
-			url_imdb = ''
+			# Try to extract AKA title
+			aka_list = findall(r"\((.*?)\)", fd)
+			aka = next((a for a in aka_list if not a.isdigit()), None)
+			paka = self.UNAC(aka) if aka else ""
+
+			# Extract year
+			year_matches = findall(r"19\d{2}|20\d{2}", fd)
+			year = year_matches[0] if year_matches else ""
+
+			imsg = ""
+			url_mimdb = ""
+			url_poster = ""
+			url_imdb = []
 
 			if aka and aka != self.title_safe:
 				url_mimdb = "https://m.imdb.com/find?q={}%20({})".format(self.title_safe, quoteEventName(aka))
 			else:
 				url_mimdb = "https://m.imdb.com/find?q={}".format(self.title_safe)
+
 			url_read = get(url_mimdb).text
 			rc = compile(r'<img src="(.*?)".*?<span class="h3">\n(.*?)\n</span>.*?\((\d+)\)(\s\(.*?\))?(.*?)</a>', DOTALL)
 			url_imdb = rc.findall(url_read)
 
-			if len(url_imdb) == 0 and aka:
+			if not url_imdb and aka:
 				url_mimdb = "https://m.imdb.com/find?q={}".format(self.title_safe)
 				url_read = get(url_mimdb).text
-				rc = compile(r'<img src="(.*?)".*?<span class="h3">\n(.*?)\n</span>.*?\((\d+)\)(\s\(.*?\))?(.*?)</a>', DOTALL)
 				url_imdb = rc.findall(url_read)
+
 			len_imdb = len(url_imdb)
 			idx_imdb = 0
 			pfound = False
@@ -395,48 +383,52 @@ class AgpDownloadThread(Thread):
 				imdb = list(imdb)
 				imdb[1] = self.UNAC(imdb[1])
 				tmp = findall(r'aka <i>"(.*?)"</i>', imdb[4])
-				if tmp:
-					imdb[4] = tmp[0]
-				else:
-					imdb[4] = ''
-				imdb[4] = self.UNAC(imdb[4])
-				imdb_poster = search(r"(.*?)._V1_.*?.jpg", imdb[0])
-				if imdb_poster:
-					if imdb[3] == '':
-						if year and year != '':
-							if year == imdb[2]:
-								url_poster = "{}._V1_UY278,1,185,278_AL_.jpg".format(imdb_poster.group(1))
-								imsg = "Found title : '{}', aka : '{}', year : '{}'".format(imdb[1], imdb[4], imdb[2])
-								if self.PMATCH(self.title_safe, imdb[1]) or self.PMATCH(self.title_safe, imdb[4]) or (paka != '' and self.PMATCH(paka, imdb[1])) or (paka != '' and self.PMATCH(paka, imdb[4])):
-									pfound = True
-									break
-							elif not url_poster and (int(year) - 1 == int(imdb[2]) or int(year) + 1 == int(imdb[2])):
-								url_poster = "{}._V1_UY278,1,185,278_AL_.jpg".format(imdb_poster.group(1))
-								imsg = "Found title : '{}', aka : '{}', year : '+/-{}'".format(imdb[1], imdb[4], imdb[2])
-								if self.title_safe == imdb[1] or self.title_safe == imdb[4] or (paka != '' and paka == imdb[1]) or (paka != '' and paka == imdb[4]):
-									pfound = True
-									break
-						else:
-							url_poster = "{}._V1_UY278,1,185,278_AL_.jpg".format(imdb_poster.group(1))
-							imsg = "Found title : '{}', aka : '{}', year : ''".format(imdb[1], imdb[4])
-							if self.title_safe == imdb[1] or self.title_safe == imdb[4] or (paka != '' and paka == imdb[1]) or (paka != '' and paka == imdb[4]):
-								pfound = True
-								break
+				imdb[4] = self.UNAC(tmp[0]) if tmp else self.UNAC(imdb[4])  # AKA
+				poster_match = search(r"(.*?)._V1_.*?.jpg", imdb[0])
+				if not poster_match:
+					continue
+
+				imdb_year = imdb[2]
+				imdb_title = imdb[1]
+				imdb_aka = imdb[4]
+				base_url = poster_match.group(1)
+				url_poster = "{}._V1_UY278,1,185,278_AL_.jpg".format(base_url)
+
+				# Compare by year and title similarity
+				if imdb[3] == "":
+					# Exact year match
+					if year and year == imdb_year:
+						imsg = "Found title: '{}', aka: '{}', year: '{}'".format(imdb_title, imdb_aka, imdb_year)
+						if self.PMATCH(self.title_safe, imdb_title) or self.PMATCH(self.title_safe, imdb_aka) or self.PMATCH(paka, imdb_title) or self.PMATCH(paka, imdb_aka):
+							pfound = True
+							break
+					# Tolerate ±1 year
+					elif year and (int(year) - 1 == int(imdb_year) or int(year) + 1 == int(imdb_year)):
+						imsg = "Found title: '{}', aka: '{}', year: '+/-{}'".format(imdb_title, imdb_aka, imdb_year)
+						if self.title_safe == imdb_title or self.title_safe == imdb_aka or paka == imdb_title or paka == imdb_aka:
+							pfound = True
+							break
+					# No year available
+					elif not year:
+						imsg = "Found title: '{}', aka: '{}', year: ''".format(imdb_title, imdb_aka)
+						if self.title_safe == imdb_title or self.title_safe == imdb_aka or paka == imdb_title or paka == imdb_aka:
+							pfound = True
+							break
 				idx_imdb += 1
 			if url_poster and pfound:
 				callInThread(self.savePoster, url_poster, dwn_poster)
-				# Log di successo
-				# logger.info(f"[SUCCESS url_poster: imdb] {self.title_safe} [{chkType}-{year}] => {imsg} [{idx_imdb}/{len_imdb}] => {url_mimdb} => {url_poster}")
-				return True, f"[SUCCESS url_poster: imdb] {self.title_safe} [{chkType}-{year}] => {imsg} [{idx_imdb}/{len_imdb}] => {url_mimdb} => {url_poster}"
+				msg = "[SUCCESS url_poster: imdb] {} [{}-{}] => {} [{}/{}] => {} => {}".format(
+					self.title_safe, chkType, year, imsg, idx_imdb, len_imdb, url_mimdb, url_poster
+				)
+				# _log(msg)
+				return True, msg
 
-			# logger.info(f"[SKIP : imdb] {self.title_safe} [{chkType}-{year}] => {url_mimdb} (No Entry found [{len_imdb}])")
-			return False, f"[SKIP : imdb] {self.title_safe} [{chkType}-{year}] => {url_mimdb} (No Entry found [{len_imdb}])"
+			return False, "[SKIP : imdb] {} [{}-{}] => {} (No Entry found [{}])".format(self.title_safe, chkType, year, url_mimdb, len_imdb)
 
 		except Exception as e:
 			if exists(dwn_poster):
 				remove(dwn_poster)
-			# logger.error(f"[ERROR : imdb] {self.title_safe} [{chkType}-{year}] => {url_mimdb} ({str(e)})")
-			return False, f"[ERROR : imdb] {self.title_safe} [{chkType}-{year}] => {url_mimdb} ({str(e)})"
+			return False, "[ERROR : imdb] {} [{}-{}] => {} ({})".format(self.title_safe, chkType, year, url_mimdb, str(e))
 
 	def search_programmetv_google(self, dwn_poster, title, shortdesc, fulldesc, channel=None):
 		try:
@@ -445,7 +437,6 @@ class AgpDownloadThread(Thread):
 			headers = {"User-Agent": choice(AGENTS)}
 			chkType, fd = self.checkType(shortdesc, fulldesc)
 			if chkType.startswith("movie"):
-				# logger.info(f"[SKIP : programmetv-google] {title} [{chkType}] => Skip movie title")
 				return False, f"[SKIP : programmetv-google] {title} [{chkType}] => Skip movie title"
 
 			title_safe = title
@@ -477,31 +468,31 @@ class AgpDownloadThread(Thread):
 						url_poster = sub(r'/\d+x\d+/', f"/{w_tar}x{h_tar}/", url_poster)
 						url_poster = sub(r'crop-from/top/', '', url_poster)
 						callInThread(self.savePoster, url_poster, self.dwn_poster)
-						# logger.info(f"[SUCCESS url_poster: programmetv-google] {self.title_safe} [{chkType}] => Found self.title_safe : '{get_title}' => {url_ptv} => {url_poster} (initial size: {url_poster_size}) [{ptv_id}]")
 						return True, f"[SUCCESS url_poster: programmetv-google] {self.title_safe} [{chkType}] => Found self.title_safe : '{get_title}' => {url_ptv} => {url_poster} (initial size: {url_poster_size}) [{ptv_id}]"
 
-			# logger.info(f"[SKIP : programmetv-google] {self.title_safe} [{chkType}] => Not found [{ptv_id}] => {url_ptv}")
 			return False, f"[SKIP : programmetv-google] {self.title_safe} [{chkType}] => Not found [{ptv_id}] => {url_ptv}"
 
 		except Exception as e:
 			if exists(dwn_poster):
 				remove(dwn_poster)
-			# logger.error(f"[ERROR : programmetv-google] {self.title_safe} [{chkType}] => {url_ptv} ({str(e)})")
 			return False, f"[ERROR : programmetv-google] {self.title_safe} [{chkType}] => {url_ptv} ({str(e)})"
 
 	def search_molotov_google(self, dwn_poster, title, shortdesc, fulldesc, channel=None):
 		try:
 			self.dwn_poster = dwn_poster
+			url_mgoo = ''
 			headers = {"User-Agent": choice(AGENTS)}
 			chkType, fd = self.checkType(shortdesc, fulldesc)
-			title_safe = title.replace('+', ' ')
-			pchannel = self.UNAC(channel).replace(' ', '') if channel else ''
+			if chkType.startswith("movie"):
+				return False, "[SKIP : molotov-google] {} [{}] => Skip movie title".format(title, chkType)
 
-			url_mgoo = "site:molotov.tv+" + title_safe
+			title_safe = title.replace('+', ' ')
+			self.title_safe = title_safe
+			pchannel = self.UNAC(channel).replace(' ', '') if channel else ''
+			url_mgoo = "site:molotov.tv+" + self.title_safe
 			if channel and title_safe.find(channel.split()[0]) < 0:
 				url_mgoo += "+" + quoteEventName(channel)
 			url_mgoo = f"https://www.google.com/search?q={url_mgoo}&tbm=isch"
-
 			ff = get(url_mgoo, stream=True, headers=headers, cookies={'CONSENT': 'YES+'}).text
 			if not PY3:
 				ff = ff.encode('utf-8')

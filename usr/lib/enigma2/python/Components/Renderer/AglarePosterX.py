@@ -216,8 +216,8 @@ class AglarePosterX(Renderer):
 			return
 
 		try:
-			logger.info(f"canal content: {self.canal}")
-			logger.info(f"canal[1]: {self.canal[1]}, canal[2]: {self.canal[2]}, canal[5]: {self.canal[5]}")
+			# logger.info(f"canal content: {self.canal}")
+			# logger.info(f"canal[1]: {self.canal[1]}, canal[2]: {self.canal[2]}, canal[5]: {self.canal[5]}")
 			curCanal = "{}-{}".format(self.canal[1], self.canal[2])
 			if curCanal == self.oldCanal and self.pstrNm and exists(self.pstrNm):
 				logger.info(f"Poster already loaded: {self.pstrNm}")
@@ -258,9 +258,9 @@ class AglarePosterX(Renderer):
 			# Try to search for the poster
 			for ext in self.extensions:
 				candidate = join(self.path, self.pstcanal + ext)
-				logger.info(f"Checking poster path: {candidate}")  # Log the path being checked
+				# logger.info(f"Checking poster path: {candidate}")  # Log the path being checked
 				if exists(candidate):
-					logger.info(f"Found poster at: {candidate}")  # Log the found poster path
+					# logger.info(f"Found poster at: {candidate}")  # Log the found poster path
 					# Cache the found poster path
 					if not hasattr(self, '_loaded_posters'):
 						self._loaded_posters = {}
@@ -311,7 +311,7 @@ class AglarePosterX(Renderer):
 
 		loop = 180  # Maximum number of attempts
 		found = False
-		logger.info(f"[WAIT] Checking for poster: {self.pstrNm}")
+		# logger.info(f"[WAIT] Checking for poster: {self.pstrNm}")
 		while loop > 0:
 			if self.pstrNm and self.checkPosterExistence(self.pstrNm):
 				found = True
@@ -402,6 +402,7 @@ class PosterDB(AgpDownloadThread):
 					# self._log_debug(f"Poster already exists: {poster_path}")
 					return
 
+			poster_path = None
 			for provider_name, provider_func in self.provider_engines:
 				try:
 					result = provider_func(poster_path, self.pstcanal, canal[4], canal[3], canal[0])
@@ -409,7 +410,11 @@ class PosterDB(AgpDownloadThread):
 						continue
 
 					success, log = result
-					self._log_debug(f"{provider_name}: {log}")  # fix: log anche se fallisce
+					success, log = result
+					if success and log and "SUCCESS" in str(log).upper():
+						if not exists(poster_path):
+							self.poster_download_count += 1
+						break
 
 					if success:
 						break
@@ -479,7 +484,23 @@ class PosterAutoDB(AgpDownloadThread):
 		if not exists("/tmp/agplog"):
 			makedirs("/tmp/agplog")
 		self.clean_old_logs()
+		self.provider_engines = self.build_providers()
 		self._log("=== INITIALIZATION COMPLETE ===")
+
+	def build_providers(self):
+		"""Create the list of enabled provider engines"""
+		engines = []
+		if self.providers.get("tmdb"):
+			engines.append(("TMDB", self.search_tmdb))
+		if self.providers.get("tvdb"):
+			engines.append(("TVDB", self.search_tvdb))
+		if self.providers.get("fanart"):
+			engines.append(("Fanart", self.search_fanart))
+		if self.providers.get("imdb"):
+			engines.append(("IMDB", self.search_imdb))
+		if self.providers.get("google"):
+			engines.append(("Google", self.search_google))
+		return engines
 
 	def run(self):
 		"""Main loop - runs periodic full scans and processes services"""
@@ -576,7 +597,7 @@ class PosterAutoDB(AgpDownloadThread):
 			try:
 				events = epgcache.lookupEvent(['IBDCTESX', (service_ref, 0, -1, 1440)])
 				if not events:
-					self._log_debug(f"No EPG data for service: {service_ref}")
+					# self._log_debug(f"No EPG data for service: {service_ref}")
 					continue
 
 				for evt in events:
@@ -639,26 +660,9 @@ class PosterAutoDB(AgpDownloadThread):
 				poster_path = join(POSTER_FOLDER, self.pstcanal + ext)
 				if self.is_valid_poster(poster_path):
 					utime(poster_path, (time(), time()))  # Update the timestamp to avoid re-downloading
-					# self._log_debug(f"Poster already exists: {poster_path}")
 					return
 
-			# Create the list of providers enabled for download
-			providers = []
-
-			if self.providers["tmdb"]:
-				providers.append(("TMDB", self.search_tmdb))
-			if self.providers["tvdb"]:
-				providers.append(("TVDB", self.search_tvdb))
-			if self.providers["fanart"]:
-				providers.append(("Fanart", self.search_fanart))
-			if self.providers["imdb"]:
-				providers.append(("IMDB", self.search_imdb))
-			if self.providers["google"]:
-				providers.append(("Google", self.search_google))
-
-			downloaded = False
-			# Cycle through providers to find the poster
-			for provider_name, provider_func in providers:
+			for provider_name, provider_func in self.provider_engines:
 				try:
 					result = provider_func(poster_path, self.pstcanal, canal[4], canal[3], canal[0])
 					if not result or len(result) != 2:
@@ -668,14 +672,13 @@ class PosterAutoDB(AgpDownloadThread):
 					if success and log and "SUCCESS" in str(log).upper():
 						if not exists(poster_path):
 							self.poster_download_count += 1
-							self._log(f"Poster downloaded from {provider_name}: {self.pstcanal}")
-						downloaded = True
 						break
+
+					if success:
+						break
+
 				except Exception as e:
 					self._log_error(f"Error with {provider_name}: {str(e)}")
-
-			if not downloaded:
-				self._log_debug(f"Poster download failed for: {self.pstcanal}")
 
 		except Exception as e:
 			self._log_error(f"CRITICAL ERROR in _download_poster: {str(e)}")

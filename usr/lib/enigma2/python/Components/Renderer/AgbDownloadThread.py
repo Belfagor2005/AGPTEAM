@@ -125,14 +125,14 @@ else:
 "w45", "w92", "w154", "w185", "w300", "w500", "original"
 
 📐 Consigli sulle dimensioni (in pixel)
-Tipo	          Dimensioni consigliate	Aspetto
-Poster	            500x750 → 2000x3000	    1.5 (2:3)
-Poster TV Season	400x578 → 2000x3000 	1.5 (2:3)
-Backdrop	        1280x720 → 3840x2160	1.777 (16:9)
-Still (episodio)	400x225 → 3840x2160	    1.777 (16:9)
-Profile	            300x450 → 2000x3000	    1.5 (2:3)
-Logo PNG	        500x1 → 2000x2000	    Variabile
-Logo SVG	        500x1 → vettoriale	    Variabile
+Tipo              Dimensioni consigliate    Aspetto
+Poster              500x750 → 2000x3000     1.5 (2:3)
+Poster TV Season    400x578 → 2000x3000     1.5 (2:3)
+Backdrop            1280x720 → 3840x2160    1.777 (16:9)
+Still (episodio)    400x225 → 3840x2160     1.777 (16:9)
+Profile             300x450 → 2000x3000     1.5 (2:3)
+Logo PNG            500x1 → 2000x2000       Variabile
+Logo SVG            500x1 → vettoriale      Variabile
 """
 
 
@@ -189,54 +189,45 @@ class AgbDownloadThread(Thread):
 			return False, "Errore durante la ricerca su TMDb"
 
 	def downloadData2(self, data):
-		if not isinstance(data, dict):
+		if isinstance(data, bytes):
+			data = data.decode('utf-8')  # Ensure the data is in a proper string format
+		data_json = data if isinstance(data, dict) else loads(data)
+
+		if 'results' in data_json:
 			try:
-				data = loads(data)
+				for each in data_json['results']:
+					media_type = str(each.get('media_type', ''))
+					if media_type == "tv":
+						media_type = "serie"
+					if media_type in ['serie', 'movie']:
+						year = ""
+						if media_type == "movie" and 'release_date' in each:
+							year = each['release_date'].split("-")[0]
+						elif media_type == "serie" and 'first_air_date' in each:
+							year = each['first_air_date'].split("-")[0]
+
+						title = each.get('name', each.get('title', ''))
+						backdrop_path = each.get('backdrop_path')
+						poster_path = each.get('poster_path')
+
+						backdrop = f"http://image.tmdb.org/t/p/original{backdrop_path}" if backdrop_path else ""
+						poster = f"http://image.tmdb.org/t/p/original{poster_path}" if poster_path else ""
+
+						rating = str(each.get('vote_average', 0))
+						show_title = f"{title} ({year})" if year else title
+
+						if backdrop.strip():
+							# Download backdrop in a separate thread
+							callInThread(self.saveBackdrop, backdrop, self.dwn_backdrop)
+
+							return True, f"[SUCCESS backdrop: tmdb] title {title} [poster{poster}-backdrop{backdrop}] => year{year} => rating{rating} => showtitle{show_title}"
+				return False, "[SKIP : tmdb] Not found"
+
 			except Exception as e:
-				logger.error("JSON decoding error: " + str(e))
-				return False, "[ERROR : tmdb] Invalid JSON"
-
-		results = data.get("results", [])
-		if not results:
-			return False, "[SKIP : tmdb] Nessun risultato trovato"
-
-		try:
-			for each in results:
-				media_type = each.get("media_type", "")
-				if media_type == "tv":
-					media_type = "serie"
-
-				if media_type in ["serie", "movie"]:
-					title = each.get("name") or each.get("title", "")
-					year = ""
-
-					if media_type == "movie":
-						year = each.get("release_date", "").split("-")[0]
-					elif media_type == "serie":
-						year = each.get("first_air_date", "").split("-")[0]
-
-					backdrop_path = each.get("backdrop_path")
-					poster_path = each.get("poster_path")
-
-					backdrop = "http://image.tmdb.org/t/p/original" + backdrop_path if backdrop_path else ""
-					poster = "http://image.tmdb.org/t/p/original" + poster_path if poster_path else ""
-
-					rating = str(each.get("vote_average", 0))
-					show_title = "{} ({})".format(title, year) if year else title
-
-					if backdrop:
-						callInThread(self.saveBackdrop, backdrop, self.dwn_backdrop)
-						msg = "[SUCCESS poster: tmdb] title {} [poster{}-backdrop{}] => year{} => rating{} => showtitle{}".format(
-							title, poster, backdrop, year, rating, show_title
-						)
-						# logger.info("TMDb match: " + msg)
-						return True, msg
-			return False, "[SKIP : tmdb] Nessun film o serie valida"
-		except Exception as e:
-			logger.error("TMDb parsing error: " + str(e))
-			if exists(self.dwn_backdrop):
-				remove(self.dwn_backdrop)
-			return False, "[ERROR : tmdb]"
+				logger.error(f"Error during downloadData2 processing: {e}")
+				if exists(self.dwn_backdrop):
+					remove(self.dwn_backdrop)
+				return False, "[ERROR : tmdb] Error processing data"
 
 	def search_tvdb(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None):
 		try:
@@ -250,6 +241,7 @@ class AgbDownloadThread(Thread):
 				year = year[0]
 			else:
 				year = ''
+
 			url_tvdbg = "https://thetvdb.com/api/GetSeries.php?seriesname={}".format(self.title_safe)
 			url_read = get(url_tvdbg).text
 			series_id = findall(r'<seriesid>(.*?)</seriesid>', url_read)
@@ -269,18 +261,21 @@ class AgbDownloadThread(Thread):
 					series_nb = i
 					break
 				i += 1
+
 			backdrop = None
 			if series_nb >= 0 and series_id and series_id[series_nb]:
 				if series_name and series_name[series_nb]:
 					series_name = self.UNAC(series_name[series_nb])
 				else:
 					series_name = ''
+
 				if self.PMATCH(self.title_safe, series_name):
 					url_tvdb = "https://thetvdb.com/api/{}/series/{}".format(thetvdb_api, series_id[series_nb])
 					if lng:
 						url_tvdb += "/{}".format(lng)
 					else:
 						url_tvdb += "/en"
+
 					url_read = get(url_tvdb).text
 					backdrop = findall(r'<backdrop>(.*?)</backdrop>', url_read)
 					url_backdrop = "https://artworks.thetvdb.com/banners/{}".format(backdrop[0])
@@ -302,12 +297,10 @@ class AgbDownloadThread(Thread):
 			year = ""
 			url_maze = ""
 			url_fanart = ""
-			# url_backdrop = ""
 			tvmaze_id = "-"
 			self.title_safe = title.replace("+", " ")
 			chkType, fd = self.checkType(shortdesc, fulldesc)
 
-			# Estrazione dell'anno se presente
 			try:
 				matches = findall(r"19\d{2}|20\d{2}", fd)
 				if matches:
@@ -315,7 +308,6 @@ class AgbDownloadThread(Thread):
 			except Exception:
 				pass
 
-			# Recupero ID TVMaze
 			try:
 				url_maze = "http://api.tvmaze.com/singlesearch/shows?q={}".format(self.title_safe)
 				resp = get(url_maze, timeout=5)
@@ -325,14 +317,10 @@ class AgbDownloadThread(Thread):
 			except Exception as err:
 				logger.error("TVMaze error: " + str(err))
 
-			# Fanart.tv
 			try:
 				m_type = "tv"
 				url_fanart = "https://webservice.fanart.tv/v3/{}/{}?api_key={}".format(m_type, tvmaze_id, fanart_api)
-				fanart_resp = get(url_fanart, verify=False, timeout=5)
-				fanart_resp.raise_for_status()
-				fjs = fanart_resp.json()
-
+				fjs = get(url_fanart, verify=False, timeout=5).json()
 				url = ""
 				if "showbackground" in fjs and fjs["showbackground"]:
 					url = fjs["showbackground"][0]["url"]
@@ -349,11 +337,9 @@ class AgbDownloadThread(Thread):
 				else:
 					return False, "[SKIP : fanart] {} [{}-{}] => {} (Not found)".format(self.title_safe, chkType, year, url_maze)
 			except Exception as e:
-				# logger.error("Fanart API error: " + str(e))
 				return False, "[ERROR : fanart] {} [{}-{}] => {} ({})".format(self.title_safe, chkType, year, url_maze, str(e))
 
 		except Exception as e:
-			# logger.error("Unhandled error in search_fanart: " + str(e))
 			if exists(dwn_backdrop):
 				remove(dwn_backdrop)
 			return False, "[ERROR : fanart] {} => {} ({})".format(self.title_safe, url_maze, str(e))
@@ -363,7 +349,6 @@ class AgbDownloadThread(Thread):
 			self.dwn_backdrop = dwn_backdrop
 			self.title_safe = title.replace("+", " ")
 			chkType, fd = self.checkType(shortdesc, fulldesc)
-
 			# Try to extract AKA title
 			aka_list = findall(r"\((.*?)\)", fd)
 			aka = next((a for a in aka_list if not a.isdigit()), None)
@@ -378,7 +363,6 @@ class AgbDownloadThread(Thread):
 			url_backdrop = ""
 			url_imdb = []
 
-			# Build IMDb search URL
 			if aka and aka != self.title_safe:
 				url_mimdb = "https://m.imdb.com/find?q={}%20({})".format(self.title_safe, quoteEventName(aka))
 			else:
@@ -388,7 +372,6 @@ class AgbDownloadThread(Thread):
 			rc = compile(r'<img src="(.*?)".*?<span class="h3">\n(.*?)\n</span>.*?\((\d+)\)(\s\(.*?\))?(.*?)</a>', DOTALL)
 			url_imdb = rc.findall(url_read)
 
-			# Retry without AKA if not found
 			if not url_imdb and aka:
 				url_mimdb = "https://m.imdb.com/find?q={}".format(self.title_safe)
 				url_read = get(url_mimdb).text
@@ -400,11 +383,9 @@ class AgbDownloadThread(Thread):
 
 			for imdb in url_imdb:
 				imdb = list(imdb)
-				imdb[1] = self.UNAC(imdb[1])  # Title
+				imdb[1] = self.UNAC(imdb[1])
 				tmp = findall(r'aka <i>"(.*?)"</i>', imdb[4])
 				imdb[4] = self.UNAC(tmp[0]) if tmp else self.UNAC(imdb[4])  # AKA
-
-				# Extract image URL
 				backdrop_match = search(r"(.*?)._V1_.*?.jpg", imdb[0])
 				if not backdrop_match:
 					continue
@@ -436,7 +417,6 @@ class AgbDownloadThread(Thread):
 							pfound = True
 							break
 				idx_imdb += 1
-
 			if url_backdrop and pfound:
 				callInThread(self.saveBackdrop, url_backdrop, dwn_backdrop)
 				msg = "[SUCCESS url_backdrop: imdb] {} [{}-{}] => {} [{}/{}] => {} => {}".format(
@@ -458,65 +438,52 @@ class AgbDownloadThread(Thread):
 			url_ptv = ''
 			headers = {"User-Agent": choice(AGENTS)}
 			chkType, fd = self.checkType(shortdesc, fulldesc)
-
 			if chkType.startswith("movie"):
-				return False, "[SKIP : programmetv-google] {} [{}] => Skip movie title".format(title, chkType)
+				return False, f"[SKIP : programmetv-google] {title} [{chkType}] => Skip movie title"
 
 			title_safe = title
 			self.title_safe = title_safe.replace('+', ' ')
 			url_ptv = "site:programme-tv.net+" + self.title_safe
-
 			if channel and self.title_safe.find(channel.split()[0]) < 0:
 				url_ptv += "+" + quoteEventName(channel)
-
-			url_ptv = "https://www.google.com/search?q={}&tbm=isch&tbs=ift:jpg%2Cisz:m".format(url_ptv)
+			url_ptv = f"https://www.google.com/search?q={url_ptv}&tbm=isch&tbs=ift:jpg%2Cisz:m"
 			ff = get(url_ptv, stream=True, headers=headers, cookies={'CONSENT': 'YES+'}).text
-
 			if not PY3:
 				ff = ff.encode('utf-8')
-
 			ptv_id = 0
 			plst = findall(r'\],\["https://www.programme-tv.net(.*?)",\d+,\d+]', ff)
-
 			for backdroplst in plst:
 				ptv_id += 1
-				url_backdrop = "https://www.programme-tv.net{}".format(backdroplst)
+				url_backdrop = f"https://www.programme-tv.net{backdroplst}"
 				url_backdrop = sub(r"\\u003d", "=", url_backdrop)
 				url_backdrop_size = findall(r'([\d]+)x([\d]+).*?([\w\.-]+).jpg', url_backdrop)
-
 				if url_backdrop_size and url_backdrop_size[0]:
 					get_title = self.UNAC(url_backdrop_size[0][2].replace('-', ''))
 					if self.title_safe == get_title:
-						# Use fixed target height
-						h_tar = 278.0
 						h_ori = float(url_backdrop_size[0][1])
+						h_tar = float(findall(r'(\d+)', isz)[1])
 						ratio = h_ori / h_tar
 						w_ori = float(url_backdrop_size[0][0])
-						w_tar = int(w_ori / ratio)
+						w_tar = w_ori / ratio
+						w_tar = int(w_tar)
 						h_tar = int(h_tar)
-
-						url_backdrop = sub(r'/\d+x\d+/', "/" + str(w_tar) + "x" + str(h_tar) + "/", url_backdrop)
+						url_backdrop = sub(r'/\d+x\d+/', f"/{w_tar}x{h_tar}/", url_backdrop)
 						url_backdrop = sub(r'crop-from/top/', '', url_backdrop)
+						callInThread(self.saveBackdrop, url_backdrop, self.dwn_backdrop)
+						return True, f"[SUCCESS url_backdrop: programmetv-google] {self.title_safe} [{chkType}] => Found self.title_safe : '{get_title}' => {url_ptv} => {url_backdrop} (initial size: {url_backdrop_size}) [{ptv_id}]"
 
-						callInThread(self.saveBackdrop, url_backdrop, dwn_backdrop)
-
-						return True, "[SUCCESS url_backdrop: programmetv-google] {} [{}] => Found title : '{}' => {} => {} (initial size: {}) [{}]".format(title, chkType, get_title, url_ptv, url_backdrop, url_backdrop_size, ptv_id)
-
-			return False, "[SKIP : programmetv-google] {} [{}] => Not found [{}] => {}".format(self.title_safe, chkType, ptv_id, url_ptv)
+			return False, f"[SKIP : programmetv-google] {self.title_safe} [{chkType}] => Not found [{ptv_id}] => {url_ptv}"
 
 		except Exception as e:
 			if exists(dwn_backdrop):
 				remove(dwn_backdrop)
-			return False, "[ERROR : programmetv-google] {} [{}] => {} ({})".format(title, chkType, url_ptv, str(e))
+			return False, f"[ERROR : programmetv-google] {self.title_safe} [{chkType}] => {url_ptv} ({str(e)})"
 
 	def search_molotov_google(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None):
 		try:
 			self.dwn_backdrop = dwn_backdrop
 			url_mgoo = ''
-			# headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36"}
 			headers = {"User-Agent": choice(AGENTS)}
-
-			# Check type and handle movie exclusion early
 			chkType, fd = self.checkType(shortdesc, fulldesc)
 			if chkType.startswith("movie"):
 				return False, "[SKIP : molotov-google] {} [{}] => Skip movie title".format(title, chkType)
@@ -524,187 +491,113 @@ class AgbDownloadThread(Thread):
 			title_safe = title.replace('+', ' ')
 			self.title_safe = title_safe
 			pchannel = self.UNAC(channel).replace(' ', '') if channel else ''
-
-			backdrop = None
-			imsg = ''
 			url_mgoo = "site:molotov.tv+" + self.title_safe
-
-			# Add channel if applicable
-			if channel and self.title_safe.find(channel.split()[0]) < 0:
+			if channel and title_safe.find(channel.split()[0]) < 0:
 				url_mgoo += "+" + quoteEventName(channel)
-
-			url_mgoo = "https://www.google.com/search?q={}&tbm=isch".format(url_mgoo)
+			url_mgoo = f"https://www.google.com/search?q={url_mgoo}&tbm=isch"
 			ff = get(url_mgoo, stream=True, headers=headers, cookies={'CONSENT': 'YES+'}).text
 			if not PY3:
 				ff = ff.encode('utf-8')
 
-			# Extract image results
 			plst = findall(r'https://www.molotov.tv/(.*?)"(?:.*?)?"(.*?)"', ff)
-			molotov_id = 0
-			molotov_table = [0, 0, None, None, 0]
-			partialtitle = 0
-			partialchannel = 0
+			molotov_table = [0, 0, None, None, 0]  # [title match, channel match, title, path, id]
 
-			# Process the results
 			for pl in plst:
-				get_path = "https://www.molotov.tv/" + pl[0]
+				get_path = f"https://www.molotov.tv/{pl[0]}"
 				get_name = self.UNAC(pl[1])
-				get_title = findall(r'(.*?)[ ]+en[ ]+streaming', get_name)
-				get_title = get_title[0] if get_title else None
+				get_title = findall(r'(.*?)[ ]+en[ ]+streaming', get_name) or None
+				get_channel = self.extract_channel(get_name)
 
-				get_channel = findall(r'(?:streaming|replay)?[ ]+sur[ ]+(.*?)[ ]+molotov.tv', get_name)
-				if not get_channel:
-					get_channel = findall(r'regarder[ ]+(.*?)[ ]+en', get_name)
-				get_channel = self.UNAC(get_channel[0]).replace(' ', '') if get_channel else None
+				partialtitle = self.PMATCH(title_safe, get_title or '')
+				partialchannel = self.PMATCH(pchannel, get_channel or '')
 
-				# Match title and channel
-				partialchannel = self.PMATCH(pchannel, get_channel)
-				partialtitle = self.PMATCH(self.title_safe, get_title)
-
-				# Update the best match
 				if partialtitle > molotov_table[0]:
-					molotov_table = [partialtitle, partialchannel, get_name, get_path, molotov_id]
+					molotov_table = [partialtitle, partialchannel, get_name, get_path, len(molotov_table)]
+
 				if partialtitle == 100 and partialchannel == 100:
 					break
-				molotov_id += 1
 
-			# If a match is found, download image
 			if molotov_table[0]:
-				ffm = get(molotov_table[3], stream=True, headers=headers).text
-				if not PY3:
-					ffm = ffm.encode('utf-8')
-				pltt = findall(r'"https://fusion.molotov.tv/(.*?)/jpg" alt="(.*?)"', ffm)
-				if len(pltt) > 0:
-					pltc = self.UNAC(pltt[0][1])
-					plst = "https://fusion.molotov.tv/" + pltt[0][0] + "/jpg"
-					imsg = "Found title ({}%) & channel ({}%) : '{}' + '{}' [{}/{}]".format(
-						molotov_table[0], molotov_table[1], molotov_table[2], pltc, molotov_table[4], len(plst)
-					)
+				return self.handle_backdrop_result(molotov_table, headers, dwn_backdrop, 'molotov')
 			else:
-				# Fallback image search
-				plst = findall(r'\],\["https://(.*?)",\d+,\d+].*?"https://.*?","(.*?)"', ff)
-				len_plst = len(plst)
-				if len_plst > 0:
-					for pl in plst:
-						if pl[1].startswith("Regarder"):
-							pltc = self.UNAC(pl[1])
-							partialtitle = self.PMATCH(self.title_safe, pltc)
-							get_channel = findall(r'regarder[ ]+(.*?)[ ]+en', pltc)
-							get_channel = self.UNAC(get_channel[0]).replace(' ', '') if get_channel else None
-							partialchannel = self.PMATCH(pchannel, get_channel)
-							if partialchannel > 0 and partialtitle < 50:
-								partialtitle = 50
-							plst = "https://" + pl[0]
-							molotov_table = [partialtitle, partialchannel, pltc, plst, -1]
-							imsg = "Fallback title ({}%) & channel ({}%) : '{}' [{}/{}]".format(
-								molotov_table[0], molotov_table[1], pltc, -1, len(plst)
-							)
-							break
-
-			# Determine if valid backdrop is found
-			if molotov_table[0] == 100 and molotov_table[1] == 100:
-				backdrop = plst
-			elif chkType.startswith("movie"):
-				imsg = "Skip movie type '{}' [{}%-{}%-{}]".format(pltc, molotov_table[0], molotov_table[1], len(plst))
-			elif molotov_table[0] == 100:
-				backdrop = plst
-			elif molotov_table[0] >= 50 and molotov_table[1]:
-				backdrop = plst
-			elif molotov_table[0] >= 75:
-				backdrop = plst
-			elif chkType == '':
-				imsg = "Skip unknown type '{}' [{}%-{}%-{}]".format(pltc, molotov_table[0], molotov_table[1], len(plst))
-			elif molotov_table[0] >= 25 and molotov_table[1]:
-				backdrop = plst
-			elif molotov_table[0] >= 50:
-				backdrop = plst
-			else:
-				imsg = "Not found '{}' [{}%-{}%-{}]".format(pltc, molotov_table[0], molotov_table[1], len(plst))
-
-			# If backdrop is found, download it
-			if backdrop:
-				url_backdrop = sub(r'/\d+x\d+/', "/" + sub(r',', 'x', isz) + "/", backdrop)
-				callInThread(self.saveBackdrop, url_backdrop, dwn_backdrop)
-				return True, "[SUCCESS url_backdrop: molotov-google] {} ({}) [{}] => {} => {} => {}".format(
-					self.title_safe, channel, chkType, imsg, url_mgoo, url_backdrop
-				)
-
-			return False, "[SKIP : molotov-google] {} ({}) [{}] => {} => {}".format(self.title_safe, channel, chkType, imsg, url_mgoo)
+				return self.handle_fallback(ff, pchannel, title_safe, headers, dwn_backdrop)
 
 		except Exception as e:
 			if exists(dwn_backdrop):
 				remove(dwn_backdrop)
-			return False, "[ERROR : molotov-google] {} [{}] => {} ({})".format(self.title_safe, chkType, url_mgoo, str(e))
+			return False, f"[ERROR : molotov-google] {title_safe} => {str(e)}"
+
+	def extract_channel(self, get_name):
+		get_channel = findall(r'(?:streaming|replay)?[ ]+sur[ ]+(.*?)[ ]+molotov.tv', get_name) or \
+			findall(r'regarder[ ]+(.*?)[ ]+en', get_name)
+		return self.UNAC(get_channel[0]).replace(' ', '') if get_channel else None
+
+	def handle_backdrop_result(self, molotov_table, headers, dwn_backdrop, platform):
+		ffm = get(molotov_table[3], stream=True, headers=headers).text
+		if not PY3:
+			ffm = ffm.encode('utf-8')
+
+		pltt = findall(r'"https://fusion.molotov.tv/(.*?)/jpg" alt="(.*?)"', ffm)
+		if len(pltt) > 0:
+			backdrop_url = f"https://fusion.molotov.tv/{pltt[0][0]}/jpg"
+			callInThread(self.saveBackdrop, backdrop_url, dwn_backdrop)
+			return True, f"[SUCCESS {platform}-google] Found backdrop for {self.title_safe} => {backdrop_url}"
+		else:
+			return False, f"[SKIP : {platform}-google] No suitable backdrop found."
+
+	def handle_fallback(self, ff, pchannel, title_safe, headers, dwn_backdrop):
+		plst = findall(r'\],\["https://(.*?)",\d+,\d+].*?"https://.*?","(.*?)"', ff)
+		if plst:
+			for pl in plst:
+				if pl[1].startswith("Regarder"):
+					backdrop_url = f"https://{pl[0]}"
+					callInThread(self.saveBackdrop, backdrop_url, dwn_backdrop)
+					return True, f"[SUCCESS fallback] Found fallback backdrop for {title_safe} => {backdrop_url}"
+		return False, "[SKIP : fallback] No suitable fallback found."
 
 	def search_google(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None):
 		try:
 			self.dwn_backdrop = dwn_backdrop
-			# headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36"}
 			headers = {"User-Agent": choice(AGENTS)}
-
 			chkType, fd = self.checkType(shortdesc, fulldesc)
-			backdrop = None
-			url_backdrop = ''
-			year = None
-			srch = None
-
-			title_safe = title.replace('+', ' ')  # Replace '+' with space in title
-			self.title_safe = title_safe
-
-			# Extract year from the full description
+			title_safe = title.replace('+', ' ')
 			year = findall(r'19\d{2}|20\d{2}', fd)
 			year = year[0] if year else None
 
-			# Determine the search term based on the type
+			url_google = f'"{title_safe}"'
+			if channel and title_safe.find(channel) < 0:
+				url_google += f"+{quoteEventName(channel)}"
 			if chkType.startswith("movie"):
-				srch = chkType[6:]
-			elif chkType.startswith("tv"):
-				srch = chkType[3:]
-
-			# Construct the Google search URL
-			url_google = '"{}"'.format(self.title_safe)
-			if channel and self.title_safe.find(channel) < 0:
-				url_google += "+{}".format(quoteEventName(channel))
-			if srch:
-				url_google += "+{}".format(srch)
+				url_google += f"+{chkType[6:]}"
 			if year:
-				url_google += "+{}".format(year)
+				url_google += f"+{year}"
 
-			url_google = "https://www.google.com/search?q={}&tbm=isch&tbs=sbd:0".format(url_google)
+			def fetch_images(url):
+				return get(url, stream=True, headers=headers, cookies={'CONSENT': 'YES+'}).text
 
-			# Get the response from Google
-			ff = get(url_google, stream=True, headers=headers, cookies={'CONSENT': 'YES+'}).text
+			url_google = f"https://www.google.com/search?q={url_google}&tbm=isch&tbs=sbd:0"
+			ff = fetch_images(url_google)
 
-			# Extract image URLs from the response
 			backdroplst = findall(r'\],\["https://(.*?)",\d+,\d+]', ff)
 
-			# If no results found, try searching again with a different query
 			if not backdroplst:
-				url_google = "https://www.google.com/search?q={}&tbm=isch&tbs=ift:jpg%2Cisz:m".format(self.title_safe)
-				ff = get(url_google, stream=True, headers=headers).text
+				url_google = f"https://www.google.com/search?q={title_safe}&tbm=isch&tbs=ift:jpg%2Cisz:m"
+				ff = fetch_images(url_google)
 				backdroplst = findall(r'\],\["https://(.*?)",\d+,\d+]', ff)
 
-			# Process the image results
 			for pl in backdroplst:
-				url_backdrop = "https://{}".format(pl)
+				url_backdrop = f"https://{pl}"
 				url_backdrop = sub(r"\\u003d", "=", url_backdrop)
 				callInThread(self.saveBackdrop, url_backdrop, dwn_backdrop)
-
-				# Check if the backdrop file exists after downloading
 				if exists(dwn_backdrop):
-					backdrop = pl
-					break
+					return True, f"[SUCCESS google] Found backdrop for {self.title_safe} => {url_backdrop}"
 
-			# Return the result based on whether a backdrop was found
-			if backdrop:
-				return True, "[SUCCESS backdrop: google] {} [{}-{}] => {} => {}".format(self.title_safe, chkType, year, url_google, url_backdrop)
-
-			return False, "[SKIP : google] {} [{}-{}] => {} => {} (Not found)".format(self.title_safe, chkType, year, url_google, url_backdrop)
+			return False, f"[SKIP : google] No backdrop found for {self.title_safe}"
 
 		except Exception as e:
 			if exists(dwn_backdrop):
 				remove(dwn_backdrop)
-			return False, "[ERROR : google] {} [{}-{}] => {} => {} ({})".format(self.title_safe, chkType, year, url_google, url_backdrop, str(e))
+			return False, f"[ERROR : google] {self.title_safe} => {str(e)}"
 
 	def saveBackdrop(self, url, callback):
 		headers = {"User-Agent": choice(AGENTS)}
