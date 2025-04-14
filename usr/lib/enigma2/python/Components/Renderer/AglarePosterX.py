@@ -61,7 +61,7 @@ epgcache = eEPGCache.getInstance()
 epgcache.load()
 pdb = LifoQueue()
 rw_mounts = ["/media/usb", "/media/hdd", "/media/mmc", "/media/sd"]
-extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
+extensions = ['.jpg', '.jpeg', '.png']
 autobouquet_file = None
 apdb = dict()
 SCAN_TIME = "00:00"

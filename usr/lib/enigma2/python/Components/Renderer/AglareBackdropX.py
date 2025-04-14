@@ -61,7 +61,7 @@ epgcache = eEPGCache.getInstance()
 epgcache.load()
 pdb = LifoQueue()
 rw_mounts = ["/media/usb", "/media/hdd", "/media/mmc", "/media/sd"]
-extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
+extensions = ['.jpg', '.jpeg', '.png']
 autobouquet_file = None
 apdb = dict()
 SCAN_TIME = "02:00"
@@ -218,7 +218,7 @@ class AglareBackdropX(Renderer):
 			logger.info(f"canal[1]: {self.canal[1]}, canal[2]: {self.canal[2]}, canal[5]: {self.canal[5]}")
 			curCanal = "{}-{}".format(self.canal[1], self.canal[2])
 			if curCanal == self.oldCanal and self.pstrNm and exists(self.pstrNm):
-				logger.info(f"backdrop already loaded: {self.pstrNm}")
+				logger.info(f"Backdrop already loaded: {self.pstrNm}")
 				return
 
 			if self.instance:
@@ -246,7 +246,7 @@ class AglareBackdropX(Renderer):
 				self.instance.hide()
 			return
 
-	def generateBacdropPath(self):
+	def generateBackdropPath(self):
 		"""Generate backdrop path from current channel data, checking for multiple image extensions"""
 		if isinstance(self.pstcanal, str) and self.pstcanal.strip():  # Ensure self.pstcanal is a valid string
 			# Check if the Backdrop has already been loaded
@@ -282,7 +282,7 @@ class AglareBackdropX(Renderer):
 		"""Display the backdrop image"""
 		if self.instance:
 			self.instance.hide()
-		if not self.pstrNm or not self.checkPosterExistence(self.pstrNm):
+		if not self.pstrNm or not self.checkBackdropExistence(self.pstrNm):
 			self.instance.hide()
 			logger.info('showBackdrop ide instance')
 			return
