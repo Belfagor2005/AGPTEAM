@@ -52,7 +52,7 @@ from Components.config import config
 # Local imports
 from .Agp_lib import PY3, quoteEventName
 from .Agp_apikeys import tmdb_api, thetvdb_api, fanart_api  # , omdb_api
-
+from .Agp_Utils import logger
 
 try:
 	from http.client import HTTPConnection
@@ -108,78 +108,55 @@ else:
 	isz = isz.replace(isz, "1280,1920")
 
 
-'''
-isz = "w780"
-"backdrop_sizes": [
-  "w300",
-  "w780",
-  "w1280",
-  "original"
-],
-"logo_sizes": [
-  "w45",
-  "w92",
-  "w154",
-  "w185",
-  "w300",
-  "w500",
-  "original"
-],
-"poster_sizes": [
-  "w92",
-  "w154",
-  "w185",
-  "w342",
-  "w500",
-  "w780",
-  "original"
-],
-"profile_sizes": [
-  "w45",
-  "w185",
-  "h632",
-  "original"
-],
-"still_sizes": [
-  "w92",
-  "w185",
-  "w300",
-  "original"
-]
-## Add Supported Image Sizes (in Pixels)
-# API NAME  =   WEB NAME           MIN Pixel    MAX Pixel     Aspect Ratio
-# poster    = Poster ............  500 x 750   2000 x 3000   1.50    (1x1.5)
-# poster    = Poster TV Season ..  400 x 578   2000 x 3000   1.50    (1x1.5)
-# backdrop  = Backdrop .......... 1280 x 720   3840 x 2160   1.77778 (16x9)
-# still     = Backdrop Episode ..  400 x 225   3840 x 2160   1.77778 (16x9)
-# profile   = Person Profile ....  300 x 450   2000 x 3000   1.50    (1x1.5)
-# Logo PNG  = Production/Networks  500 x 1     2000 x 2000   n/a
-# Logo SVG  = Production/Networks  500 x 1     Vector File   n/a
-'''
+"""
+🖼️ Poster:
+"w92", "w154", "w185", "w342", "w500", "w780", "original"
+
+🖼️ Backdrop:
+"w300", "w780", "w1280", "original"
+
+🧑‍🎤 Profile:
+"w45", "w185", "h632", "original"
+
+📺 Still (frame episodio):
+"w92", "w185", "w300", "original"
+
+🏷️ Logo:
+"w45", "w92", "w154", "w185", "w300", "w500", "original"
+
+📐 Consigli sulle dimensioni (in pixel)
+Tipo	          Dimensioni consigliate	Aspetto
+Poster	            500x750 → 2000x3000	    1.5 (2:3)
+Poster TV Season	400x578 → 2000x3000 	1.5 (2:3)
+Backdrop	        1280x720 → 3840x2160	1.777 (16:9)
+Still (episodio)	400x225 → 3840x2160	    1.777 (16:9)
+Profile	            300x450 → 2000x3000	    1.5 (2:3)
+Logo PNG	        500x1 → 2000x2000	    Variabile
+Logo SVG	        500x1 → vettoriale	    Variabile
+"""
 
 
 class AgbDownloadThread(Thread):
 	def __init__(self):
 		Thread.__init__(self)
-		self.checkMovie = ["film", "movie", "фильм", "кино", "ταινία",
-						   "película", "cinéma", "cine", "cinema",
-						   "filma"]
-		self.checkTV = ["serial", "series", "serie", "serien", "série",
-						"séries", "serious", "folge", "episodio",
-						"episode", "épisode", "l'épisode", "ep.",
-						"animation", "staffel", "soap", "doku", "tv",
-						"talk", "show", "news", "factual",
-						"entertainment", "telenovela", "dokumentation",
-						"dokutainment", "documentary", "informercial",
-						"information", "sitcom", "reality", "program",
-						"magazine", "mittagsmagazin", "т/с", "м/с",
-						"сезон", "с-н", "эпизод", "сериал", "серия",
-						"actualité", "discussion", "interview", "débat",
-						"émission", "divertissement", "jeu", "magasine",
-						"information", "météo", "journal", "sport",
-						"culture", "infos", "feuilleton", "téléréalité",
-						"société", "clips", "concert", "santé",
-						"éducation", "variété"]
+		self.checkMovie = [
+			"film", "movie", "фильм", "кино", "ταινία",
+			"película", "cinéma", "cine", "cinema", "filma"
+		]
+		self.checkTV = [
+			"serial", "series", "serie", "serien", "série", "séries",
+			"serious", "folge", "episodio", "episode", "épisode",
+			"l'épisode", "ep.", "animation", "staffel", "soap", "doku",
+			"tv", "talk", "show", "news", "factual", "entertainment",
+			"telenovela", "dokumentation", "dokutainment", "documentary",
+			"informercial", "information", "sitcom", "reality", "program",
+			"magazine", "mittagsmagazin", "т/с", "м/с", "сезон", "с-н",
+			"эпизод", "сериал", "серия", "actualité", "discussion",
+			"interview", "débat", "émission", "divertissement", "jeu",
+			"magasine", "information", "météo", "journal", "sport",
+			"culture", "infos", "feuilleton", "téléréalité", "société",
+			"clips", "concert", "santé", "éducation", "variété"
+		]
 
 	def search_tmdb(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None):
 		try:
@@ -203,12 +180,12 @@ class AgbDownloadThread(Thread):
 					data = response.json()
 					return self.downloadData2(data)
 				except ValueError as e:
-					print("TMDb response decode error: " + str(e))
+					logger.error("TMDb response decode error: " + str(e))
 					return False, "Errore nel parsing della risposta TMDb"
 			else:
 				return False, "Errore durante la richiesta a TMDb: {}".format(response.status_code)
 		except Exception as e:
-			print("TMDb search error: " + str(e))
+			logger.error("TMDb search error: " + str(e))
 			return False, "Errore durante la ricerca su TMDb"
 
 	def downloadData2(self, data):
@@ -216,7 +193,7 @@ class AgbDownloadThread(Thread):
 			try:
 				data = loads(data)
 			except Exception as e:
-				print("JSON decoding error: " + str(e))
+				logger.error("JSON decoding error: " + str(e))
 				return False, "[ERROR : tmdb] Invalid JSON"
 
 		results = data.get("results", [])
@@ -252,11 +229,11 @@ class AgbDownloadThread(Thread):
 						msg = "[SUCCESS poster: tmdb] title {} [poster{}-backdrop{}] => year{} => rating{} => showtitle{}".format(
 							title, poster, backdrop, year, rating, show_title
 						)
-						# print("TMDb match: " + msg)
+						# logger.info("TMDb match: " + msg)
 						return True, msg
 			return False, "[SKIP : tmdb] Nessun film o serie valida"
 		except Exception as e:
-			print("TMDb parsing error: " + str(e))
+			logger.error("TMDb parsing error: " + str(e))
 			if exists(self.dwn_backdrop):
 				remove(self.dwn_backdrop)
 			return False, "[ERROR : tmdb]"
@@ -346,7 +323,7 @@ class AgbDownloadThread(Thread):
 				mj = resp.json()
 				tvmaze_id = mj.get("externals", {}).get("thetvdb", "-")
 			except Exception as err:
-				print("TVMaze error: " + str(err))
+				logger.error("TVMaze error: " + str(err))
 
 			# Fanart.tv
 			try:
@@ -367,16 +344,16 @@ class AgbDownloadThread(Thread):
 					msg = "[SUCCESS backdrop: fanart] {} [{}-{}] => {} => {} => {}".format(
 						self.title_safe, chkType, year, url_maze, url_fanart, url
 					)
-					# print("Fanart match: " + msg)
+					# logger.info("Fanart match: " + msg)
 					return True, msg
 				else:
 					return False, "[SKIP : fanart] {} [{}-{}] => {} (Not found)".format(self.title_safe, chkType, year, url_maze)
 			except Exception as e:
-				# print("Fanart API error: " + str(e))
+				# logger.error("Fanart API error: " + str(e))
 				return False, "[ERROR : fanart] {} [{}-{}] => {} ({})".format(self.title_safe, chkType, year, url_maze, str(e))
 
 		except Exception as e:
-			# print("Unhandled error in search_fanart: " + str(e))
+			# logger.error("Unhandled error in search_fanart: " + str(e))
 			if exists(dwn_backdrop):
 				remove(dwn_backdrop)
 			return False, "[ERROR : fanart] {} => {} ({})".format(self.title_safe, url_maze, str(e))
@@ -743,7 +720,7 @@ class AgbDownloadThread(Thread):
 					local_file.write(response.content)
 
 		except RequestException as error:
-			print("ERROR in module 'download': Error:{} Url:{} Callback:{}".format(str(error), url, callback))
+			logger.error("ERROR in module 'download': Error:{} Url:{} Callback:{}".format(str(error), url, callback))
 
 		return callback
 
@@ -762,7 +739,7 @@ class AgbDownloadThread(Thread):
 			rimg.save(dwn_backdrop)
 			rimg.close()
 		except Exception as e:
-			print("ERROR:{}".format(e))
+			logger.error("ERROR:{}".format(e))
 
 	def verifybackdrop(self, dwn_backdrop):
 		try:
@@ -777,7 +754,7 @@ class AgbDownloadThread(Thread):
 					pass
 				return False
 		except Exception as e:
-			print(e)
+			logger.error(e)
 			try:
 				remove(dwn_backdrop)
 			except:

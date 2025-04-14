@@ -53,7 +53,8 @@ import NavigationInstance
 
 # Local imports
 from Components.Renderer.AgpDownloadThread import AgpDownloadThread
-from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb  # , noposter
+from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, logger  # , noposter
+
 
 # Constants and global variables
 epgcache = eEPGCache.getInstance()
@@ -120,7 +121,7 @@ class AglarePosterX(Renderer):
 		self.oldCanal = None
 		self.logdbg = None
 		self.pstcanal = None
-		self.loaded_posters = set()
+		self.loaded_posters = []
 		self.timer = eTimer()
 		self.timer.callback.append(self.showPoster)
 
@@ -193,27 +194,18 @@ class AglarePosterX(Renderer):
 				service_str = service.toString()
 				events = epgcache.lookupEvent(['IBDCTESX', (service_str, 0, -1, -1)])
 
-				# Check if self.nxts is within range
-				if events and self.nxts < len(events):
-					event = events[self.nxts]
-					if len(event) >= 7:
-						service_name = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '')
-						self.canal[0] = service_name
-						self.canal[1] = event[1]
-						self.canal[2] = event[4]
-						self.canal[3] = event[5]
-						self.canal[4] = event[6]
-						self.canal[5] = self.canal[2]
+				service_name = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '')
+				self.canal[0] = service_name
+				self.canal[1] = events[self.nxts][1]
+				self.canal[2] = events[self.nxts][4]
+				self.canal[3] = events[self.nxts][5]
+				self.canal[4] = events[self.nxts][6]
+				self.canal[5] = self.canal[2]
 
-						if not autobouquet_file and service_name not in apdb:
-							apdb[service_name] = service_str
-					else:
-						print("Error: event tuple too short (len < 7)")
-				else:
-					print(f"Error: nxts {self.nxts} is out of range for events list of length {len(events) if events else 0}")
-					return
+				if not autobouquet_file and service_name not in apdb:
+					apdb[service_name] = service_str
 		except Exception as e:
-			print(f"Error in service handling: {e}, Service: {service}, nxts: {self.nxts}, what: {what}")
+			logger.error(f"Error in service handling: {e}, Service: {service}, nxts: {self.nxts}, what: {what}")
 			if self.instance:
 				self.instance.hide()
 			return
@@ -224,85 +216,80 @@ class AglarePosterX(Renderer):
 			return
 
 		try:
+			logger.info(f"canal content: {self.canal}")
+			logger.info(f"canal[1]: {self.canal[1]}, canal[2]: {self.canal[2]}, canal[5]: {self.canal[5]}")
 			curCanal = "{}-{}".format(self.canal[1], self.canal[2])
-
 			if curCanal == self.oldCanal and self.pstrNm and exists(self.pstrNm):
-				print(f"Poster already loaded: {self.pstrNm}")
+				logger.info(f"Poster already loaded: {self.pstrNm}")
 				return
 
-			print(f"curCanal: {curCanal}, oldCanal: {self.oldCanal}")
+			if self.instance:
+				self.instance.hide()
+
 			self.oldCanal = curCanal
+			self.pstcanal = clean_for_tvdb(self.canal[5])
+			if self.pstcanal is not None:
+				self.pstrNm = self.generatePosterPath()  # join(self.path, str(self.pstcanal) + ".jpg")
+				if self.pstrNm is not None:
+					self.pstcanal = self.pstrNm
 
-			# Check if the poster path is valid
-			if len(self.canal) > 5 and self.canal[5]:
-				# Clean the name and generate the poster path
-				self.pstcanal = clean_for_tvdb(self.canal[5]) if self.canal[5] else None
-				poster_path = self.generatePosterPath()
-				print(f"Generated poster path: {poster_path}")
-
-				if poster_path:  # If a poster is found
-					print(f"Found poster: {poster_path}")
-
-					if self.pstrNm == poster_path:  # If the poster is already loaded
-						print(f"Poster already loaded: {poster_path}")
-						return
-
-					# Update the poster path and display it
-					self.pstrNm = poster_path
-					print("[LOAD] Showing poster:", self.pstrNm)
-					utime(self.pstrNm, (time(), time()))  # Update access time
-					self.instance.hide()  # Hide the instance
-					self.timer.start(500, True)  # Start the timer
-					return
-				else:
-					print(f"Error: Poster for event '{self.canal[2]}' not found. Queuing event.")
-					canal = self.canal[:]
-					pdb.put(canal)
-					self.runPosterThread()
+			if exists(self.pstcanal):
+				utime(self.pstcanal, (time(), time()))
+				self.timer.start(10, True)
 			else:
-				print("Invalid canal data, skipping poster load.")
+				logger.warning(f"Poster not found at {self.pstcanal}, queuing for download.")
+				canal = self.canal[:]
+				pdb.put(canal)
+				self.runPosterThread()
 
 		except Exception as e:
-			print(f"Error in poster display: {e}")
+			logger.error(f"Error in poster display: {e}")
 			if self.instance:
 				self.instance.hide()
 			return
 
 	def generatePosterPath(self):
 		"""Generate poster path from current channel data, checking for multiple image extensions"""
-		if self.pstcanal:  # Uses self.pstcanal instead of a parameter
+		if isinstance(self.pstcanal, str) and self.pstcanal.strip():  # Ensure self.pstcanal is a valid string
+			# Check if the poster has already been loaded
+			if hasattr(self, '_loaded_posters') and self.pstcanal in self._loaded_posters:
+				logger.info(f"Poster already loaded: {self._loaded_posters[self.pstcanal]}")  # Log if poster is already loaded
+				return self._loaded_posters[self.pstcanal]  # Return the already loaded poster path
+			# Try to search for the poster
 			for ext in self.extensions:
 				candidate = join(self.path, self.pstcanal + ext)
-				print(f"Checking poster path: {candidate}")  # Debug log to check path
+				logger.info(f"Checking poster path: {candidate}")  # Log the path being checked
 				if exists(candidate):
-					print(f"Found poster at: {candidate}")  # Log the found poster path
+					logger.info(f"Found poster at: {candidate}")  # Log the found poster path
+					# Cache the found poster path
+					if not hasattr(self, '_loaded_posters'):
+						self._loaded_posters = {}
+					self._loaded_posters[self.pstcanal] = candidate  # Cache the loaded poster path
 					return candidate
-		print(f"Poster not found for {self.pstcanal}")  # Log when poster is not found
+			logger.info(f"Poster not found for {self.pstcanal}")
+		else:
+			logger.error(f"Invalid self.pstcanal value: {self.pstcanal}")
 		return None
 
 	# @lru_cache(maxsize=150)
 	def checkPosterExistence(self, poster_path):
 		"""Check if poster file exists"""
-		if exists(poster_path):
-			print(f"Poster exists at: {poster_path}")
-			return True
-		else:
-			print(f"Poster does not exist at: {poster_path}")
-			return False
+		return exists(poster_path)
 
 	def runPosterThread(self):
 		"""Start poster download thread"""
-		Thread(target=self.waitPoster).start()
+		Thread(target=self.waitPoster, daemon=True).start()
 
 	def showPoster(self):
 		"""Display the poster image"""
-
+		if self.instance:
+			self.instance.hide()
 		if not self.pstrNm or not self.checkPosterExistence(self.pstrNm):
 			self.instance.hide()
-			print('showPoster ide instance')
+			logger.info('showPoster ide instance')
 			return
 
-		print(f"[LOAD] Showing poster: {self.pstrNm}")
+		# logger.info(f"[LOAD] Showing poster: {self.pstrNm}")
 		self.instance.hide()
 		self.instance.setPixmap(loadJPG(self.pstrNm))
 		self.instance.setScale(1)
@@ -310,10 +297,13 @@ class AglarePosterX(Renderer):
 
 	def waitPoster(self):
 		"""Wait for poster download to complete"""
+		if self.instance:
+			self.instance.hide()
 		self.pstrNm = self.generatePosterPath()
 		if not hasattr(self, 'pstrNm') or self.pstrNm is None:
-			self._log_error("pstrNm not initialized in waitPoster")
+			logger.info("pstrNm not initialized in waitPoster")
 			return
+		logger.info(f"Poster found: {self.pstrNm}")
 
 		if not self.pstrNm:
 			self._log_debug("[ERROR: waitPoster] Poster path is None")
@@ -321,20 +311,20 @@ class AglarePosterX(Renderer):
 
 		loop = 180  # Maximum number of attempts
 		found = False
-		print(f"[WAIT] Checking for poster: {self.pstrNm}")
+		logger.info(f"[WAIT] Checking for poster: {self.pstrNm}")
 		while loop > 0:
 			if self.pstrNm and self.checkPosterExistence(self.pstrNm):
 				found = True
 				break
-			print(f"[WAIT] Attempting to find poster... (remaining tries: {loop})")  # Add more logging
+			logger.info(f"[WAIT] Attempting to find poster... (remaining tries: {loop})")  # Add more logging
 			sleep(0.5)
 			loop -= 1
 
 		if found:
-			print(f"Poster found: {self.pstrNm}")
+			logger.info(f"Poster found: {self.pstrNm}")
 			self.timer.start(10, True)
 		else:
-			print("[ERROR] Poster not found after multiple attempts.")
+			logger.error("[ERROR] Poster not found after multiple attempts.")
 
 	def _log_debug(self, message):
 		"""Log debug message to file"""
@@ -342,7 +332,7 @@ class AglarePosterX(Renderer):
 			with open("/tmp/agplog/AglarePosterX.log", "a") as w:
 				w.write(f"{datetime.now()}: {message}\n")
 		except Exception as e:
-			print(f"Logging error: {e}")
+			logger.error(f"Logging error: {e}")
 
 	def _log_error(self, message):
 		"""Log error message to file"""
@@ -350,7 +340,7 @@ class AglarePosterX(Renderer):
 			with open("/tmp/agplog/AglarePosterX_errors.log", "a") as f:
 				f.write(f"{datetime.now()}: ERROR: {message}\n")
 		except Exception as e:
-			print(f"Error logging error: {e}")
+			logger.error(f"Error logging error: {e}")
 
 
 class PosterDB(AgpDownloadThread):
@@ -369,6 +359,22 @@ class PosterDB(AgpDownloadThread):
 			"google": False
 		}
 		self.providers = {**default_providers, **(providers or {})}
+		self.provider_engines = self.build_providers()
+
+	def build_providers(self):
+		"""Create the list of enabled provider engines"""
+		engines = []
+		if self.providers.get("tmdb"):
+			engines.append(("TMDB", self.search_tmdb))
+		if self.providers.get("tvdb"):
+			engines.append(("TVDB", self.search_tvdb))
+		if self.providers.get("fanart"):
+			engines.append(("Fanart", self.search_fanart))
+		if self.providers.get("imdb"):
+			engines.append(("IMDB", self.search_imdb))
+		if self.providers.get("google"):
+			engines.append(("Google", self.search_google))
+		return engines
 
 	def run(self):
 		"""Main processing loop"""
@@ -382,34 +388,21 @@ class PosterDB(AgpDownloadThread):
 		try:
 			self.pstcanal = clean_for_tvdb(canal[5])
 			if not self.pstcanal:
-				print(f"Invalid channel name: {canal[0]}")
+				logger.info(f"Invalid channel name: {canal[0]}")
 				return
 
 			if not any(self.providers.values()):
 				self._log_debug("No provider is enabled for poster download")
 				return
 
-			for ext in extensions:
+			for ext in self.extensions:
 				poster_path = join(POSTER_FOLDER, self.pstcanal + ext)
 				if self.is_valid_poster(poster_path):
 					utime(poster_path, (time(), time()))  # Update the timestamp to avoid re-downloading
-					self._log_debug(f"Poster already exists: {poster_path}")
+					# self._log_debug(f"Poster already exists: {poster_path}")
 					return
 
-			# Create the list of enabled providers
-			providers = []
-			if self.providers.get("tmdb"):
-				providers.append(("TMDB", self.search_tmdb))
-			if self.providers.get("tvdb"):
-				providers.append(("TVDB", self.search_tvdb))
-			if self.providers.get("fanart"):
-				providers.append(("Fanart", self.search_fanart))
-			if self.providers.get("imdb"):
-				providers.append(("IMDB", self.search_imdb))
-			if self.providers.get("google"):
-				providers.append(("Google", self.search_google))
-
-			for provider_name, provider_func in providers:
+			for provider_name, provider_func in self.provider_engines:
 				try:
 					result = provider_func(poster_path, self.pstcanal, canal[4], canal[3], canal[0])
 					if not result or len(result) != 2:
@@ -438,7 +431,7 @@ class PosterDB(AgpDownloadThread):
 			with open("/tmp/agplog/PosterDB.log", "a") as f:
 				f.write(f"{datetime.now()}: {message}\n")
 		except Exception as e:
-			print(f"Logging error: {e}")
+			logger.error(f"Logging error: {e}")
 
 	def _log_error(self, message):
 		"""Log error message to file"""
@@ -446,7 +439,7 @@ class PosterDB(AgpDownloadThread):
 			with open("/tmp/agplog/PosterDB_errors.log", "a") as f:
 				f.write(f"{datetime.now()}: ERROR: {message}\n")
 		except Exception as e:
-			print(f"Error logging error: {e}")
+			logger.error(f"Error logging error: {e}")
 
 
 class PosterAutoDB(AgpDownloadThread):
@@ -646,7 +639,7 @@ class PosterAutoDB(AgpDownloadThread):
 				poster_path = join(POSTER_FOLDER, self.pstcanal + ext)
 				if self.is_valid_poster(poster_path):
 					utime(poster_path, (time(), time()))  # Update the timestamp to avoid re-downloading
-					self._log_debug(f"Poster already exists: {poster_path}")
+					# self._log_debug(f"Poster already exists: {poster_path}")
 					return
 
 			# Create the list of providers enabled for download
@@ -701,7 +694,7 @@ class PosterAutoDB(AgpDownloadThread):
 				if getsize(self.log_file) > 5 * 1024 * 1024:
 					remove(self.log_file)
 		except Exception as e:
-			print(f"Log cleanup error: {str(e)}")
+			logger.error(f"Log cleanup error: {str(e)}")
 
 	def _log(self, message):
 		self._write_log("INFO", message)
@@ -718,7 +711,7 @@ class PosterAutoDB(AgpDownloadThread):
 			with open(self.log_file, 'a') as f:
 				f.write(f"[{datetime.now()}] {level}: {message}\n")
 		except Exception as e:
-			print(f"Log write error: {str(e)}")
+			logger.error(f"Log write error: {str(e)}")
 
 
 def SearchBouquetTerrestrial():
@@ -763,7 +756,7 @@ def process_autobouquet(max_channels=2000, allowed_types=None):
 								normalized_ref = f"{service_type}:{sref.split(':')[0]}"
 								unique_refs[normalized_ref] = None
 		except Exception as e:
-			print(f"Error processing bouquets.tv: {e}")
+			logger.error(f"Error processing bouquets.tv: {e}")
 
 	for bouquet_file in glob("/etc/enigma2/*.tv"):
 		try:
@@ -778,7 +771,7 @@ def process_autobouquet(max_channels=2000, allowed_types=None):
 							normalized_ref = f"{service_type}:{sref.split(':')[0]}"
 							unique_refs[normalized_ref] = None
 		except Exception as e:
-			print(f"Error processing {bouquet_file}: {e}")
+			logger.error(f"Error processing {bouquet_file}: {e}")
 			continue
 
 	return list(unique_refs.keys())

@@ -52,7 +52,7 @@ from Components.config import config
 # Local imports
 from .Agp_lib import PY3, quoteEventName
 from .Agp_apikeys import tmdb_api, thetvdb_api, fanart_api  # , omdb_api
-
+from .Agp_Utils import logger
 
 try:
 	from http.client import HTTPConnection
@@ -108,72 +108,55 @@ else:
 	isz = isz.replace(isz, "780,1170")
 
 
-'''
-isz = "w780"
-"backdrop_sizes": [
-  "w300",
-  "w780",
-  "w1280",
-  "original"
-],
-"logo_sizes": [
-  "w45",
-  "w92",
-  "w154",
-  "w185",
-  "w300",
-  "w500",
-  "original"
-],
-"poster_sizes": [
-  "w92",
-  "w154",
-  "w185",
-  "w342",
-  "w500",
-  "w780",
-  "original"
-],
-"profile_sizes": [
-  "w45",
-  "w185",
-  "h632",
-  "original"
-],
-"still_sizes": [
-  "w92",
-  "w185",
-  "w300",
-  "original"
-]
-## Add Supported Image Sizes (in Pixels)
-# API NAME  =   WEB NAME           MIN Pixel    MAX Pixel     Aspect Ratio
-# poster    = Poster ............  500 x 750   2000 x 3000   1.50    (1x1.5)
-# poster    = Poster TV Season ..  400 x 578   2000 x 3000   1.50    (1x1.5)
-# backdrop  = Backdrop .......... 1280 x 720   3840 x 2160   1.77778 (16x9)
-# still     = Backdrop Episode ..  400 x 225   3840 x 2160   1.77778 (16x9)
-# profile   = Person Profile ....  300 x 450   2000 x 3000   1.50    (1x1.5)
-# Logo PNG  = Production/Networks  500 x 1     2000 x 2000   n/a
-# Logo SVG  = Production/Networks  500 x 1     Vector File   n/a
-'''
+"""
+🖼️ Poster:
+"w92", "w154", "w185", "w342", "w500", "w780", "original"
+
+🖼️ Backdrop:
+"w300", "w780", "w1280", "original"
+
+🧑‍🎤 Profile:
+"w45", "w185", "h632", "original"
+
+📺 Still (frame episodio):
+"w92", "w185", "w300", "original"
+
+🏷️ Logo:
+"w45", "w92", "w154", "w185", "w300", "w500", "original"
+
+📐 Consigli sulle dimensioni (in pixel)
+Tipo	          Dimensioni consigliate	Aspetto
+Poster	            500x750 → 2000x3000	    1.5 (2:3)
+Poster TV Season	400x578 → 2000x3000 	1.5 (2:3)
+Backdrop	        1280x720 → 3840x2160	1.777 (16:9)
+Still (episodio)	400x225 → 3840x2160	    1.777 (16:9)
+Profile	            300x450 → 2000x3000	    1.5 (2:3)
+Logo PNG	        500x1 → 2000x2000	    Variabile
+Logo SVG	        500x1 → vettoriale	    Variabile
+"""
 
 
 class AgpDownloadThread(Thread):
 	def __init__(self):
 		Thread.__init__(self)
-		self.checkMovie = ["film", "movie", "фильм", "кино", "ταινία",
-						   "película", "cinéma", "cine", "cinema", "filma"]
-		self.checkTV = ["serial", "series", "serie", "serien", "série",
-						"séries", "serious", "folge", "episodio", "episode", "épisode",
-						"l'épisode", "ep.", "animation", "staffel", "soap", "doku",
-						"tv", "talk", "show", "news", "factual", "entertainment",
-						"telenovela", "dokumentation", "dokutainment", "documentary",
-						"informercial", "information", "sitcom", "reality", "program",
-						"magazine", "mittagsmagazin", "т/с", "м/с", "сезон", "с-н", "эпизод",
-						"сериал", "серия", "actualité", "discussion", "interview", "débat",
-						"émission", "divertissement", "jeu", "magasine", "information", "météo",
-						"journal", "sport", "culture", "infos", "feuilleton", "téléréalité",
-						"société", "clips", "concert", "santé", "éducation", "variété"]
+		self.checkMovie = [
+			"film", "movie", "фильм", "кино", "ταινία",
+			"película", "cinéma", "cine", "cinema", "filma"
+		]
+		self.checkTV = [
+			"serial", "series", "serie", "serien", "série", "séries",
+			"serious", "folge", "episodio", "episode", "épisode",
+			"l'épisode", "ep.", "animation", "staffel", "soap", "doku",
+			"tv", "talk", "show", "news", "factual", "entertainment",
+			"telenovela", "dokumentation", "dokutainment", "documentary",
+			"informercial", "information", "sitcom", "reality", "program",
+			"magazine", "mittagsmagazin", "т/с", "м/с", "сезон", "с-н",
+			"эпизод", "сериал", "серия", "actualité", "discussion",
+			"interview", "débat", "émission", "divertissement", "jeu",
+			"magasine", "information", "météo", "journal", "sport",
+			"culture", "infos", "feuilleton", "téléréalité", "société",
+			"clips", "concert", "santé", "éducation", "variété"
+		]
 
 	def search_tmdb(self, dwn_poster, title, shortdesc, fulldesc, channel=None):
 		try:
@@ -197,7 +180,7 @@ class AgpDownloadThread(Thread):
 				return False, f"Errore durante la ricerca su TMDb: {response.status_code}"
 
 		except RequestException as e:
-			print(f"Errore nella ricerca TMDb: {e}")
+			logger.error(f"Errore nella ricerca TMDb: {e}")
 			return False, "Errore durante la ricerca su TMDb"
 
 	def downloadData2(self, data):
@@ -236,7 +219,7 @@ class AgpDownloadThread(Thread):
 				return False, "[SKIP : tmdb] Not found"
 
 			except Exception as e:
-				print(f"Error during downloadData2 processing: {e}")
+				logger.error(f"Error during downloadData2 processing: {e}")
 				if exists(self.dwn_poster):
 					remove(self.dwn_poster)
 				return False, "[ERROR : tmdb] Error processing data"
@@ -295,20 +278,20 @@ class AgpDownloadThread(Thread):
 
 					if poster is not None and poster[0]:
 						callInThread(self.savePoster, url_poster, self.dwn_poster)
-						# print(f"[SUCCESS : tvdb] {self.title_safe} [{chkType}-{year}] => {url_tvdbg} => {url_tvdb} => {url_poster}")
+						# logger.info(f"[SUCCESS : tvdb] {self.title_safe} [{chkType}-{year}] => {url_tvdbg} => {url_tvdb} => {url_poster}")
 						return True, f"[SUCCESS : tvdb] {self.title_safe} [{chkType}-{year}] => {url_tvdbg} => {url_tvdb} => {url_poster}"
 
-					# print(f"[SKIP : tvdb] {self.title_safe} [{chkType}-{year}] => {url_tvdbg} (Not found)")
+					# logger.info(f"[SKIP : tvdb] {self.title_safe} [{chkType}-{year}] => {url_tvdbg} (Not found)")
 					return False, f"[SKIP : tvdb] {self.title_safe} [{chkType}-{year}] => {url_tvdbg} (Not found)"
 
 			else:
-				# print(f"[SKIP : tvdb] {self.title_safe} [{chkType}-{year}] => {url_tvdbg} (Not found)")
+				# logger.info(f"[SKIP : tvdb] {self.title_safe} [{chkType}-{year}] => {url_tvdbg} (Not found)")
 				return False, f"[SKIP : tvdb] {self.title_safe} [{chkType}-{year}] => {url_tvdbg} (Not found)"
 
 		except Exception as e:
 			if exists(dwn_poster):
 				remove(dwn_poster)
-			# print(f"[ERROR : tvdb] {title} => {url_tvdbg} ({str(e)})")
+			# logger.error(f"[ERROR : tvdb] {title} => {url_tvdbg} ({str(e)})")
 			return False, f"[ERROR : tvdb] {title} => {url_tvdbg} ({str(e)})"
 
 	def search_fanart(self, dwn_poster, title, shortdesc, fulldesc, channel=None):
@@ -336,7 +319,7 @@ class AgpDownloadThread(Thread):
 				mj = get(url_maze).json()
 				id = (mj['externals']['thetvdb'])
 			except Exception as err:
-				print('Error:', err)
+				logger.error('Error:', err)
 
 			try:
 				m_type = 'tv'
@@ -350,18 +333,18 @@ class AgpDownloadThread(Thread):
 				url_poster = get(url).json()
 				if url_poster and url_poster != 'null' or url_poster is not None or url_poster != '':
 					callInThread(self.savePoster, url_poster, dwn_poster)
-					# print(f"[SUCCESS poster: fanart] {self.title_safe} [{chkType}-{year}] => {url_maze} => {url_fanart} => {url_poster}")
+					# logger.info(f"[SUCCESS poster: fanart] {self.title_safe} [{chkType}-{year}] => {url_maze} => {url_fanart} => {url_poster}")
 					return True, f"[SUCCESS poster: fanart] {self.title_safe} [{chkType}-{year}] => {url_maze} => {url_fanart} => {url_poster}"
 
-				# print(f"[SKIP : fanart] {self.title_safe} [{chkType}-{year}] => {url_fanart} (Not found)")
+				# logger.info(f"[SKIP : fanart] {self.title_safe} [{chkType}-{year}] => {url_fanart} (Not found)")
 				return False, f"[SKIP : fanart] {self.title_safe} [{chkType}-{year}] => {url_fanart} (Not found)"
 			except Exception as e:
-				print(e)
+				logger.error(e)
 
 		except Exception as e:
 			if exists(dwn_poster):
 				remove(dwn_poster)
-			print(f"[ERROR : fanart] {self.title_safe} [{chkType}-{year}] => {url_fanart} ({str(e)})")
+			logger.error(f"[ERROR : fanart] {self.title_safe} [{chkType}-{year}] => {url_fanart} ({str(e)})")
 			return False, f"[ERROR : fanart] {self.title_safe} [{chkType}-{year}]"
 
 	def search_imdb(self, dwn_poster, title, shortdesc, fulldesc, channel=None):
@@ -443,16 +426,16 @@ class AgpDownloadThread(Thread):
 			if url_poster and pfound:
 				callInThread(self.savePoster, url_poster, dwn_poster)
 				# Log di successo
-				# print(f"[SUCCESS url_poster: imdb] {self.title_safe} [{chkType}-{year}] => {imsg} [{idx_imdb}/{len_imdb}] => {url_mimdb} => {url_poster}")
+				# logger.info(f"[SUCCESS url_poster: imdb] {self.title_safe} [{chkType}-{year}] => {imsg} [{idx_imdb}/{len_imdb}] => {url_mimdb} => {url_poster}")
 				return True, f"[SUCCESS url_poster: imdb] {self.title_safe} [{chkType}-{year}] => {imsg} [{idx_imdb}/{len_imdb}] => {url_mimdb} => {url_poster}"
 
-			# print(f"[SKIP : imdb] {self.title_safe} [{chkType}-{year}] => {url_mimdb} (No Entry found [{len_imdb}])")
+			# logger.info(f"[SKIP : imdb] {self.title_safe} [{chkType}-{year}] => {url_mimdb} (No Entry found [{len_imdb}])")
 			return False, f"[SKIP : imdb] {self.title_safe} [{chkType}-{year}] => {url_mimdb} (No Entry found [{len_imdb}])"
 
 		except Exception as e:
 			if exists(dwn_poster):
 				remove(dwn_poster)
-			# print(f"[ERROR : imdb] {self.title_safe} [{chkType}-{year}] => {url_mimdb} ({str(e)})")
+			# logger.error(f"[ERROR : imdb] {self.title_safe} [{chkType}-{year}] => {url_mimdb} ({str(e)})")
 			return False, f"[ERROR : imdb] {self.title_safe} [{chkType}-{year}] => {url_mimdb} ({str(e)})"
 
 	def search_programmetv_google(self, dwn_poster, title, shortdesc, fulldesc, channel=None):
@@ -462,7 +445,7 @@ class AgpDownloadThread(Thread):
 			headers = {"User-Agent": choice(AGENTS)}
 			chkType, fd = self.checkType(shortdesc, fulldesc)
 			if chkType.startswith("movie"):
-				# print(f"[SKIP : programmetv-google] {title} [{chkType}] => Skip movie title")
+				# logger.info(f"[SKIP : programmetv-google] {title} [{chkType}] => Skip movie title")
 				return False, f"[SKIP : programmetv-google] {title} [{chkType}] => Skip movie title"
 
 			title_safe = title
@@ -494,16 +477,16 @@ class AgpDownloadThread(Thread):
 						url_poster = sub(r'/\d+x\d+/', f"/{w_tar}x{h_tar}/", url_poster)
 						url_poster = sub(r'crop-from/top/', '', url_poster)
 						callInThread(self.savePoster, url_poster, self.dwn_poster)
-						# print(f"[SUCCESS url_poster: programmetv-google] {self.title_safe} [{chkType}] => Found self.title_safe : '{get_title}' => {url_ptv} => {url_poster} (initial size: {url_poster_size}) [{ptv_id}]")
+						# logger.info(f"[SUCCESS url_poster: programmetv-google] {self.title_safe} [{chkType}] => Found self.title_safe : '{get_title}' => {url_ptv} => {url_poster} (initial size: {url_poster_size}) [{ptv_id}]")
 						return True, f"[SUCCESS url_poster: programmetv-google] {self.title_safe} [{chkType}] => Found self.title_safe : '{get_title}' => {url_ptv} => {url_poster} (initial size: {url_poster_size}) [{ptv_id}]"
 
-			# print(f"[SKIP : programmetv-google] {self.title_safe} [{chkType}] => Not found [{ptv_id}] => {url_ptv}")
+			# logger.info(f"[SKIP : programmetv-google] {self.title_safe} [{chkType}] => Not found [{ptv_id}] => {url_ptv}")
 			return False, f"[SKIP : programmetv-google] {self.title_safe} [{chkType}] => Not found [{ptv_id}] => {url_ptv}"
 
 		except Exception as e:
 			if exists(dwn_poster):
 				remove(dwn_poster)
-			# print(f"[ERROR : programmetv-google] {self.title_safe} [{chkType}] => {url_ptv} ({str(e)})")
+			# logger.error(f"[ERROR : programmetv-google] {self.title_safe} [{chkType}] => {url_ptv} ({str(e)})")
 			return False, f"[ERROR : programmetv-google] {self.title_safe} [{chkType}] => {url_ptv} ({str(e)})"
 
 	def search_molotov_google(self, dwn_poster, title, shortdesc, fulldesc, channel=None):
@@ -637,7 +620,7 @@ class AgpDownloadThread(Thread):
 					local_file.write(response.content)
 
 		except RequestException as error:
-			print("ERROR in module 'download': Error:{} Url:{} Callback:{}".format(str(error), url, callback))
+			logger.error("ERROR in module 'download': Error:{} Url:{} Callback:{}".format(str(error), url, callback))
 
 		return callback
 
@@ -656,7 +639,7 @@ class AgpDownloadThread(Thread):
 			rimg.save(dwn_poster)
 			rimg.close()
 		except Exception as e:
-			print("ERROR:{}".format(e))
+			logger.error("ERROR:{}".format(e))
 
 	def verifyPoster(self, dwn_poster):
 		try:
@@ -671,7 +654,7 @@ class AgpDownloadThread(Thread):
 					pass
 				return False
 		except Exception as e:
-			print(e)
+			logger.error(e)
 			try:
 				remove(dwn_poster)
 			except:

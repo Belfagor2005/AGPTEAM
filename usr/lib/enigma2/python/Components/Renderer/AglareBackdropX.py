@@ -53,7 +53,7 @@ import NavigationInstance
 
 # Local imports
 from Components.Renderer.AgbDownloadThread import AgbDownloadThread
-from .Agp_Utils import BACKDROP_FOLDER, clean_for_tvdb  # , nobackdrop
+from .Agp_Utils import BACKDROP_FOLDER, clean_for_tvdb, logger  # , nobackdrop
 
 
 # Constants and global variables
@@ -192,27 +192,18 @@ class AglareBackdropX(Renderer):
 				service_str = service.toString()
 				events = epgcache.lookupEvent(['IBDCTESX', (service_str, 0, -1, -1)])
 
-				# Check if self.nxts is within range
-				if events and self.nxts < len(events):
-					event = events[self.nxts]
-					if len(event) >= 7:
-						service_name = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '')
-						self.canal[0] = service_name
-						self.canal[1] = event[1]
-						self.canal[2] = event[4]
-						self.canal[3] = event[5]
-						self.canal[4] = event[6]
-						self.canal[5] = self.canal[2]
+				service_name = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '')
+				self.canal[0] = service_name
+				self.canal[1] = events[self.nxts][1]
+				self.canal[2] = events[self.nxts][4]
+				self.canal[3] = events[self.nxts][5]
+				self.canal[4] = events[self.nxts][6]
+				self.canal[5] = self.canal[2]
 
-						if not autobouquet_file and service_name not in apdb:
-							apdb[service_name] = service_str
-					else:
-						print("Error: event tuple too short (len < 7)")
-				else:
-					print(f"Error: nxts {self.nxts} is out of range for events list of length {len(events) if events else 0}")
-					return
+				if not autobouquet_file and service_name not in apdb:
+					apdb[service_name] = service_str
 		except Exception as e:
-			print(f"Error in service handling: {e}, Service: {service}, nxts: {self.nxts}, what: {what}")
+			logger.error(f"Error in service handling: {e}, Service: {service}, nxts: {self.nxts}, what: {what}")
 			if self.instance:
 				self.instance.hide()
 			return
@@ -223,57 +214,59 @@ class AglareBackdropX(Renderer):
 			return
 
 		try:
+			logger.info(f"canal content: {self.canal}")
+			logger.info(f"canal[1]: {self.canal[1]}, canal[2]: {self.canal[2]}, canal[5]: {self.canal[5]}")
 			curCanal = "{}-{}".format(self.canal[1], self.canal[2])
-
 			if curCanal == self.oldCanal and self.pstrNm and exists(self.pstrNm):
-				print(f"Backdrop already loaded: {self.pstrNm}")
+				logger.info(f"backdrop already loaded: {self.pstrNm}")
 				return
 
-			print(f"curCanal: {curCanal}, oldCanal: {self.oldCanal}")
+			if self.instance:
+				self.instance.hide()
+
 			self.oldCanal = curCanal
+			self.pstcanal = clean_for_tvdb(self.canal[5])
+			if self.pstcanal is not None:
+				self.pstrNm = self.generateBackdropPath()  # join(self.path, str(self.pstcanal) + ".jpg")
+				if self.pstrNm is not None:
+					self.pstcanal = self.pstrNm
 
-			# Check if the Backdrop path is valid
-			if len(self.canal) > 5 and self.canal[5]:
-				# Clean the name and generate the backdrop path
-				self.pstcanal = clean_for_tvdb(self.canal[5]) if self.canal[5] else None
-				backdrop_path = self.generateBacdropPath()
-				print(f"Generated backdrop path: {backdrop_path}")
-
-				if backdrop_path:  # If a backdrop is found
-					print(f"Found backdrop: {backdrop_path}")
-
-					if self.pstrNm == backdrop_path:  # If the backdrop is already loaded
-						print(f"Backdrop already loaded: {backdrop_path}")
-						return
-
-					# Update the backdrop path and display it
-					self.pstrNm = backdrop_path
-					print("[LOAD] Showing backdrop:", self.pstrNm)
-					utime(self.pstrNm, (time(), time()))  # Update access time
-					self.instance.hide()  # Hide the instance
-					self.timer.start(500, True)  # Start the timer
-
-					return
-				else:
-					print(f"Error: Backdrop for event '{self.canal[2]}' not found. Queuing event.")
-					canal = self.canal[:]
-					pdb.put(canal)  # Queue the event
-					self.runBackdropThread()
+			if exists(self.pstcanal):
+				utime(self.pstcanal, (time(), time()))
+				self.timer.start(10, True)
 			else:
-				print("Invalid canal data, skipping poster load.")
+				logger.warning(f"Error: Backdrop for event '{self.canal[2]}' not found. Queuing event.")
+				canal = self.canal[:]
+				pdb.put(canal)
+				self.runBackdropThread()
+
 		except Exception as e:
-			print(f"Error in backdrop display: {e}")
+			logger.error(f"Error in backdrop display: {e}")
 			if self.instance:
 				self.instance.hide()
 			return
 
 	def generateBacdropPath(self):
 		"""Generate backdrop path from current channel data, checking for multiple image extensions"""
-		if self.pstcanal:  # Uses self.pstcanal instead of a parameter
+		if isinstance(self.pstcanal, str) and self.pstcanal.strip():  # Ensure self.pstcanal is a valid string
+			# Check if the Backdrop has already been loaded
+			if hasattr(self, '_loaded_backdrops') and self.pstcanal in self._loaded_backdrops:
+				logger.info(f"Backdrop already loaded: {self._loaded_backdrops[self.pstcanal]}")  # Log if Backdrop is already loaded
+				return self._loaded_backdrops[self.pstcanal]  # Return the already loaded Backdrop path
+			# Try to search for the Backdrop
 			for ext in self.extensions:
 				candidate = join(self.path, self.pstcanal + ext)
+				logger.info(f"Checking Backdrop path: {candidate}")  # Log the path being checked
 				if exists(candidate):
+					logger.info(f"Found Backdrop at: {candidate}")  # Log the found Backdrop path
+					# Cache the found Backdrop path
+					if not hasattr(self, '_loaded_backdrops'):
+						self._loaded_backdrops = {}
+					self._loaded_backdrops[self.pstcanal] = candidate  # Cache the loaded Backdrop path
 					return candidate
+			logger.info(f"Backdrop not found for {self.pstcanal}")
+		else:
+			logger.error(f"Invalid self.pstcanal value: {self.pstcanal}")
 		return None
 
 	# @lru_cache(maxsize=150)
@@ -287,13 +280,14 @@ class AglareBackdropX(Renderer):
 
 	def showBackdrop(self):
 		"""Display the backdrop image"""
-
-		if not self.pstrNm or not self.checkBackdropExistence(self.pstrNm):
+		if self.instance:
 			self.instance.hide()
-			print('showBackdrop ide instance')
+		if not self.pstrNm or not self.checkPosterExistence(self.pstrNm):
+			self.instance.hide()
+			logger.info('showBackdrop ide instance')
 			return
 
-		print(f"[LOAD] Showing backdrop: {self.pstrNm}")
+		# logger.info(f"[LOAD] Showing backdrop: {self.pstrNm}")
 		self.instance.hide()
 		self.instance.setPixmap(loadJPG(self.pstrNm))
 		self.instance.setScale(1)
@@ -301,11 +295,13 @@ class AglareBackdropX(Renderer):
 
 	def waitBackdrop(self):
 		"""Wait for backdrop download to complete"""
+		if self.instance:
+			self.instance.hide()
 		self.pstrNm = self.generateBackdropPath()
 		if not hasattr(self, 'pstrNm') or self.pstrNm is None:
-			print("Backdrop not found")
+			logger.info("Backdrop not found")
 			return
-		print(f"Backdrop found: {self.pstrNm}")
+		logger.info(f"Backdrop found: {self.pstrNm}")
 
 		if not self.pstrNm:
 			self._log_debug("[ERROR: waitBackdrop] Backdrop path is None")
@@ -313,16 +309,20 @@ class AglareBackdropX(Renderer):
 
 		loop = 180  # Maximum number of attempts
 		found = False
-		print(f"[WAIT] Checking for backdrop: {self.pstrNm}")
+		logger.info(f"[WAIT] Checking for backdrop: {self.pstrNm}")
 		while loop > 0:
 			if self.pstrNm and self.checkBackdropExistence(self.pstrNm):
 				found = True
 				break
+			logger.info(f"[WAIT] Attempting to find Backdrop... (remaining tries: {loop})")  # Add more logging
 			sleep(0.5)
 			loop -= 1
 
 		if found:
+			logger.info(f"Backdrop found: {self.pstrNm}")
 			self.timer.start(10, True)
+		else:
+			logger.info("[ERROR] Backdrop not found after multiple attempts.")
 
 	def _log_debug(self, message):
 		"""Log debug message to file"""
@@ -330,7 +330,7 @@ class AglareBackdropX(Renderer):
 			with open("/tmp/logBackdropX.log", "a") as w:
 				w.write(f"{datetime.now()}: {message}\n")
 		except Exception as e:
-			print(f"Logging error: {e}")
+			logger.error(f"Logging error: {e}")
 
 	def _log_error(self, message):
 		"""Log error message to file"""
@@ -338,7 +338,7 @@ class AglareBackdropX(Renderer):
 			with open("/tmp/agplog/AglareBackdropX_errors.log", "a") as f:
 				f.write(f"{datetime.now()}: ERROR: {message}\n")
 		except Exception as e:
-			print(f"Error logging error: {e}")
+			logger.error(f"Error logging error: {e}")
 
 
 class BackdropDB(AgbDownloadThread):
@@ -357,6 +357,22 @@ class BackdropDB(AgbDownloadThread):
 			"google": False
 		}
 		self.providers = {**default_providers, **(providers or {})}
+		self.provider_engines = self.build_providers()
+
+	def build_providers(self):
+		"""Create the list of enabled provider engines"""
+		engines = []
+		if self.providers.get("tmdb"):
+			engines.append(("TMDB", self.search_tmdb))
+		if self.providers.get("tvdb"):
+			engines.append(("TVDB", self.search_tvdb))
+		if self.providers.get("fanart"):
+			engines.append(("Fanart", self.search_fanart))
+		if self.providers.get("imdb"):
+			engines.append(("IMDB", self.search_imdb))
+		if self.providers.get("google"):
+			engines.append(("Google", self.search_google))
+		return engines
 
 	def run(self):
 		"""Main processing loop"""
@@ -370,7 +386,7 @@ class BackdropDB(AgbDownloadThread):
 		try:
 			self.pstcanal = clean_for_tvdb(canal[5])
 			if not self.pstcanal:
-				print(f"Invalid channel name: {canal[0]}")
+				logger.info(f"Invalid channel name: {canal[0]}")
 				return
 
 			if not any(self.providers.values()):
@@ -384,20 +400,7 @@ class BackdropDB(AgbDownloadThread):
 					self._log_debug(f"Backdrop already exists: {backdrop_path}")
 					return
 
-			# Create the list of enabled providers
-			providers = []
-			if self.providers.get("tmdb"):
-				providers.append(("TMDB", self.search_tmdb))
-			if self.providers.get("tvdb"):
-				providers.append(("TVDB", self.search_tvdb))
-			if self.providers.get("fanart"):
-				providers.append(("Fanart", self.search_fanart))
-			if self.providers.get("imdb"):
-				providers.append(("IMDB", self.search_imdb))
-			if self.providers.get("google"):
-				providers.append(("Google", self.search_google))
-
-			for provider_name, provider_func in providers:
+			for provider_name, provider_func in self.provider_engines:
 				try:
 					result = provider_func(backdrop_path, self.pstcanal, canal[4], canal[3], canal[0])
 					if not result or len(result) != 2:
@@ -426,7 +429,7 @@ class BackdropDB(AgbDownloadThread):
 			with open("/tmp/BackdropDB.log", "a") as f:
 				f.write(f"{datetime.now()}: {message}\n")
 		except Exception as e:
-			print("logDB error:", str(e))
+			logger.error("logDB error:", str(e))
 
 	def _log_error(self, message):
 		"""Log error message to file"""
@@ -434,7 +437,7 @@ class BackdropDB(AgbDownloadThread):
 			with open("/tmp/agplog/BackdropDB_errors.log", "a") as f:
 				f.write(f"{datetime.now()}: ERROR: {message}\n")
 		except Exception as e:
-			print(f"Error logging error: {e}")
+			logger.error(f"Error logging error: {e}")
 
 
 class BackdropAutoDB(AgbDownloadThread):
@@ -689,7 +692,7 @@ class BackdropAutoDB(AgbDownloadThread):
 				if getsize(self.log_file) > 5 * 1024 * 1024:
 					remove(self.log_file)
 		except Exception as e:
-			print(f"Log cleanup error: {str(e)}")
+			logger.error(f"Log cleanup error: {str(e)}")
 
 	def _log(self, message):
 		self._write_log("INFO", message)
@@ -706,7 +709,7 @@ class BackdropAutoDB(AgbDownloadThread):
 			with open(self.log_file, 'a') as f:
 				f.write(f"[{datetime.now()}] {level}: {message}\n")
 		except Exception as e:
-			print(f"Log write error: {str(e)}")
+			logger.error(f"Log write error: {str(e)}")
 
 
 def SearchBouquetTerrestrial():
@@ -751,7 +754,7 @@ def process_autobouquet(max_channels=1000, allowed_types=None):
 								normalized_ref = f"{service_type}:{sref.split(':')[0]}"
 								unique_refs[normalized_ref] = None
 		except Exception as e:
-			print(f"Error processing bouquets.tv: {e}")
+			logger.error(f"Error processing bouquets.tv: {e}")
 
 	for bouquet_file in glob("/etc/enigma2/*.tv"):
 		try:
@@ -766,7 +769,7 @@ def process_autobouquet(max_channels=1000, allowed_types=None):
 							normalized_ref = f"{service_type}:{sref.split(':')[0]}"
 							unique_refs[normalized_ref] = None
 		except Exception as e:
-			print(f"Error processing {bouquet_file}: {e}")
+			logger.error(f"Error processing {bouquet_file}: {e}")
 			continue
 
 	return list(unique_refs.keys())
