@@ -144,8 +144,7 @@ def setup_logging(log_file='/tmp/agplog/agp_utils.log', max_log_size=5, backup_c
 			"""Format log record with color"""
 			levelname = record.levelname
 			if levelname in self.COLORS:
-				record.levelname = (f"{self.COLORS[levelname]}{levelname}"
-									f"{self.COLORS['RESET']}")
+				record.levelname = (f"{self.COLORS[levelname]}{levelname}" f"{self.COLORS['RESET']}")
 			return super().format(record)
 
 	# Create main logger
@@ -377,7 +376,6 @@ def clean_for_tvdb_optimized(title):
 	# Final cleanup
 	title = sub(r'[^\w\s]', ' ', title)
 	title = sub(r'\s+', ' ', title).strip().lower()
-
 	return title
 
 
@@ -392,6 +390,8 @@ def clean_for_tvdb(title):
 	Returns:
 		str: Cleaned title ready for TVDB API
 	"""
+	original_title = title  # Safe copy for logging
+
 	if not isinstance(title, str) or not title.strip():
 		return ""
 
@@ -401,14 +401,12 @@ def clean_for_tvdb(title):
 		title = title.encode('ascii', 'ignore').decode('ascii')
 
 		# Final cleanup
-		# title = sub(r'[^\w\s]', ' ', title)
 		title = convtext(title)
 		title = sub(r'\s+', ' ', title).strip()
-		# print(clean_for_tvdb.cache_info())  # Mostra hit/miss
 		return title
 
 	except Exception as e:
-		logger.error(f"Error cleaning title '{title}': {str(e)}")
+		logger.error("Error cleaning title '%s': %s", str(original_title), str(e))
 		return ""
 
 # ================ END TEXT MANAGER ===============
@@ -500,8 +498,8 @@ def free_up_space(path, min_space_mb, media_type, strategy="oldest_first"):
 				file_mb = file_info["size"] / (1024 * 1024)
 				remove(file_info["path"])
 				freed_mb += file_mb
-				logger.info(f"Purged {media_type}: {basename(file_info['path'])} "
-							f"({file_mb:.1f}MB, {ctime(file_info['mtime'])})")
+				logger.info(
+					f"Purged {media_type}: {basename(file_info['path'])} "f"({file_mb:.1f}MB, {ctime(file_info['mtime'])})")
 			except Exception as e:
 				logger.error(f"Purge failed for {file_info['path']}: {str(e)}")
 
