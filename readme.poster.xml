@@ -1,0 +1,113 @@
+Skin Widget Implementation Poster Guide
+
+1. Basic Poster Widget:
+
+<widget source="ServiceEvent" render="AglarePosterX" position="x,y" size="width,height" />
+
+
+2. Advanced Options:
+
+<widget source="ServiceEvent" render="AglarePosterX" position="x,y" size="width,height" 
+    nexts="0" 
+    path="/path/to/custom/folder" 
+    zPosition="2" 
+    transparent="1" 
+    alphatest="blend"
+    scale="1"       <!-- Enable/disable aspect ratio scaling -->
+    blur="0" />      <!-- Optional blur effect (0-10) -->                                                           
+Available Attributes:
+Attribute		Values			Description
+source			ServiceEvent	Mandatory source for event information
+nexts			0,1,2...		Shows poster for nth next event (0=current)
+path			Any valid path	Custom folder for poster storage (default: /tmp/poster)
+zPosition		0-9				Layering control for skin
+transparent		0,1				Enable transparency (needs alphatest)
+alphatest		on,off,blend	Transparency handling (recommend blend)
+
+
+3. Placement Examples:
+
+a. Infobar:
+
+<screen name="InfoBar">
+    <widget source="ServiceEvent"           render="AglarePosterX" position="100,100"      size="185,278" />
+
+    <widget source="session.Event_Next"     render="AglarePosterX" position="100,100"       size="185,278" />
+
+    <widget source="session.Event_Now"      render="AglarePosterX" position="100,100"       size="185,278"      path="/media/hdd/poster" />
+
+    <widget source="session.Event_Now"      render="AglarePosterX" position="100,100"       size="185,278"      nexts="2" />
+
+    <widget source="session.CurrentService" render="AglarePosterX" position="100,100"       size="185,278"      nexts="3" />
+</screen>
+
+
+
+b. Channel List:
+
+<screen name="ChannelSelection">
+    <widget source="ServiceEvent" render="AglarePosterX" position="100,200" size="185,278" />
+
+    <widget source="ServiceEvent" render="AglarePosterX" position="100,200" size="185,278" nexts="1" />
+
+    <widget source="ServiceEvent" render="AglarePosterX" position="100,200" size="185,278"  nexts="2" path="/media/hdd/poster />
+</screen>
+
+
+c. Event View:
+
+<screen name="EventView">
+    <widget source="Event" render="AglarePosterX" position="50,50" size="185,278" />
+
+    <widget source="Event" render="AglarePosterX" position="100,100" size="185,278" path="/media/hdd/poster" />
+
+    <widget source="Event" render="AglarePosterX" position="100,100" size="185,278" nexts="2" />
+    
+</screen>
+
+
+4. Special Notes
+Source Requirements
+Infobar/Channel List: Use ServiceEvent
+
+EventView: Use Event
+
+Path Handling
+Default paths checked:
+/media/hdd/poster
+/media/usb/poster
+/tmp/poster
+
+Auto-created if missing permissions
+
+Performance Tips:
+
+<!-- Recommended for slower hardware -->
+<widget render="AglarePosterX" ... alphatest="on" transparent="0" />
+
+
+Multiple Instances:
+
+<!-- Current and next event -->
+<widget source="ServiceEvent" render="AglarePosterX" position="x,y" size="w,h" nexts="0" />
+<widget source="ServiceEvent" render="AglarePosterX" position="x,y+300" size="w,h" nexts="1" />
+
+
+5. Troubleshooting
+Issue	            Solution
+Blank poster?       Check /tmp/poster directory exists and has read permissions
+Wrong event?        Verify nexts value matches desired offset
+Image stretched?	Set scale="1" to preserve aspect ratio
+Performance issues? Reduce widget size or disable transparency
+
+The renderer automatically handles:
+✅ Aspect ratio control (scale="1")
+✅ Different screen contexts (channel list/infobar)
+✅ Dynamic path creation when needed
+✅ Lower default zPosition (for background placement)
+✅ Multiple skin instances
+✅ Optimized for larger images (e.g., 1920x1080 backgrounds)
+✅ Poster caching and fallback to default image
+✅ Supports blur effects (blur="3")
+
+Regards Lululla
