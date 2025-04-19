@@ -318,96 +318,193 @@ def clean_epg_text(text):
 def clean_filename(title):
 	"""
 	Sanitize title for use as filename.
-	Handles special characters and accents.
+	Handles special characters, accents, and Unicode properly.
 
 	Args:
-		title: Original title string.
+		title: Original title (str, bytes or any object).
 
 	Returns:
-		str: Cleaned filename-safe string.
+		str: Cleaned filename-safe string (returns "no_title" for empty input).
 	"""
+	# Handle empty/None input
 	if not title:
 		return "no_title"
 
-	# Convert to ASCII (remove accents)
-	title = normalize('NFKD', title)
-	title = title.encode('ascii', 'ignore').decode('ascii')
+	# Convert to string if not already str/bytes
+	if not isinstance(title, (str, bytes)):
+		try:
+			title = str(title)
+		except Exception:
+			return "no_title"
 
-	# Remove special characters and normalize
-	title = sub(r'[^\w\s-]', '_', title)  # Replace special chars with _
-	title = sub(r'[\s-]+', '_', title)    # Replace spaces and - with _
-	title = sub(r'_+', '_', title)        # Reduce multiple _ to single
-	title = title.strip('_')                 # Remove _ from start/end
+	try:
+		# Decode bytes to UTF-8 string
+		if isinstance(title, bytes):
+			title = title.decode('utf-8', errors='ignore')
 
-	return title.lower()[:100]  # Limit to 100 chars
+		# Preserve original for fallback
+		original_title = title
+
+		# Try ASCII conversion but keep original if it fails
+		try:
+			title = normalize('NFKD', title)
+			title = title.encode('ascii', 'ignore').decode('ascii')
+			if not title.strip():  # If conversion wiped the string
+				title = original_title
+		except Exception:
+			title = original_title
+
+		# Replace special chars (keep alphanumeric, spaces, and hyphens)
+		title = sub(r'[^\w\s-]', '_', title)
+
+		# Normalize separators
+		title = sub(r'[\s-]+', '_', title)  # Convert spaces and hyphens to _
+		title = sub(r'_+', '_', title)      # Collapse multiple _
+		title = title.strip('_')            # Trim _ from ends
+
+		# Final cleanup and length limit
+		clean_title = title.lower()[:100]
+
+		return clean_title if clean_title else "no_title"
+
+	except Exception:
+		return "no_title"
 
 
 def clean_for_tvdb_optimized(title):
 	"""
 	Optimized version for fast title cleaning
 	Removes common articles and patterns for better API matching
+	Handles special characters, encodings and Unicode normalization
 
 	Args:
-		title: Original title string
+		title: Original title (str, bytes or any object)
 
 	Returns:
-		str: Cleaned title ready for TVDB API
+		str: Cleaned title ready for TVDB API or empty string on error
 	"""
+	# Handle None or empty input
 	if not title:
 		return ""
 
-	# Convert to ASCII (remove accents)
-	title = normalize('NFKD', title)
-	title = title.encode('ascii', 'ignore').decode('ascii')
+	# Convert to string if not already str/bytes
+	if not isinstance(title, (str, bytes)):
+		try:
+			title = str(title)
+		except Exception as e:
+			logger.error(f"Title conversion error '{title!r}': {str(e)}")
+			return ""
 
-	# Remove common articles from start/end
-	title = sub(r'^(il|lo|la|i|gli|le|un|uno|una|a|an)\s+', '', title, flags=IGNORECASE)
-	title = sub(r'\s+(il|lo|la|i|gli|le|un|uno|una|a|an)$', '', title, flags=IGNORECASE)
+	try:
+		# Decode bytes to UTF-8 string
+		if isinstance(title, bytes):
+			title = title.decode('utf-8', errors='ignore')
 
-	# Remove common patterns (years, quality indicators, etc.)
-	patterns = [
-		r'\([0-9]{4}\)', r'\[.*?\]', r'\bHD\b', r'\b4K\b',
-		r'\bS\d+E\d+\b', r'\b\(\d+\)', r'\bodc\.\s?\d+\b',
-		r'\bep\.\s?\d+\b', r'\bparte\s?\d+\b'
-	]
-	for pattern in patterns:
-		title = sub(pattern, '', title, flags=IGNORECASE)
+		# Preserve original for fallback
+		original_title = title
 
-	# Final cleanup
-	title = sub(r'[^\w\s]', ' ', title)
-	title = sub(r'\s+', ' ', title).strip().lower()
-	return title
+		# Convert to ASCII (remove accents) but keep original if conversion fails
+		try:
+			title = normalize('NFKD', title)
+			title = title.encode('ascii', 'ignore').decode('ascii')
+			if not title.strip():  # If conversion wiped the string
+				title = original_title
+		except Exception:
+			title = original_title
+
+		# Remove common articles from start/end
+		title = sub(r'^(il|lo|la|i|gli|le|un|uno|una|a|an)\s+', '', title, flags=IGNORECASE)
+		title = sub(r'\s+(il|lo|la|i|gli|le|un|uno|una|a|an)$', '', title, flags=IGNORECASE)
+
+		# Remove common patterns (years, quality indicators, etc.)
+		patterns = [
+			r'\([0-9]{4}\)', r'\[.*?\]', r'\bHD\b', r'\b4K\b',
+			r'\bS\d+E\d+\b', r'\b\(\d+\)', r'\bodc\.\s?\d+\b',
+			r'\bep\.\s?\d+\b', r'\bparte\s?\d+\b'
+		]
+		for pattern in patterns:
+			title = sub(pattern, '', title, flags=IGNORECASE)
+
+		# Final cleanup
+		title = sub(r'[^\w\s]', ' ', title)
+		title = sub(r'\s+', ' ', title).strip().lower()
+
+		return title
+
+	except Exception as e:
+		logger.error(f"Error cleaning title: {str(e)}")
+		return ""
 
 
 # @lru_cache(maxsize=2000)
 def clean_for_tvdb(title):
 	"""
 	Prepare title for API searches with comprehensive cleaning
+	Handles special characters, encodings and Unicode normalization
 
 	Args:
-		title: Original title string
+		title: Original title (str, bytes or any object)
 
 	Returns:
-		str: Cleaned title ready for TVDB API
+		str: Cleaned title ready for TVDB API or empty string on error
 	"""
-	original_title = title  # Safe copy for logging
-
-	if not isinstance(title, str) or not title.strip():
+	# Handle None or empty input
+	if title is None:
 		return ""
+
+	# Convert to string if not already str/bytes
+	if not isinstance(title, (str, bytes)):
+		try:
+			title = str(title)
+		except Exception as e:
+			logger.error(f"Title conversion error '{title!r}': {str(e)}")
+			return ""
+
+	# Handle empty string after conversion
+	if not title.strip():
+		return ""
+
+	original_title = title  # Keep copy for error reporting
 
 	try:
-		# Convert to ASCII (remove accents)
-		title = normalize('NFKD', title)
-		title = title.encode('ascii', 'ignore').decode('ascii')
+		# Decode bytes to UTF-8 string
+		if isinstance(title, bytes):
+			try:
+				title = title.decode('utf-8')
+			except UnicodeDecodeError:
+				title = title.decode('utf-8', errors='ignore')
 
-		# Final cleanup
-		title = convtext(title)
-		title = sub(r'\s+', ' ', title).strip()
-		return title
+		# Preserve original for fallback
+		clean_title = title
+
+		# Try ASCII conversion but keep original if it fails
+		try:
+			temp_title = normalize('NFKD', title)
+			temp_title = temp_title.encode('ascii', 'ignore').decode('ascii')
+			if temp_title.strip():  # Only use if conversion produced valid text
+				clean_title = temp_title
+		except Exception:
+			pass  # Keep original title if conversion fails
+
+		# Process with convtext
+		final_title = convtext(clean_title)
+
+		# Handle convtext returning None
+		if final_title is None:
+			# Try with original title before ASCII conversion
+			final_title = convtext(title)
+			if final_title is None:
+				return ""
+
+		# Final whitespace cleanup
+		final_title = sub(r'\s+', ' ', final_title).strip()
+
+		return final_title
 
 	except Exception as e:
-		logger.error("Error cleaning title '%s': %s", str(original_title), str(e))
+		logger.error(f"Error cleaning title '{str(original_title)}': {str(e)}")
 		return ""
+
 
 # ================ END TEXT MANAGER ===============
 

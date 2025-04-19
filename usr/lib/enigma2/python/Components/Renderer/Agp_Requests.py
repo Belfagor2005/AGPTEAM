@@ -28,10 +28,20 @@ from __future__ import absolute_import, print_function
 __author__ = "Lululla"
 __copyright__ = "AGP Team"
 
+# Third-party libraries
 import requests
 from collections import namedtuple
 from random import choices
 from requests.adapters import HTTPAdapter
+
+# ========================
+# DISABLE URLLIB3 DEBUG LOGS
+# ========================
+import logging
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("requests").setLevel(logging.WARNING)
 
 # Define User Agent structure with percentage distribution
 UserAgent = namedtuple('UserAgent', ['ua', 'weight'])

@@ -61,16 +61,8 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 logging.getLogger("requests").setLevel(logging.WARNING)
 
-"""
-try:
-	from http.client import HTTPConnection
-	HTTPConnection.debuglevel = 0
-except ImportError:
-	from httplib import HTTPConnection
-	HTTPConnection.debuglevel = 0
-"""
-
 global my_cur_skin, srch
+
 
 try:
 	lng = config.osd.language.value

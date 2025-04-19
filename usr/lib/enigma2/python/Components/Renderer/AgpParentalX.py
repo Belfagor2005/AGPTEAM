@@ -1,15 +1,16 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, print_function
 """
 #########################################################
 #                                                       #
-#  AGP - Advanced Graphics PosteRenderer                #
+#  AGP - Advanced Graphics Renderer                     #
 #  Version: 3.5.0                                       #
 #  Created by Lululla (https://github.com/Belfagor2005) #
 #  License: CC BY-NC-SA 4.0                             #
 #  https://creativecommons.org/licenses/by-nc-sa/4.0    #
-#                                                       #
-#  Last Modified: {date_modify}                         #
+#  from original code by @digiteng 2021                 #
+#  Last Modified: "15:14 - 20250401"                    #
 #                                                       #
 #  Credits:                                             #
 #  - Original concept by Lululla                        #
@@ -18,18 +19,14 @@
 #  - OMDB API integration                               #
 #  - Advanced caching system                            #
 #                                                       #
-#  Features:                                            #
-#  - Displays age rating icons                          #
-#  - Supports multiple rating systems                   #
-#  - Integrates with AglarePosterX metadata             #
-#                                                       #
 #  Usage of this code without proper attribution        #
 #  is strictly prohibited.                              #
 #  For modifications and redistribution,                #
 #  please maintain this credit header.                  #
 #########################################################
 """
-from __future__ import print_function
+__author__ = "Lululla"
+__copyright__ = "AGP Team"
 
 # Standard library imports
 from os import makedirs

@@ -9,7 +9,7 @@ from __future__ import absolute_import, print_function
 #  Created by Lululla (https://github.com/Belfagor2005) #
 #  License: CC BY-NC-SA 4.0                             #
 #  https://creativecommons.org/licenses/by-nc-sa/4.0    #
-#  from original code by @digiteng 2021                 #
+#   by base code from digiteng 2022                     #
 #  Last Modified: "15:14 - 20250401"                    #
 #                                                       #
 #  Credits:                                             #
@@ -56,13 +56,13 @@ api_lock = threading_Lock()
 
 """skin configuration"""
 """
-<widget source="Event" render="AgpInfoEvents" position="x,y" size="width,height"
+<widget source="Event" render="AglareInfoEvents" position="x,y" size="width,height"
 	display_mode="full" />
 """
 
 """skin custom configuration"""
 """
-<widget source="Event" render="AgpInfoEvents" position="x,y" size="width,height"
+<widget source="Event" render="AglareInfoEvents" position="x,y" size="width,height"
 	display_mode="custom"
 	info_format="{title} ({year}) - {rating}
 {genres}
@@ -70,7 +70,7 @@ api_lock = threading_Lock()
 """
 
 
-class AgpInfoEvents(Renderer, VariableText):
+class AglareInfoEvents(Renderer, VariableText):
 	"""Enhanced renderer for displaying detailed event information from TMDB"""
 
 	GUI_WIDGET = eLabel
@@ -84,9 +84,9 @@ class AgpInfoEvents(Renderer, VariableText):
 		if len(self.quick_cache) > 50:
 			self.quick_cache.clear()
 		self.last_service = None
-		self.display_mode = config.plugins.AgpInfoEvents.display_mode.value
-		self.info_format = config.plugins.AgpInfoEvents.info_format.value
-		logger.info("AgpInfoEvents Renderer initialized")
+		self.display_mode = config.plugins.AglareInfoEvents.display_mode.value
+		self.info_format = config.plugins.AglareInfoEvents.info_format.value
+		logger.info("AglareInfoEvents Renderer initialized")
 
 	def applySkin(self, desktop, parent):
 		"""Handle skin attributes"""
@@ -271,12 +271,12 @@ class AgpInfoEvents(Renderer, VariableText):
 
 def setupConfig():
 	"""Initialize configuration options"""
-	config.plugins.AgpInfoEvents = ConfigSubsection()
-	config.plugins.AgpInfoEvents.display_mode = ConfigSelection(
+	config.plugins.AglareInfoEvents = ConfigSubsection()
+	config.plugins.AglareInfoEvents.display_mode = ConfigSelection(
 		choices=[("short", "Short info"), ("full", "Full info"), ("custom", "Custom format")],
 		default="short"
 	)
-	config.plugins.AgpInfoEvents.info_format = ConfigText(
+	config.plugins.AglareInfoEvents.info_format = ConfigText(
 		default="{title} ({year})\nRating: {rating}\nGenres: {genres}\n\n{overview}",
 		fixed_size=False
 	)
