@@ -6,7 +6,9 @@ from enigma import eEPGCache, eServiceReference
 from time import localtime, time, mktime, strftime
 from datetime import datetime
 import logging
-# 20250104 @ lululla fix
+import gettext
+_ = gettext.gettext
+# 2025.04.01 @ lululla fix
 
 # Setup logging
 logger = logging.getLogger(__name__)

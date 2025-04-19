@@ -8,7 +8,9 @@ from Tools.Hex2strColor import Hex2strColor
 from Components.Converter.Poll import Poll
 from Tools.Directories import pathExists
 from skin import parameters
-
+import gettext
+_ = gettext.gettext
+# 2025.04.01 @ lululla fix
 
 caid_data = (
     ("0x100", "0x1ff", "Seca", "S", "SECA", True),
