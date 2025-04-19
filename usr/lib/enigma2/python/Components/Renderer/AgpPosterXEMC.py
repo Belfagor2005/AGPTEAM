@@ -9,11 +9,10 @@ from __future__ import absolute_import, print_function
 #  Created by Lululla (https://github.com/Belfagor2005) #
 #  License: CC BY-NC-SA 4.0                             #
 #  https://creativecommons.org/licenses/by-nc-sa/4.0    #
-#                                                       #
+#  from original code by @digiteng 2021                 #
 #  Last Modified: "15:14 - 20250401"                    #
 #                                                       #
 #  Credits:                                             #
-#   by base code from digiteng 2022                     #
 #  - Original concept by Lululla                        #
 #  - TMDB API integration                               #
 #  - TVDB API integration                               #
@@ -31,7 +30,7 @@ __copyright__ = "AGP Team"
 
 # Standard library imports
 from Components.config import config
-from os import utime
+from os import utime, makedirs
 from os.path import exists, join, getsize
 from re import findall, IGNORECASE
 from time import sleep, time
@@ -40,10 +39,10 @@ from threading import Thread
 from datetime import datetime
 
 # Enigma2/Dreambox specific imports
+from enigma import ePixmap, loadJPG, eEPGCache, eTimer
 from Components.Renderer.Renderer import Renderer
-from enigma import ePixmap, eTimer, loadJPG, eEPGCache
-from Components.Sources.ServiceEvent import ServiceEvent
 from Components.Sources.CurrentService import CurrentService
+from Components.Sources.ServiceEvent import ServiceEvent
 
 # Local imports
 from Components.Renderer.AgpDownloadThread import AgpDownloadThread
@@ -56,7 +55,7 @@ extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
 
 """
 # Use for emc plugin
-<widget source="Servicet" render="AglarePosterXEMC"
+<widget source="Servicet" render="AgpPosterXEMC"
 	position="100,100"
 	size="185,278"
 	cornerRadius="20"
@@ -79,7 +78,7 @@ except:
 	pass
 
 
-class AglarePosterXEMC(Renderer):
+class AgpPosterXEMC(Renderer):
 
 	GUI_WIDGET = ePixmap
 
@@ -99,11 +98,11 @@ class AglarePosterXEMC(Renderer):
 		attribs = []
 
 		self.providers = {
-			"tmdb": True,
-			"tvdb": False,
-			"imdb": False,
-			"fanart": False,
-			"google": False
+			"tmdb": True,       # The Movie Database
+			"tvdb": False,      # The TV Database
+			"imdb": False,      # Internet Movie Database
+			"fanart": False,    # Fanart.tv
+			"google": False     # Google Images
 		}
 
 		for (attrib, value) in self.skinAttributes:
@@ -124,10 +123,22 @@ class AglarePosterXEMC(Renderer):
 		if not self.instance:
 			return
 
-		if what[0] == self.CHANGED_CLEAR:
-			self.instance.hide()
+		# Skip unnecessary updates
+		if what[0] not in (self.CHANGED_DEFAULT, self.CHANGED_ALL, self.CHANGED_SPECIFIC, self.CHANGED_CLEAR):
+			if self.instance:
+				self.instance.hide()
 			return
+		"""
+		if what[0] == self.CHANGED_CLEAR:
+			if self.instance:
+				self.instance.hide()
+			return
+		"""
 
+		# source = self.source
+		# source_type = type(source)
+		# servicetype = None
+		# service = None
 		try:
 			event = None
 			if isinstance(self.source, ServiceEvent):
@@ -148,7 +159,7 @@ class AglarePosterXEMC(Renderer):
 			self.canal[5] = None
 			for ext in self.extensions:
 				full_path = image_path + ext
-				if exists(full_path):
+				if checkPosterExistence(full_path):
 					self.canal[5] = full_path
 					break
 
@@ -206,7 +217,7 @@ class AglarePosterXEMC(Renderer):
 			for ext in self.extensions:
 				candidate = join(self.path, self.pstcanal + ext)
 				logger.info(f"Checking poster path: {candidate}")  # Log the path being checked
-				if exists(candidate):
+				if checkPosterExistence(candidate):
 					logger.info(f"Found poster at: {candidate}")  # Log the found poster path
 					# Cache the found poster path
 					if not hasattr(self, '_loaded_posters'):
@@ -218,10 +229,6 @@ class AglarePosterXEMC(Renderer):
 			logger.error(f"Invalid self.pstcanal value: {self.pstcanal}")
 		return None
 
-	def checkPosterExistence(self, poster_path):
-		"""Check if poster file exists"""
-		return exists(poster_path)
-
 	def runPosterThread(self):
 		"""Start poster download thread"""
 		Thread(target=self.waitPoster, daemon=True).start()
@@ -230,7 +237,7 @@ class AglarePosterXEMC(Renderer):
 		"""Display the poster image"""
 		if self.instance:
 			self.instance.hide()
-		if not self.pstrNm or not self.checkPosterExistence(self.pstrNm):
+		if not self.pstrNm or not checkPosterExistence(self.pstrNm):
 			self.instance.hide()
 			logger.info("showPoster hide instance")
 			return
@@ -258,7 +265,7 @@ class AglarePosterXEMC(Renderer):
 		found = False
 		logger.info(f"[WAIT] Checking for poster: {self.pstrNm}")
 		while loop > 0:
-			if self.pstrNm and self.checkPosterExistence(self.pstrNm):
+			if self.pstrNm and checkPosterExistence(self.pstrNm):
 				found = True
 				break
 			logger.info(f"[WAIT] Attempting to find poster... (remaining tries: {loop})")  # Add more logging
@@ -292,37 +299,37 @@ class PosterDBEMC(AgpDownloadThread):
 	"""Handles poster downloading and database management"""
 	def __init__(self, providers=None):
 		super().__init__()
+		self.extensions = extensions
 		self.logdbg = None
 		self.pstcanal = None
-		self.extensions = extensions
 		self.service_pattern = compile(r'^#SERVICE (\d+):([^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+)')
+		self.log_file = "/tmp/agplog/PosterDBEMC.log"
+		if not exists("/tmp/agplog"):
+			makedirs("/tmp/agplog")
+
 		default_providers = {
-			"tmdb": True,
-			"tvdb": False,
-			"imdb": False,
-			"fanart": False,
-			"google": False
+			"tmdb": True,       # The Movie Database
+			"tvdb": False,      # The TV Database
+			"imdb": False,      # Internet Movie Database
+			"fanart": False,    # Fanart.tv
+			"google": False     # Google Images
 		}
 		self.providers = {**default_providers, **(providers or {})}
 		self.provider_engines = self.build_providers()
 
 	def build_providers(self):
-		"""Create the list of enabled provider engines"""
-		engines = []
-		if self.providers.get("tmdb"):
-			engines.append(("TMDB", self.search_tmdb))
-		if self.providers.get("tvdb"):
-			engines.append(("TVDB", self.search_tvdb))
-		if self.providers.get("fanart"):
-			engines.append(("Fanart", self.search_fanart))
-		if self.providers.get("imdb"):
-			engines.append(("IMDB", self.search_imdb))
-		if self.providers.get("google"):
-			engines.append(("Google", self.search_google))
-		return engines
+		"""Initialize enabled provider search engines"""
+		mapping = {
+			"tmdb": ("TMDB", self.search_tmdb),
+			"tvdb": ("TVDB", self.search_tvdb),
+			"fanart": ("Fanart", self.search_fanart),
+			"imdb": ("IMDB", self.search_imdb),
+			"google": ("Google", self.search_google)
+		}
+		return [engine for key, engine in mapping.items() if self.providers.get(key)]
 
 	def run(self):
-		"""Main processing loop"""
+		"""Main processing loop - handles incoming channel requests"""
 		while True:
 			canal = pdbemc.get()
 			self.process_canal(canal)
@@ -333,16 +340,21 @@ class PosterDBEMC(AgpDownloadThread):
 		try:
 			self.pstcanal = clean_for_tvdb(canal[5])
 			if not self.pstcanal:
-				logger.info(f"Invalid channel name: {canal[0]}")
+				print(f"Invalid channel name: {canal[0]}")
 				return
 
-			if not self.provider_engines:
+			if not any(self.providers.values()):
 				self._log_debug("No provider is enabled for poster download")
+				return
+
+			poster_path = join(IMOVIE_FOLDER, f"{self.pstcanal}.jpg")
+			if checkPosterExistence(self.pstcanal):
+				utime(poster_path, (time(), time()))
 				return
 
 			for ext in self.extensions:
 				poster_path = join(IMOVIE_FOLDER, self.pstcanal + ext)
-				if self.is_valid_poster(poster_path):
+				if checkPosterExistence(poster_path):
 					utime(poster_path, (time(), time()))  # Avoid re-download
 					self._log_debug(f"Poster already exists: {poster_path}")
 					return
@@ -365,27 +377,34 @@ class PosterDBEMC(AgpDownloadThread):
 		except Exception as e:
 			self._log_error(f"Processing error ({self.pstcanal}): {e}")
 
-	def is_valid_poster(self, poster_path):
-		"""Check if the poster file is valid (exists and has a valid size)"""
-		return exists(poster_path) and getsize(poster_path) > 100
-
 	def _log_debug(self, message):
-		"""Log debug message to file"""
-		try:
-			with open("/tmp/agplog/AgpPosterXEMC.log", "a") as w:
-				w.write(f"{datetime.now()}: {message}\n")
-		except Exception as e:
-			logger.error(f"Logging error: {e}")
+		self._write_log("DEBUG", message)
 
 	def _log_error(self, message):
-		"""Log error message to file"""
+		self._write_log("ERROR", message)
+
+	def _write_log(self, level, message):
+		"""Centralized logging method"""
 		try:
-			with open("/tmp/agplog/AgpPosterXEMC_errors.log", "a") as f:
-				f.write(f"{datetime.now()}: ERROR: {message}\n")
+			log_dir = "/tmp/agplog"
+			if not exists(log_dir):
+				makedirs(log_dir)
+			with open(self.log_file, "a") as w:
+				w.write(f"{datetime.now()} {level}: {message}\n")
 		except Exception as e:
-			logger.error(f"Error logging error: {e}")
+			print(f"Logging error: {e}")
+
+
+def checkPosterExistence(poster_path):
+	return exists(poster_path)
+
+
+def is_valid_poster(poster_path):
+	"""Check if the poster file is valid (exists and has a valid size)"""
+	return exists(poster_path) and getsize(poster_path) > 100
 
 
 # Start the thread
 threadDBemc = PosterDBEMC()
+threadDBemc.daemon = True
 threadDBemc.start()

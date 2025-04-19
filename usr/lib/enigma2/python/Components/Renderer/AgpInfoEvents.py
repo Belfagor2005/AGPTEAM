@@ -3,27 +3,27 @@
 from __future__ import absolute_import, print_function
 """
 #########################################################
-#														#
-#  AGP - Advanced Graphics Renderer						#
-#  Version: 3.5.0										#
+#                                                       #
+#  AGP - Advanced Graphics Renderer                     #
+#  Version: 3.5.0                                       #
 #  Created by Lululla (https://github.com/Belfagor2005) #
-#  License: CC BY-NC-SA 4.0								#
-#  https://creativecommons.org/licenses/by-nc-sa/4.0	#
-#														#
-#  Last Modified: "15:14 - 20250401"					#
-#														#
-#  Credits:												#
-#	by base code from digiteng 2022						#
-#  - Original concept by Lululla						#
-#  - TMDB API integration								#
-#  - TVDB API integration								#
-#  - OMDB API integration								#
-#  - Advanced caching system							#
-#														#
-#  Usage of this code without proper attribution		#
-#  is strictly prohibited.								#
-#  For modifications and redistribution,				#
-#  please maintain this credit header.					#
+#  License: CC BY-NC-SA 4.0                             #
+#  https://creativecommons.org/licenses/by-nc-sa/4.0    #
+#                                                       #
+#  Last Modified: "15:14 - 20250401"                    #
+#                                                       #
+#  Credits:                                             #
+#   by base code from digiteng 2022                     #
+#  - Original concept by Lululla                        #
+#  - TMDB API integration                               #
+#  - TVDB API integration                               #
+#  - OMDB API integration                               #
+#  - Advanced caching system                            #
+#                                                       #
+#  Usage of this code without proper attribution        #
+#  is strictly prohibited.                              #
+#  For modifications and redistribution,                #
+#  please maintain this credit header.                  #
 #########################################################
 """
 __author__ = "Lululla"
@@ -32,7 +32,6 @@ __copyright__ = "AGP Team"
 # Standard library imports
 from json import load as json_load, dump as json_dump
 from os import path
-from sys import version_info
 from threading import Lock as threading_Lock
 from hashlib import md5
 
@@ -55,18 +54,16 @@ from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, clean_filename, logger  # 
 epgcache = eEPGCache.getInstance()
 api_lock = threading_Lock()
 
-PY3 = version_info[0] >= 3
-
 
 """skin configuration"""
 """
-<widget source="Event" render="AglareInfoEvents" position="x,y" size="width,height"
+<widget source="Event" render="AgpInfoEvents" position="x,y" size="width,height"
 	display_mode="full" />
 """
 
 """skin custom configuration"""
 """
-<widget source="Event" render="AglareInfoEvents" position="x,y" size="width,height"
+<widget source="Event" render="AgpInfoEvents" position="x,y" size="width,height"
 	display_mode="custom"
 	info_format="{title} ({year}) - {rating}
 {genres}
@@ -74,7 +71,7 @@ PY3 = version_info[0] >= 3
 """
 
 
-class AglareInfoEvents(Renderer, VariableText):
+class AgpInfoEvents(Renderer, VariableText):
 	"""Enhanced renderer for displaying detailed event information from TMDB"""
 
 	GUI_WIDGET = eLabel
@@ -85,10 +82,12 @@ class AglareInfoEvents(Renderer, VariableText):
 		self.text = ""
 		self.canal = [None] * 6
 		self.quick_cache = {}
+		if len(self.quick_cache) > 50:
+			self.quick_cache.clear()
 		self.last_service = None
-		self.display_mode = config.plugins.AglareInfoEvents.display_mode.value
-		self.info_format = config.plugins.AglareInfoEvents.info_format.value
-		logger.info("AglareInfoEvents Renderer initialized")
+		self.display_mode = config.plugins.AgpInfoEvents.display_mode.value
+		self.info_format = config.plugins.AgpInfoEvents.info_format.value
+		logger.info("AgpInfoEvents Renderer initialized")
 
 	def applySkin(self, desktop, parent):
 		"""Handle skin attributes"""
@@ -107,8 +106,9 @@ class AglareInfoEvents(Renderer, VariableText):
 		if not hasattr(self, 'instance') or not self.instance:
 			return
 
-		if what[0] == self.CHANGED_CLEAR:
-			self.text = ""
+		if what[0] not in (self.CHANGED_DEFAULT, self.CHANGED_ALL, self.CHANGED_SPECIFIC, self.CHANGED_CLEAR):
+			if self.instance:
+				self.instance.hide()
 			return
 
 		try:
@@ -272,12 +272,12 @@ class AglareInfoEvents(Renderer, VariableText):
 
 def setupConfig():
 	"""Initialize configuration options"""
-	config.plugins.AglareInfoEvents = ConfigSubsection()
-	config.plugins.AglareInfoEvents.display_mode = ConfigSelection(
+	config.plugins.AgpInfoEvents = ConfigSubsection()
+	config.plugins.AgpInfoEvents.display_mode = ConfigSelection(
 		choices=[("short", "Short info"), ("full", "Full info"), ("custom", "Custom format")],
 		default="short"
 	)
-	config.plugins.AglareInfoEvents.info_format = ConfigText(
+	config.plugins.AgpInfoEvents.info_format = ConfigText(
 		default="{title} ({year})\nRating: {rating}\nGenres: {genres}\n\n{overview}",
 		fixed_size=False
 	)

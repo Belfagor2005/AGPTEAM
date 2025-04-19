@@ -54,6 +54,7 @@ from os.path import (  # Path manipulation utilities
 )
 from pathlib import Path  # Object-oriented path handling
 import glob              # Pattern-based file searching
+# from functools import lru_cache
 
 # ========================
 # IMPORTS FOR LOGGING
@@ -77,7 +78,7 @@ import time
 # ========================
 # IMPORTS FOR TEXT PROCESSING
 # ========================
-import unicodedata
+from unicodedata import normalize
 from re import sub, IGNORECASE
 
 # ========================
@@ -317,35 +318,27 @@ def clean_epg_text(text):
 
 def clean_filename(title):
 	"""
-	Sanitize title for use as filename
-	Handles special characters and accents
+	Sanitize title for use as filename.
+	Handles special characters and accents.
 
 	Args:
-		title: Original title string
+		title: Original title string.
 
 	Returns:
-		str: Cleaned filename-safe string
+		str: Cleaned filename-safe string.
 	"""
 	if not title:
 		return "no_title"
 
-	# Handle unicode conversion for Python 2/3 compatibility
-	if version_info[0] == 2:
-		if isinstance(title, str):
-			title = title.decode('utf-8', 'ignore')
-	else:
-		if isinstance(title, bytes):
-			title = title.decode('utf-8', 'ignore')
-
 	# Convert to ASCII (remove accents)
-	title = unicodedata.normalize('NFKD', title)
+	title = normalize('NFKD', title)
 	title = title.encode('ascii', 'ignore').decode('ascii')
 
 	# Remove special characters and normalize
 	title = sub(r'[^\w\s-]', '_', title)  # Replace special chars with _
 	title = sub(r'[\s-]+', '_', title)    # Replace spaces and - with _
 	title = sub(r'_+', '_', title)        # Reduce multiple _ to single
-	title = title.strip('_')              # Remove _ from start/end
+	title = title.strip('_')                 # Remove _ from start/end
 
 	return title.lower()[:100]  # Limit to 100 chars
 
@@ -365,7 +358,7 @@ def clean_for_tvdb_optimized(title):
 		return ""
 
 	# Convert to ASCII (remove accents)
-	title = unicodedata.normalize('NFKD', title)
+	title = normalize('NFKD', title)
 	title = title.encode('ascii', 'ignore').decode('ascii')
 
 	# Remove common articles from start/end
@@ -387,10 +380,8 @@ def clean_for_tvdb_optimized(title):
 
 	return title
 
-# Used in `_fill_from_event` o `_fill_from_service`
-# normalized_name = clean_for_tvdb_optimized(event_name)
 
-
+# @lru_cache(maxsize=2000)
 def clean_for_tvdb(title):
 	"""
 	Prepare title for API searches with comprehensive cleaning
@@ -401,28 +392,24 @@ def clean_for_tvdb(title):
 	Returns:
 		str: Cleaned title ready for TVDB API
 	"""
-	if not title:
+	if not isinstance(title, str) or not title.strip():
 		return ""
 
-	# Convert to ASCII (remove accents)
-	title = unicodedata.normalize('NFKD', title)
-	title = title.encode('ascii', 'ignore').decode('ascii')
+	try:
+		# Convert to ASCII (remove accents)
+		title = normalize('NFKD', title)
+		title = title.encode('ascii', 'ignore').decode('ascii')
 
-	# Remove common patterns (years, quality indicators, etc.)
-	patterns = [
-		r'\([0-9]{4}\)', r'\[.*?\]', r'\bHD\b', r'\b4K\b',
-		r'\bS\d+E\d+\b', r'\b\(\d+\)', r'\bodc\.\s?\d+\b',
-		r'\bep\.\s?\d+\b', r'\bparte\s?\d+\b'
-	]
-	for pattern in patterns:
-		title = sub(pattern, '', title, flags=IGNORECASE)
+		# Final cleanup
+		# title = sub(r'[^\w\s]', ' ', title)
+		title = convtext(title)
+		title = sub(r'\s+', ' ', title).strip()
+		# print(clean_for_tvdb.cache_info())  # Mostra hit/miss
+		return title
 
-	# Final cleanup before returning
-	title = sub(r'[^\w\s]', ' ', title)
-	title = sub(r'\s+', ' ', title).strip().lower()
-
-	return convtext(title)
-
+	except Exception as e:
+		logger.error(f"Error cleaning title '{title}': {str(e)}")
+		return ""
 
 # ================ END TEXT MANAGER ===============
 

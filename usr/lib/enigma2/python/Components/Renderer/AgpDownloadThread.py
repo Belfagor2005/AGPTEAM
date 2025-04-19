@@ -10,7 +10,6 @@ from __future__ import absolute_import, print_function
 #  License: CC BY-NC-SA 4.0                             #
 #  https://creativecommons.org/licenses/by-nc-sa/4.0    #
 #  from original code by @digiteng 2021                 #
-#                                                       #
 #  Last Modified: "15:14 - 20250401"                    #
 #                                                       #
 #  Credits:                                             #
@@ -40,8 +39,7 @@ from unicodedata import normalize
 
 # Third-party libraries
 from PIL import Image
-from requests import get, codes, Session  # , exceptions
-from requests.exceptions import RequestException
+from requests import get, codes, Session
 from requests.adapters import HTTPAdapter, Retry
 from twisted.internet.reactor import callInThread
 
@@ -53,6 +51,7 @@ from Components.config import config
 from .Agp_lib import PY3, quoteEventName
 from .Agp_apikeys import tmdb_api, thetvdb_api, fanart_api  # , omdb_api
 from .Agp_Utils import logger
+
 
 try:
 	from http.client import HTTPConnection
@@ -96,17 +95,20 @@ AGENTS = [
 	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36 Edge/87.0.664.75",
 	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36 Edge/18.18363"
 ]
+headers = {"User-Agent": choice(AGENTS)}
 
 
-isz = "185,278"
+isz = "500,750"
 screenwidth = getDesktop(0).size()
 if screenwidth.width() <= 1280:
 	isz = isz.replace(isz, "185,278")
 elif screenwidth.width() <= 1920:
-	isz = isz.replace(isz, "342,514")
+	isz = isz.replace(isz, "500,750")
 else:
 	isz = isz.replace(isz, "780,1170")
-"""
+
+
+'''
 🖼️ Poster:
 "w92", "w154", "w185", "w342", "w500", "w780", "original"
 
@@ -131,7 +133,7 @@ Still (episodio)    400x225 → 3840x2160     1.777 (16:9)
 Profile             300x450 → 2000x3000     1.5 (2:3)
 Logo PNG            500x1 → 2000x2000       Variabile
 Logo SVG            500x1 → vettoriale      Variabile
-"""
+'''
 
 
 class AgpDownloadThread(Thread):
@@ -157,83 +159,84 @@ class AgpDownloadThread(Thread):
 		]
 
 	def search_tmdb(self, dwn_poster, title, shortdesc, fulldesc, channel=None):
+		"""Download poster from TMDB with full verification pipeline"""
+		self.title_safe = self.UNAC(title.replace("+", " ").strip())
 		try:
-			self.dwn_poster = dwn_poster
-			self.title_safe = title.replace("+", " ")
-			url = "https://api.themoviedb.org/3/search/multi?api_key={}&language={}&query={}".format(
-				tmdb_api, lng, self.title_safe
-			)
-			retries = Retry(total=1, backoff_factor=1)
+			if not dwn_poster or not title:
+				return (False, "Invalid input parameters")
+
+			if not self.title_safe:
+				return (False, "Invalid title after cleaning")
+
+			# 3. Determine search type
+			srch, fd = self.checkType(shortdesc, fulldesc)
+
+			# 4. Build TMDB API URL
+			url = f"https://api.themoviedb.org/3/search/{srch}?api_key={tmdb_api}&language={lng}&query={self.title_safe}"
+
+			# 5. Make API request with retries
+			retries = Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
 			adapter = HTTPAdapter(max_retries=retries)
 			http = Session()
 			http.mount("http://", adapter)
 			http.mount("https://", adapter)
-			headers = {"User-Agent": choice(AGENTS)}
-
 			response = http.get(url, headers=headers, timeout=(10, 20), verify=False)
 			response.raise_for_status()
 
 			if response.status_code == codes.ok:
 				try:
 					data = response.json()
-					return self.downloadData2(data)
+					return self.downloadData2(data, dwn_poster)
 				except ValueError as e:
 					logger.error("TMDb response decode error: " + str(e))
 					return False, "Errore nel parsing della risposta TMDb"
 			else:
 				return False, "Errore durante la richiesta a TMDb: {}".format(response.status_code)
-		except RequestException as e:
+
+		except Exception as e:
 			logger.error("TMDb search error: " + str(e))
 			return False, "Errore durante la ricerca su TMDb"
 
-	def downloadData2(self, data):
+	def downloadData2(self, data, dwn_poster):
 		if isinstance(data, bytes):
-			data = data.decode('utf-8')  # Ensure the data is in a proper string format
+			data = data.decode('utf-8')
 		data_json = data if isinstance(data, dict) else loads(data)
 
 		if 'results' in data_json:
-			try:
-				for each in data_json['results']:
-					media_type = str(each.get('media_type', ''))
-					if media_type == "tv":
-						media_type = "serie"
-					if media_type in ['serie', 'movie']:
-						year = ""
-						if media_type == "movie" and 'release_date' in each:
-							year = each['release_date'].split("-")[0]
-						elif media_type == "serie" and 'first_air_date' in each:
-							year = each['first_air_date'].split("-")[0]
+			for each in data_json['results']:
+				media_type = str(each.get('media_type', ''))
+				if media_type == "tv":
+					media_type = "serie"
+				if media_type not in ['serie', 'movie']:
+					continue
+				# year = ""
+				# if media_type == "movie" and 'release_date' in each and each['release_date']:
+					# year = each['release_date'].split("-")[0]
+				# elif media_type == "serie" and 'first_air_date' in each and each['first_air_date']:
+					# year = each['first_air_date'].split("-")[0]
 
-						title = each.get('name', each.get('title', ''))
-						backdrop_path = each.get('backdrop_path')
-						poster_path = each.get('poster_path')
+				title = each.get('name', each.get('title', ''))
+				poster_path = each.get('poster_path')
 
-						backdrop = f"http://image.tmdb.org/t/p/original{backdrop_path}" if backdrop_path else ""
-						poster = f"http://image.tmdb.org/t/p/original{poster_path}" if poster_path else ""
+				if not poster_path:  # Se non c'è poster, salta
+					continue
 
-						rating = str(each.get('vote_average', 0))
-						show_title = f"{title} ({year})" if year else title
-
-						if poster.strip():
-							# Download poster in a separate thread
-							callInThread(self.savePoster, poster, self.dwn_poster)
-
-							return True, f"[SUCCESS poster: tmdb] title {title} [poster{poster}-backdrop{backdrop}] => year{year} => rating{rating} => showtitle{show_title}"
-				return False, "[SKIP : tmdb] Not found"
-
-			except Exception as e:
-				logger.error(f"Error during downloadData2 processing: {e}")
-				if exists(self.dwn_poster):
-					remove(self.dwn_poster)
-				return False, "[ERROR : tmdb] Error processing data"
+				poster = f"http://image.tmdb.org/t/p/original{poster_path}"
+				if not poster.strip() or poster.endswith("/original"):
+					continue
+				if poster.strip():
+					callInThread(self.savePoster, poster, dwn_poster)
+					if exists(dwn_poster):
+						return True, f"[SUCCESS] Poster avviato: {title}"
+		return False, "[SKIP] Nessun risultato valido"
 
 	def search_tvdb(self, dwn_poster, title, shortdesc, fulldesc, channel=None):
+		self.title_safe = title.replace('+', ' ')
 		try:
-			self.dwn_poster = dwn_poster
+			if not exists(dwn_poster):
+				return (False, "File not created")
 			series_nb = -1
 			chkType, fd = self.checkType(shortdesc, fulldesc)
-			title_safe = title
-			self.title_safe = title_safe.replace('+', ' ')
 			year = findall(r'19\d{2}|20\d{2}', fd)
 			if len(year) > 0:
 				year = year[0]
@@ -278,26 +281,27 @@ class AgpDownloadThread(Thread):
 					poster = findall(r'<poster>(.*?)</poster>', url_read)
 					url_poster = "https://artworks.thetvdb.com/banners/{}".format(poster[0])
 					if poster is not None and poster[0]:
-						callInThread(self.savePoster, url_poster, self.dwn_poster)
-						return True, f"[SUCCESS : tvdb] {self.title_safe} [{chkType}-{year}] => {url_tvdbg} => {url_tvdb} => {url_poster}"
+						callInThread(self.savePoster, url_poster, dwn_poster)
+						if exists(dwn_poster):
+							return True, f"[SUCCESS : tvdb] {self.title_safe} [{chkType}-{year}] => {url_tvdbg} => {url_tvdb} => {url_poster}"
 					return False, f"[SKIP : tvdb] {self.title_safe} [{chkType}-{year}] => {url_tvdbg} (Not found)"
 			else:
 				return False, f"[SKIP : tvdb] {self.title_safe} [{chkType}-{year}] => {url_tvdbg} (Not found)"
 
 		except Exception as e:
-			if exists(dwn_poster):
-				remove(dwn_poster)
-			return False, f"[ERROR : tvdb] {title} => {url_tvdbg} ({str(e)})"
+			return False, f"[ERROR : tvdb] {self.title_safe} => {url_tvdbg} ({str(e)})"
 
 	def search_fanart(self, dwn_poster, title, shortdesc, fulldesc, channel=None):
+		self.title_safe = title.replace('+', ' ')
 		try:
+			if not exists(dwn_poster):
+				return (False, "File not created")
+
 			year = ""
 			url_maze = ""
 			url_fanart = ""
 			tvmaze_id = "-"
-			self.title_safe = title.replace("+", " ")
 			chkType, fd = self.checkType(shortdesc, fulldesc)
-
 			try:
 				matches = findall(r"19\d{2}|20\d{2}", fd)
 				if matches:
@@ -323,29 +327,31 @@ class AgpDownloadThread(Thread):
 					url = (fjs['tvposter'][0]['url'])
 				elif "movieposter" in fjs and fjs["movieposter"]:
 					url = (fjs['movieposter'][0]['url'])
-
 				if url:
 					callInThread(self.savePoster, url, dwn_poster)
-					msg = "[SUCCESS backdrop: fanart] {} [{}-{}] => {} => {} => {}".format(
+					msg = "[SUCCESS poster: fanart] {} [{}-{}] => {} => {} => {}".format(
 						self.title_safe, chkType, year, url_maze, url_fanart, url
 					)
 					# logger.info("Fanart match: " + msg)
-					return True, msg
+					if exists(dwn_poster):
+						return True, msg
 				else:
 					return False, f"[SKIP : fanart] {self.title_safe} [{chkType}-{year}] => {url_fanart} (Not found)"
 			except Exception as e:
+				print(e)
 				return False, "[ERROR : fanart] {} [{}-{}] => {} ({})".format(self.title_safe, chkType, year, url_maze, str(e))
 
 		except Exception as e:
 			print(e)
-			if exists(dwn_poster):
-				remove(dwn_poster)
 			return False, f"[ERROR : fanart] {self.title_safe} [{chkType}-{year}]"
 
 	def search_imdb(self, dwn_poster, title, shortdesc, fulldesc, channel=None):
+		self.title_safe = title.replace("+", " ")
 		try:
-			self.dwn_poster = dwn_poster
-			self.title_safe = title.replace("+", " ")
+			if not exists(dwn_poster):
+				return (False, "File not created")
+
+			dwn_poster = dwn_poster
 			chkType, fd = self.checkType(shortdesc, fulldesc)
 			# Try to extract AKA title
 			aka_list = findall(r"\((.*?)\)", fd)
@@ -355,11 +361,10 @@ class AgpDownloadThread(Thread):
 			# Extract year
 			year_matches = findall(r"19\d{2}|20\d{2}", fd)
 			year = year_matches[0] if year_matches else ""
-
 			imsg = ""
 			url_mimdb = ""
 			url_poster = ""
-			url_imdb = []
+			url_imdb = ''
 
 			if aka and aka != self.title_safe:
 				url_mimdb = "https://m.imdb.com/find?q={}%20({})".format(self.title_safe, quoteEventName(aka))
@@ -417,30 +422,27 @@ class AgpDownloadThread(Thread):
 				idx_imdb += 1
 			if url_poster and pfound:
 				callInThread(self.savePoster, url_poster, dwn_poster)
-				msg = "[SUCCESS url_poster: imdb] {} [{}-{}] => {} [{}/{}] => {} => {}".format(
-					self.title_safe, chkType, year, imsg, idx_imdb, len_imdb, url_mimdb, url_poster
-				)
-				# _log(msg)
-				return True, msg
+				if exists(dwn_poster):
+					msg = "[SUCCESS url_poster: imdb] {} [{}-{}] => {} [{}/{}] => {} => {}".format(
+						self.title_safe, chkType, year, imsg, idx_imdb, len_imdb, url_mimdb, url_poster
+					)
+					return True, msg
 
 			return False, "[SKIP : imdb] {} [{}-{}] => {} (No Entry found [{}])".format(self.title_safe, chkType, year, url_mimdb, len_imdb)
 
 		except Exception as e:
-			if exists(dwn_poster):
-				remove(dwn_poster)
 			return False, "[ERROR : imdb] {} [{}-{}] => {} ({})".format(self.title_safe, chkType, year, url_mimdb, str(e))
 
 	def search_programmetv_google(self, dwn_poster, title, shortdesc, fulldesc, channel=None):
+		self.title_safe = title.replace('+', ' ')
 		try:
-			self.dwn_poster = dwn_poster
+			if not exists(dwn_poster):
+				return (False, "File not created")
+
 			url_ptv = ''
-			headers = {"User-Agent": choice(AGENTS)}
 			chkType, fd = self.checkType(shortdesc, fulldesc)
 			if chkType.startswith("movie"):
-				return False, f"[SKIP : programmetv-google] {title} [{chkType}] => Skip movie title"
-
-			title_safe = title
-			self.title_safe = title_safe.replace('+', ' ')
+				return False, f"[SKIP : programmetv-google] {self.title_safe} [{chkType}] => Skip movie title"
 			url_ptv = "site:programme-tv.net+" + self.title_safe
 			if channel and self.title_safe.find(channel.split()[0]) < 0:
 				url_ptv += "+" + quoteEventName(channel)
@@ -467,30 +469,27 @@ class AgpDownloadThread(Thread):
 						h_tar = int(h_tar)
 						url_poster = sub(r'/\d+x\d+/', f"/{w_tar}x{h_tar}/", url_poster)
 						url_poster = sub(r'crop-from/top/', '', url_poster)
-						callInThread(self.savePoster, url_poster, self.dwn_poster)
-						return True, f"[SUCCESS url_poster: programmetv-google] {self.title_safe} [{chkType}] => Found self.title_safe : '{get_title}' => {url_ptv} => {url_poster} (initial size: {url_poster_size}) [{ptv_id}]"
-
+						callInThread(self.savePoster, url_poster, dwn_poster)
+						if exists(dwn_poster):
+							return True, f"[SUCCESS url_poster: programmetv-google] {self.title_safe} [{chkType}] => Found self.title_safe : '{get_title}' => {url_ptv} => {url_poster} (initial size: {url_poster_size}) [{ptv_id}]"
 			return False, f"[SKIP : programmetv-google] {self.title_safe} [{chkType}] => Not found [{ptv_id}] => {url_ptv}"
 
 		except Exception as e:
-			if exists(dwn_poster):
-				remove(dwn_poster)
 			return False, f"[ERROR : programmetv-google] {self.title_safe} [{chkType}] => {url_ptv} ({str(e)})"
 
 	def search_molotov_google(self, dwn_poster, title, shortdesc, fulldesc, channel=None):
+		self.title_safe = title.replace('+', ' ')
 		try:
-			self.dwn_poster = dwn_poster
+			if not exists(dwn_poster):
+				return (False, "File not created")
 			url_mgoo = ''
-			headers = {"User-Agent": choice(AGENTS)}
 			chkType, fd = self.checkType(shortdesc, fulldesc)
 			if chkType.startswith("movie"):
-				return False, "[SKIP : molotov-google] {} [{}] => Skip movie title".format(title, chkType)
+				return False, "[SKIP : molotov-google] {} [{}] => Skip movie title".format(self.title_safe, chkType)
 
-			title_safe = title.replace('+', ' ')
-			self.title_safe = title_safe
 			pchannel = self.UNAC(channel).replace(' ', '') if channel else ''
 			url_mgoo = "site:molotov.tv+" + self.title_safe
-			if channel and title_safe.find(channel.split()[0]) < 0:
+			if channel and self.title_safe.find(channel.split()[0]) < 0:
 				url_mgoo += "+" + quoteEventName(channel)
 			url_mgoo = f"https://www.google.com/search?q={url_mgoo}&tbm=isch"
 			ff = get(url_mgoo, stream=True, headers=headers, cookies={'CONSENT': 'YES+'}).text
@@ -505,8 +504,7 @@ class AgpDownloadThread(Thread):
 				get_name = self.UNAC(pl[1])
 				get_title = findall(r'(.*?)[ ]+en[ ]+streaming', get_name) or None
 				get_channel = self.extract_channel(get_name)
-
-				partialtitle = self.PMATCH(title_safe, get_title or '')
+				partialtitle = self.PMATCH(self.title_safe, get_title or '')
 				partialchannel = self.PMATCH(pchannel, get_channel or '')
 
 				if partialtitle > molotov_table[0]:
@@ -518,12 +516,10 @@ class AgpDownloadThread(Thread):
 			if molotov_table[0]:
 				return self.handle_poster_result(molotov_table, headers, dwn_poster, 'molotov')
 			else:
-				return self.handle_fallback(ff, pchannel, title_safe, headers, dwn_poster)
+				return self.handle_fallback(ff, pchannel, self.title_safe, headers, dwn_poster)
 
 		except Exception as e:
-			if exists(dwn_poster):
-				remove(dwn_poster)
-			return False, f"[ERROR : molotov-google] {title_safe} => {str(e)}"
+			return False, f"[ERROR : molotov-google] {self.title_safe} => {str(e)}"
 
 	def extract_channel(self, get_name):
 		get_channel = findall(r'(?:streaming|replay)?[ ]+sur[ ]+(.*?)[ ]+molotov.tv', get_name) or \
@@ -539,7 +535,8 @@ class AgpDownloadThread(Thread):
 		if len(pltt) > 0:
 			poster_url = f"https://fusion.molotov.tv/{pltt[0][0]}/jpg"
 			callInThread(self.savePoster, poster_url, dwn_poster)
-			return True, f"[SUCCESS {platform}-google] Found poster for {self.title_safe} => {poster_url}"
+			if exists(dwn_poster):
+				return True, f"[SUCCESS {platform}-google] Found poster for {self.title_safe} => {poster_url}"
 		else:
 			return False, f"[SKIP : {platform}-google] No suitable poster found."
 
@@ -550,20 +547,21 @@ class AgpDownloadThread(Thread):
 				if pl[1].startswith("Regarder"):
 					poster_url = f"https://{pl[0]}"
 					callInThread(self.savePoster, poster_url, dwn_poster)
-					return True, f"[SUCCESS fallback] Found fallback poster for {title_safe} => {poster_url}"
+					if exists(dwn_poster):
+						return True, f"[SUCCESS fallback] Found fallback poster for {title_safe} => {poster_url}"
 		return False, "[SKIP : fallback] No suitable fallback found."
 
 	def search_google(self, dwn_poster, title, shortdesc, fulldesc, channel=None):
+		self.title_safe = title.replace('+', ' ')
 		try:
-			self.dwn_poster = dwn_poster
-			headers = {"User-Agent": choice(AGENTS)}
+			if not exists(dwn_poster):
+				return (False, "File not created")
+
 			chkType, fd = self.checkType(shortdesc, fulldesc)
-			title_safe = title.replace('+', ' ')
 			year = findall(r'19\d{2}|20\d{2}', fd)
 			year = year[0] if year else None
-
-			url_google = f'"{title_safe}"'
-			if channel and title_safe.find(channel) < 0:
+			url_google = f'"{self.title_safe}"'
+			if channel and self.title_safe.find(channel) < 0:
 				url_google += f"+{quoteEventName(channel)}"
 			if chkType.startswith("movie"):
 				url_google += f"+{chkType[6:]}"
@@ -579,7 +577,7 @@ class AgpDownloadThread(Thread):
 			posterlst = findall(r'\],\["https://(.*?)",\d+,\d+]', ff)
 
 			if not posterlst:
-				url_google = f"https://www.google.com/search?q={title_safe}&tbm=isch&tbs=ift:jpg%2Cisz:m"
+				url_google = f"https://www.google.com/search?q={self.title_safe}&tbm=isch&tbs=ift:jpg%2Cisz:m"
 				ff = fetch_images(url_google)
 				posterlst = findall(r'\],\["https://(.*?)",\d+,\d+]', ff)
 
@@ -593,27 +591,27 @@ class AgpDownloadThread(Thread):
 			return False, f"[SKIP : google] No poster found for {self.title_safe}"
 
 		except Exception as e:
-			if exists(dwn_poster):
-				remove(dwn_poster)
 			return False, f"[ERROR : google] {self.title_safe} => {str(e)}"
 
-	def savePoster(self, url, callback):
-		headers = {"User-Agent": choice(AGENTS)}
-		try:
-			if not url or url.strip().endswith("/original"):
-				return None
+	def savePoster(self, url, filepath):
+		if not url:
+			return None
 
-			response = get(url, headers=headers, timeout=(3.05, 6))
+		if exists(filepath):
+			return True
+
+		try:
+			headers = {"User-Agent": choice(AGENTS)}
+			response = get(url, headers=headers, timeout=(10, 30))
 			response.raise_for_status()
 
 			if response.status_code == 200:
-				with open(callback, "wb") as local_file:
-					local_file.write(response.content)
-
-		except RequestException as error:
-			logger.error("ERROR in module 'download': Error:{} Url:{} Callback:{}".format(str(error), url, callback))
-
-		return callback
+				with open(filepath, "wb") as f:
+					f.write(response.content)
+				return True
+		except Exception as e:
+			logger.error(f"Error saving poster: {str(e)}")
+		return None
 
 	def resizePoster(self, dwn_poster):
 		try:
@@ -630,7 +628,7 @@ class AgpDownloadThread(Thread):
 			rimg.save(dwn_poster)
 			rimg.close()
 		except Exception as e:
-			logger.error("ERROR:{}".format(e))
+			print("ERROR:{}".format(e))
 
 	def verifyPoster(self, dwn_poster):
 		try:
@@ -645,7 +643,7 @@ class AgpDownloadThread(Thread):
 					pass
 				return False
 		except Exception as e:
-			logger.error(e)
+			print(e)
 			try:
 				remove(dwn_poster)
 			except:
