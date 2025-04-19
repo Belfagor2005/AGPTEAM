@@ -52,14 +52,23 @@ from .Agp_lib import PY3, quoteEventName
 from .Agp_apikeys import tmdb_api, thetvdb_api, fanart_api  # , omdb_api
 from .Agp_Utils import logger
 
+# ========================
+# DISABLE URLLIB3 DEBUG LOGS
+# ========================
+import logging
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("requests").setLevel(logging.WARNING)
 
+"""
 try:
 	from http.client import HTTPConnection
 	HTTPConnection.debuglevel = 0
 except ImportError:
 	from httplib import HTTPConnection
 	HTTPConnection.debuglevel = 0
-
+"""
 
 global my_cur_skin, srch
 

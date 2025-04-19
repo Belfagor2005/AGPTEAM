@@ -713,13 +713,13 @@ class BackdropAutoDB(AgbDownloadThread):
 			print(f"Logging error: {e}")
 
 
-def checkBackdropExistence(poster_path):
-	return exists(poster_path)
+def checkBackdropExistence(backdrop_path):
+	return exists(backdrop_path)
 
 
-def is_valid_poster(poster_path):
-	"""Check if the poster file is valid (exists and has a valid size)"""
-	return exists(poster_path) and getsize(poster_path) > 100
+def is_valid_backdrop(backdrop_path):
+	"""Check if the backdrop file is valid (exists and has a valid size)"""
+	return exists(backdrop_path) and getsize(backdrop_path) > 100
 
 
 def clear_all_log():
