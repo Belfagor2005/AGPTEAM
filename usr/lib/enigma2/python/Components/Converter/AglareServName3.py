@@ -7,6 +7,9 @@ from ServiceReference import resolveAlternate
 from Components.Element import cached
 from Tools.Directories import fileExists
 from Tools.Transponder import ConvertToHumanReadable
+import gettext
+_ = gettext.gettext
+# 2025.04.01 @ lululla fix
 
 
 class AglareServName3(Converter):

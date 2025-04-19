@@ -17,6 +17,7 @@
 # 26.11.2018 add terrestrial and cable type mod by Sirius
 # 01.12.2018 fix video codec mod by Sirius
 # 25.12.2018 add support for gamma values mod by Sirius
+# 2025.04.01 @ lululla fix
 
 from Components.Converter.Poll import Poll
 from Components.Converter.Converter import Converter
@@ -24,8 +25,10 @@ from enigma import iServiceInformation, iPlayableService
 from Components.config import config
 from Components.Element import cached
 from Tools.Directories import fileExists
-import os
+from os import popen
 import socket
+import gettext
+_ = gettext.gettext
 
 if fileExists("/etc/issue"):
 	image = ''
@@ -336,7 +339,7 @@ class AglareServiceInfoEX(Poll, Converter, object):
 		elif self.type == self.VideoCodec:
 			return self.createVideoCodec(info)
 		if self.type == self.IPLOCAL:
-			gw = os.popen("ip -4 route show default").read().split()
+			gw = popen("ip -4 route show default").read().split()
 			s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 			s.connect((gw[2], 0))
 			ipaddr = s.getsockname()[0]

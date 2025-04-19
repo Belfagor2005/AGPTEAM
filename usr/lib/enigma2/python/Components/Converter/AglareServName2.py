@@ -24,7 +24,7 @@ from __future__ import division
 # Version: 1.9 (31.07.2015) add custom provname for custom name channel- 2boom
 # Version: 2.0 (11.12.2018) Edit to compitable with OE2.0 and OE2.5 - RAED
 # Version: 2.1 (21.05.2021) Support py3 - RAED
-#
+# 2025.04.01 @ lululla fix
 
 from Components.Converter.Converter import Converter
 from enigma import (
@@ -41,6 +41,9 @@ from Components.Element import cached
 from Components.config import config
 import NavigationInstance
 from os import path as os_path
+
+import gettext
+_ = gettext.gettext
 
 
 def DreamOS():

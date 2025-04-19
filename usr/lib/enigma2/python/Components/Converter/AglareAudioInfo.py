@@ -5,6 +5,8 @@ from Components.Converter.Converter import Converter
 from Components.Element import cached
 from Components.Converter.Poll import Poll
 import logging
+import gettext
+_ = gettext.gettext
 
 # 2025.04.01 @ lululla fix
 

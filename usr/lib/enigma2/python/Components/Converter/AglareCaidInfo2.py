@@ -5,15 +5,19 @@
 #
 #  Coded by bigroma & 2boom & j00zek
 #
+# 2025.04.01 @ lululla fix
 
-from __future__ import absolute_import  # zmiana strategii ladowanie modulow w py2 z relative na absolute jak w py3
+from __future__ import absolute_import
 from Components.config import config
 from Components.Converter.Converter import Converter
 from Components.Converter.Poll import Poll
 from Components.Element import cached
 from enigma import iServiceInformation, eDVBCI_UI, eDVBCIInterfaces
 from Tools.Directories import fileExists
-import os
+from os.path import join, isdir
+from os import listdir, stat
+import gettext
+_ = gettext.gettext
 
 DBG = False
 if DBG:
@@ -425,27 +429,27 @@ class AglareCaidInfo2(Poll, Converter, object):
 
 		# trying to use last PID
 		try:
-			procStat = open(os.path.join("/proc", str(self.currPID), 'stat'), "r").read().split('(')[1].split(')')[0]
+			procStat = open(join("/proc", str(self.currPID), 'stat'), "r").read().split('(')[1].split(')')[0]
 			foundSC = checkCam(procStat)
 			if foundSC is not None:
 				return foundSC
 		except Exception as e:
 			if DBG:
-				j00zekDEBUG('\t Exception trying to get name of curr.PID= %s : %s' % (os.path.join("/proc", str(self.currPID)), str(e)))
+				j00zekDEBUG('\t Exception trying to get name of curr.PID= %s : %s' % (join("/proc", str(self.currPID)), str(e)))
 		# searching for new PID
-		for f in os.listdir("/proc"):
-			if os.path.isdir(os.path.join("/proc", f)):
+		for f in listdir("/proc"):
+			if isdir(join("/proc", f)):
 				try:
 					pid = int(f)
 					if pid > self.currPID:
-						procStat = open(os.path.join("/proc", f, 'stat'), "r").read().split('(')[1].split(')')[0]
+						procStat = open(join("/proc", f, 'stat'), "r").read().split('(')[1].split(')')[0]
 						foundSC = checkCam(procStat)
 						if foundSC is not None:
 							self.currPID = pid
 							return foundSC
 				except Exception as e:
 					if DBG:
-						j00zekDEBUG('\t Exception trying to analyze %s : %s' % (os.path.join("/proc", f), str(e)))
+						j00zekDEBUG('\t Exception trying to analyze %s : %s' % (join("/proc", f), str(e)))
 		return _('None SoftCam is running')
 
 	def getCIdata(self, allVisible, showNameOfActive=True):
@@ -744,8 +748,8 @@ class AglareCaidInfo2(Poll, Converter, object):
 		service = self.source.service
 		if service:
 			try:
-				ecm_mtime = os.stat("/tmp/ecm.info").st_mtime
-				if not os.stat("/tmp/ecm.info").st_size > 0:
+				ecm_mtime = stat("/tmp/ecm.info").st_mtime
+				if not stat("/tmp/ecm.info").st_size > 0:
 					info = {}
 				if ecm_mtime == old_ecm_mtime:
 					return info
