@@ -44,17 +44,24 @@ from concurrent.futures import ThreadPoolExecutor
 # Enigma2/Dreambox specific imports
 from enigma import ePixmap, loadJPG, eEPGCache, eTimer
 from Components.Renderer.Renderer import Renderer
-from Components.Sources.CurrentService import CurrentService
 from Components.Sources.Event import Event
 from Components.Sources.EventInfo import EventInfo
+from Components.Sources.CurrentService import CurrentService
 from Components.Sources.ServiceEvent import ServiceEvent
 from ServiceReference import ServiceReference
 import NavigationInstance
 
 # Local imports
 from Components.Renderer.AgpDownloadThread import AgpDownloadThread
-from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, logger
-
+from .Agp_Utils import (
+	POSTER_FOLDER,
+	check_disk_space,
+	delete_old_files_if_low_disk_space,
+	validate_media_path,
+	# MemClean,
+	clean_for_tvdb,
+	logger
+)
 
 # Constants and global variables
 epgcache = eEPGCache.getInstance()
@@ -529,6 +536,21 @@ class PosterAutoDB(AgpDownloadThread):
 			"google": False     # Google Images
 		}
 		self.providers = {**default_providers, **(providers or {})}
+		"""
+		# self.poster_folder = validate_media_path(
+			# POSTER_FOLDER,
+			# media_type="posters",
+			# min_space_mb=100
+		# )
+		# self.cleanup_interval = 3600  # 1 our
+		# self.last_cleanup = 0
+		"""
+		self.min_disk_space = 100  # MB minimi richiesti
+		self.max_poster_age = 30   # Giorni per la pulizia automatica
+
+		# Inizializza il percorso dei poster
+		self.poster_folder = self._init_poster_folder()
+
 		self.max_posters = max_posters
 		self.processed_titles = OrderedDict()  # Tracks processed shows
 		self.poster_download_count = 0
@@ -567,7 +589,13 @@ class PosterAutoDB(AgpDownloadThread):
 			try:
 				current_time = time()
 				now = datetime.now()
-
+				"""
+				# periodic cleaning
+				# if current_time - self.last_cleanup > self.cleanup_interval:
+					# self._auto_cleanup()
+					# self.last_cleanup = current_time
+					# MemClean()
+				"""
 				# Check if 2 hours passed since last scan
 				do_time_scan = current_time - self.last_scan > 7200 or not self.last_scan
 
@@ -685,6 +713,11 @@ class PosterAutoDB(AgpDownloadThread):
 	def _download_poster(self, canal):
 		"""Download poster with provider fallback logic"""
 		try:
+			# Check space before downloading
+			if not check_disk_space(self.poster_folder, 10):  # 10MB minimi
+				self._log("Salto download - spazio insufficiente")
+				return False
+
 			if self.poster_download_count >= self.max_posters:
 				return
 
@@ -744,9 +777,84 @@ class PosterAutoDB(AgpDownloadThread):
 			if not downloaded:
 				self._log_debug(f"Poster download failed for: {self.pstcanal}")
 
+			if not self._check_storage():
+				self._log("Download skipped due to insufficient storage")
+				return False
+
+			# if self.poster_download_count % 5 == 0:  # Every 5 downloads
+				# self._auto_cleanup()
+
 		except Exception as e:
 			self._log_error(f"CRITICAL ERROR in _download_poster: {str(e)}")
 			print_exc()
+
+	def _init_poster_folder(self):
+		"""Inizializza la cartella con validazione"""
+		try:
+			return validate_media_path(
+				POSTER_FOLDER,
+				media_type="posters",
+				min_space_mb=self.min_disk_space
+			)
+		except Exception as e:
+			self._log_error(f"Poster folder init failed: {str(e)}")
+			return "/tmp/posters"  # Fallback assoluto
+
+	def _load_storage_config(self):
+		"""Carica configurazioni da file"""
+		try:
+			from agp_utils import ConfigParser
+			config = ConfigParser()
+			config.read('/etc/agp.conf')
+
+			self.min_disk_space = config.getint('storage', 'min_space', fallback=100)
+			self.max_poster_age = config.getint('storage', 'max_age', fallback=30)
+		except:
+			self.min_disk_space = 100
+			self.max_poster_age = 30
+
+	def _check_storage(self):
+		"""Versione ottimizzata usando le utility"""
+		try:
+			if check_disk_space(self.poster_folder, self.min_disk_space):
+				return True
+
+			self._log("Low disk space detected, running cleanup...")
+			delete_old_files_if_low_disk_space(
+				self.poster_folder,
+				min_free_space_mb=self.min_disk_space,
+				max_age_days=self.max_poster_age
+			)
+
+			return check_disk_space(self.poster_folder, self.min_disk_space)
+
+		except Exception as e:
+			self._log_error(f"Storage check failed: {str(e)}")
+			return False
+
+	"""
+	# def _auto_cleanup(self):
+		# # 1. Advanced Disk Space Check
+		# if not check_disk_space(self.poster_folder, 100):
+			# self._log("Start automatic cleaning for insufficient space")
+			# delete_old_files_if_low_disk_space(
+				# self.poster_folder,
+				# min_free_space_mb=100,
+				# max_age_days=30
+			# )
+
+		# # 2. Cleaning force if still insufficient
+		# stat = statvfs(self.poster_folder)
+		# free_mb = (stat.f_bavail * stat.f_frsize) / (1024 * 1024)
+		# if free_mb < 50:  # Emergency
+			# self._log("Emergency cleaning - critical space")
+			# free_up_space(
+				# path=self.poster_folder,
+				# min_space_mb=100,
+				# media_type="posters",
+				# strategy="largest_first"  # Delete larger files
+			# )
+	"""
 
 	def _log(self, message):
 		self._write_log("INFO", message)

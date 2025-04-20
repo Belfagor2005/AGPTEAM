@@ -42,6 +42,7 @@ from PIL import Image
 from requests import get, codes, Session
 from requests.adapters import HTTPAdapter, Retry
 from twisted.internet.reactor import callInThread
+import requests
 
 # Enigma2 specific
 from enigma import getDesktop
@@ -52,6 +53,7 @@ from .Agp_lib import PY3, quoteEventName
 from .Agp_apikeys import tmdb_api, thetvdb_api, fanart_api  # , omdb_api
 from .Agp_Utils import logger
 
+
 # ========================
 # DISABLE URLLIB3 DEBUG LOGS
 # ========================
@@ -60,6 +62,7 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 logging.getLogger("requests").setLevel(logging.WARNING)
+
 
 global my_cur_skin, srch
 
@@ -190,13 +193,24 @@ class AgbDownloadThread(Thread):
 					return self.downloadData2(data, dwn_backdrop)
 				except ValueError as e:
 					logger.error("TMDb response decode error: " + str(e))
-					return False, "Errore nel parsing della risposta TMDb"
+					return False, "Error parsing TMDb response"
+			elif response.status_code == 404:
+				# Silently handle 404 - no result found
+				return False, "No results found on TMDb"
 			else:
-				return False, "Errore durante la richiesta a TMDb: {}".format(response.status_code)
+				return False, "TMDb request error: " + str(response.status_code)
+
+		except requests.exceptions.HTTPError as e:
+			if e.response is not None and e.response.status_code == 404:
+				# Suppress 404 HTTP errors
+				return False, "No results found on TMDb"
+			else:
+				logger.error("TMDb HTTP error: " + str(e))
+				return False, "HTTP error during TMDb search"
 
 		except Exception as e:
 			logger.error("TMDb search error: " + str(e))
-			return False, "Errore durante la ricerca su TMDb"
+			return False, "Unexpected error during TMDb search"
 
 	def downloadData2(self, data, dwn_backdrop):
 		if isinstance(data, bytes):
@@ -232,77 +246,82 @@ class AgbDownloadThread(Thread):
 		return False, "[SKIP] Nessun risultato valido"
 
 	def search_tvdb(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None):
-		self.title_safe = title.replace('+', ' ')
+		self.title_safe = title.replace("+", " ")
 		try:
 			if not exists(dwn_backdrop):
 				return (False, "File not created")
+
 			series_nb = -1
 			chkType, fd = self.checkType(shortdesc, fulldesc)
-			year = findall(r'19\d{2}|20\d{2}', fd)
-			if len(year) > 0:
-				year = year[0]
-			else:
-				year = ''
+			year_match = findall(r"19\d{2}|20\d{2}", fd)
+			year = year_match[0] if year_match else ""
 
 			url_tvdbg = "https://thetvdb.com/api/GetSeries.php?seriesname={}".format(self.title_safe)
 			url_read = get(url_tvdbg).text
-			series_id = findall(r'<seriesid>(.*?)</seriesid>', url_read)
-			series_name = findall(r'<SeriesName>(.*?)</SeriesName>', url_read)
-			series_year = findall(r'<FirstAired>(19\d{2}|20\d{2})-\d{2}-\d{2}</FirstAired>', url_read)
-			'''
-			# series_banners = findall(r'<banner>(.*?)</banner>', url_read)
-			# if series_banners:
-				# series_banners = 'https://thetvdb.com' + series_banners
-			'''
-			i = 0
-			for iseries_year in series_year:
-				if year == '':
-					series_nb = 0
-					break
-				elif year == iseries_year:
+
+			series_id = findall(r"<seriesid>(.*?)</seriesid>", url_read)
+			series_name = findall(r"<SeriesName>(.*?)</SeriesName>", url_read)
+			series_year = findall(r"<FirstAired>(19\d{2}|20\d{2})-\d{2}-\d{2}</FirstAired>", url_read)
+
+			for i, iseries_year in enumerate(series_year):
+				if not year or year == iseries_year:
 					series_nb = i
 					break
-				i += 1
 
 			backdrop = None
-			if series_nb >= 0 and series_id and series_id[series_nb]:
-				if series_name and series_name[series_nb]:
-					series_name = self.UNAC(series_name[series_nb])
+			if series_nb >= 0 and len(series_id) > series_nb and series_id[series_nb]:
+				if series_name and len(series_name) > series_nb:
+					series_name_clean = self.UNAC(series_name[series_nb])
 				else:
-					series_name = ''
+					series_name_clean = ""
 
-				if self.PMATCH(self.title_safe, series_name):
+				if self.PMATCH(self.title_safe, series_name_clean):
+					if "thetvdb_api" not in globals():
+						return False, "[ERROR : tvdb] API key not defined"
+
 					url_tvdb = "https://thetvdb.com/api/{}/series/{}".format(thetvdb_api, series_id[series_nb])
-					if lng:
-						url_tvdb += "/{}".format(lng)
-					else:
-						url_tvdb += "/en"
+					url_tvdb += "/{}".format(lng if "lng" in globals() and lng else "en")
 
 					url_read = get(url_tvdb).text
-					backdrop = findall(r'<backdrop>(.*?)</backdrop>', url_read)
-					url_backdrop = "https://artworks.thetvdb.com/banners/{}".format(backdrop[0])
-					if backdrop is not None and backdrop[0]:
+					backdrop = findall(r"<backdrop>(.*?)</backdrop>", url_read)
+
+					if backdrop and backdrop[0]:
+						url_backdrop = "https://artworks.thetvdb.com/banners/{}".format(backdrop[0])
 						callInThread(self.saveBackdrop, url_backdrop, dwn_backdrop)
 						if exists(dwn_backdrop):
-							return True, f"[SUCCESS : tvdb] {self.title_safe} [{chkType}-{year}] => {url_tvdbg} => {url_tvdb} => {url_backdrop}"
-					return False, f"[SKIP : tvdb] {self.title_safe} [{chkType}-{year}] => {url_tvdbg} (Not found)"
-			else:
-				return False, f"[SKIP : tvdb] {self.title_safe} [{chkType}-{year}] => {url_tvdbg} (Not found)"
+							return True, "[SUCCESS : tvdb] {} [{}-{}] => {} => {} => {}".format(
+								self.title_safe, chkType, year, url_tvdbg, url_tvdb, url_backdrop
+							)
+
+					return False, "[SKIP : tvdb] {} [{}-{}] => {} (Not found)".format(
+						self.title_safe, chkType, year, url_tvdbg
+					)
+
+			return False, "[SKIP : tvdb] {} [{}-{}] => {} (Not found)".format(
+				self.title_safe, chkType, year, url_tvdbg
+			)
 
 		except Exception as e:
-			return False, f"[ERROR : tvdb] {self.title_safe} => {url_tvdbg} ({str(e)})"
+			return False, "[ERROR : tvdb] {} => {} ({})".format(self.title_safe, url_tvdbg, str(e))
+
+		except requests.exceptions.HTTPError as e:
+			if e.response is not None and e.response.status_code == 404:
+				return False, "No results found on tvdb"
+			else:
+				logger.error("tvdb HTTP error: " + str(e))
+				return False, "HTTP error during tvdb search"
 
 	def search_fanart(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None):
-		self.title_safe = title.replace('+', ' ')
+		self.title_safe = title.replace("+", " ")
 		try:
 			if not exists(dwn_backdrop):
-				return (False, "File not created")
+				return False, "File not created"
 
 			year = ""
-			url_maze = ""
-			url_fanart = ""
 			tvmaze_id = "-"
 			chkType, fd = self.checkType(shortdesc, fulldesc)
+
+			# Try to extract the year from the description
 			try:
 				matches = findall(r"19\d{2}|20\d{2}", fd)
 				if matches:
@@ -310,6 +329,7 @@ class AgbDownloadThread(Thread):
 			except Exception:
 				pass
 
+			# Fetch TVMaze ID from the API
 			try:
 				url_maze = "http://api.tvmaze.com/singlesearch/shows?q={}".format(self.title_safe)
 				resp = get(url_maze, timeout=5)
@@ -319,67 +339,84 @@ class AgbDownloadThread(Thread):
 			except Exception as err:
 				logger.error("TVMaze error: " + str(err))
 
+			# Fetch Fanart backdrop using TVMaze ID
 			try:
-				m_type = 'tv'
+				m_type = "tv"
 				url_fanart = "https://webservice.fanart.tv/v3/{}/{}?api_key={}".format(m_type, tvmaze_id, fanart_api)
 				fjs = get(url_fanart, verify=False, timeout=5).json()
 				url = ""
+
+				# Check for show or movie background
 				if "showbackground" in fjs and fjs["showbackground"]:
 					url = fjs["showbackground"][0]["url"]
 				elif "moviebackground" in fjs and fjs["moviebackground"]:
 					url = fjs["moviebackground"][0]["url"]
+
+				# Handle if URL is found
 				if url:
 					callInThread(self.saveBackdrop, url, dwn_backdrop)
 					msg = "[SUCCESS backdrop: fanart] {} [{}-{}] => {} => {} => {}".format(
 						self.title_safe, chkType, year, url_maze, url_fanart, url
 					)
-					# logger.info("Fanart match: " + msg)
 					if exists(dwn_backdrop):
 						return True, msg
 				else:
 					return False, f"[SKIP : fanart] {self.title_safe} [{chkType}-{year}] => {url_fanart} (Not found)"
 			except Exception as e:
-				print(e)
+				logger.error(f"[ERROR : fanart] {self.title_safe} [{chkType}-{year}] => {url_maze} ({str(e)})")
 				return False, "[ERROR : fanart] {} [{}-{}] => {} ({})".format(self.title_safe, chkType, year, url_maze, str(e))
 
 		except Exception as e:
-			print(e)
+			logger.error(f"[ERROR : fanart] {self.title_safe} [{chkType}-{year}] => {str(e)}")
 			return False, f"[ERROR : fanart] {self.title_safe} [{chkType}-{year}]"
+
+		except requests.exceptions.HTTPError as e:
+			if e.response and e.response.status_code == 404:
+				return False, "No results found on fanart"
+			else:
+				logger.error("fanart HTTP error: " + str(e))
+				return False, "HTTP error during fanart search"
 
 	def search_imdb(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None):
 		self.title_safe = title.replace("+", " ")
 		try:
 			if not exists(dwn_backdrop):
-				return (False, "File not created")
+				return False, "File not created"
 
-			dwn_backdrop = dwn_backdrop
 			chkType, fd = self.checkType(shortdesc, fulldesc)
-			# Try to extract AKA title
 			aka_list = findall(r"\((.*?)\)", fd)
 			aka = next((a for a in aka_list if not a.isdigit()), None)
 			paka = self.UNAC(aka) if aka else ""
 
-			# Extract year
+			# Extract year from description
 			year_matches = findall(r"19\d{2}|20\d{2}", fd)
 			year = year_matches[0] if year_matches else ""
-			imsg = ""
+
 			url_mimdb = ""
 			url_backdrop = ""
-			url_imdb = ''
+			url_imdb = ""
 
+			# Formulate search URL based on AKA (if exists)
 			if aka and aka != self.title_safe:
 				url_mimdb = "https://m.imdb.com/find?q={}%20({})".format(self.title_safe, quoteEventName(aka))
 			else:
 				url_mimdb = "https://m.imdb.com/find?q={}".format(self.title_safe)
 
-			url_read = get(url_mimdb).text
-			rc = compile(r'<img src="(.*?)".*?<span class="h3">\n(.*?)\n</span>.*?\((\d+)\)(\s\(.*?\))?(.*?)</a>', DOTALL)
-			url_imdb = rc.findall(url_read)
-
-			if not url_imdb and aka:
-				url_mimdb = "https://m.imdb.com/find?q={}".format(self.title_safe)
+			# Get IMDb search results
+			try:
 				url_read = get(url_mimdb).text
+				rc = compile(r'<img src="(.*?)".*?<span class="h3">\n(.*?)\n</span>.*?\((\d+)\)(\s\(.*?\))?(.*?)</a>', DOTALL)
 				url_imdb = rc.findall(url_read)
+
+				# If no results, retry without AKA
+				if not url_imdb and aka:
+					url_mimdb = "https://m.imdb.com/find?q={}".format(self.title_safe)
+					url_read = get(url_mimdb).text
+					url_imdb = rc.findall(url_read)
+
+			except Exception as err:
+				logger.error(f"IMDb search error: {err}")
+				return False, f"[ERROR : imdb] IMDb search failed: {err}"
 
 			len_imdb = len(url_imdb)
 			idx_imdb = 0
@@ -389,7 +426,8 @@ class AgbDownloadThread(Thread):
 				imdb = list(imdb)
 				imdb[1] = self.UNAC(imdb[1])
 				tmp = findall(r'aka <i>"(.*?)"</i>', imdb[4])
-				imdb[4] = self.UNAC(tmp[0]) if tmp else self.UNAC(imdb[4])  # AKA
+				imdb[4] = self.UNAC(tmp[0]) if tmp else self.UNAC(imdb[4])
+
 				backdrop_match = search(r"(.*?)._V1_.*?.jpg", imdb[0])
 				if not backdrop_match:
 					continue
@@ -402,25 +440,23 @@ class AgbDownloadThread(Thread):
 
 				# Compare by year and title similarity
 				if imdb[3] == "":
-					# Exact year match
 					if year and year == imdb_year:
-						imsg = "Found title: '{}', aka: '{}', year: '{}'".format(imdb_title, imdb_aka, imdb_year)
+						imsg = f"Found title: '{imdb_title}', aka: '{imdb_aka}', year: '{imdb_year}'"
 						if self.PMATCH(self.title_safe, imdb_title) or self.PMATCH(self.title_safe, imdb_aka) or self.PMATCH(paka, imdb_title) or self.PMATCH(paka, imdb_aka):
 							pfound = True
 							break
-					# Tolerate ±1 year
 					elif year and (int(year) - 1 == int(imdb_year) or int(year) + 1 == int(imdb_year)):
-						imsg = "Found title: '{}', aka: '{}', year: '+/-{}'".format(imdb_title, imdb_aka, imdb_year)
+						imsg = f"Found title: '{imdb_title}', aka: '{imdb_aka}', year: '+/-{imdb_year}'"
 						if self.title_safe == imdb_title or self.title_safe == imdb_aka or paka == imdb_title or paka == imdb_aka:
 							pfound = True
 							break
-					# No year available
 					elif not year:
-						imsg = "Found title: '{}', aka: '{}', year: ''".format(imdb_title, imdb_aka)
+						imsg = f"Found title: '{imdb_title}', aka: '{imdb_aka}', year: ''"
 						if self.title_safe == imdb_title or self.title_safe == imdb_aka or paka == imdb_title or paka == imdb_aka:
 							pfound = True
 							break
 				idx_imdb += 1
+
 			if url_backdrop and pfound:
 				callInThread(self.saveBackdrop, url_backdrop, dwn_backdrop)
 				if exists(dwn_backdrop):
@@ -432,34 +468,62 @@ class AgbDownloadThread(Thread):
 			return False, "[SKIP : imdb] {} [{}-{}] => {} (No Entry found [{}])".format(self.title_safe, chkType, year, url_mimdb, len_imdb)
 
 		except Exception as e:
-			return False, "[ERROR : imdb] {} [{}-{}] => {} ({})".format(self.title_safe, chkType, year, url_mimdb, str(e))
+			logger.error(f"[ERROR : imdb] {self.title_safe} [{chkType}-{year}] => {url_mimdb} ({str(e)})")
+			return False, f"[ERROR : imdb] {self.title_safe} [{chkType}-{year}] => {url_mimdb} ({str(e)})"
+
+		except requests.exceptions.HTTPError as e:
+			if e.response and e.response.status_code == 404:
+				return False, "No results found on imdb"
+			else:
+				logger.error(f"IMDb HTTP error: {str(e)}")
+				return False, "HTTP error during imdb search"
 
 	def search_programmetv_google(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None):
 		self.title_safe = title.replace('+', ' ')
-		try:
-			if not exists(dwn_backdrop):
-				return (False, "File not created")
 
-			url_ptv = ''
+		try:
+			# Check if file exists
+			if not exists(dwn_backdrop):
+				return False, "File not created"
+
+			url_ptv = ""
 			chkType, fd = self.checkType(shortdesc, fulldesc)
+
+			# Skip if it's a movie title
 			if chkType.startswith("movie"):
 				return False, f"[SKIP : programmetv-google] {self.title_safe} [{chkType}] => Skip movie title"
-			url_ptv = "site:programme-tv.net+" + self.title_safe
+
+			# Build Google search URL for programme-tv.net images
+			url_ptv = f"site:programme-tv.net+{self.title_safe}"
+
+			# Add channel if provided and not already included in the title
 			if channel and self.title_safe.find(channel.split()[0]) < 0:
 				url_ptv += "+" + quoteEventName(channel)
+
+			# Create full Google search URL
 			url_ptv = f"https://www.google.com/search?q={url_ptv}&tbm=isch&tbs=ift:jpg%2Cisz:m"
+
+			# Make request to Google search
 			ff = get(url_ptv, stream=True, headers=headers, cookies={'CONSENT': 'YES+'}).text
 			if not PY3:
 				ff = ff.encode('utf-8')
+
 			ptv_id = 0
 			plst = findall(r'\],\["https://www.programme-tv.net(.*?)",\d+,\d+]', ff)
+
+			# Loop through image results
 			for backdroplst in plst:
 				ptv_id += 1
 				url_backdrop = f"https://www.programme-tv.net{backdroplst}"
 				url_backdrop = sub(r"\\u003d", "=", url_backdrop)
+
+				# Extract image size and other details
 				url_backdrop_size = findall(r'([\d]+)x([\d]+).*?([\w\.-]+).jpg', url_backdrop)
+
 				if url_backdrop_size and url_backdrop_size[0]:
 					get_title = self.UNAC(url_backdrop_size[0][2].replace('-', ''))
+
+					# Match the title with the search result
 					if self.title_safe == get_title:
 						h_ori = float(url_backdrop_size[0][1])
 						h_tar = float(findall(r'(\d+)', isz)[1])
@@ -468,35 +532,63 @@ class AgbDownloadThread(Thread):
 						w_tar = w_ori / ratio
 						w_tar = int(w_tar)
 						h_tar = int(h_tar)
+
+						# Adjust the image URL for target size
 						url_backdrop = sub(r'/\d+x\d+/', f"/{w_tar}x{h_tar}/", url_backdrop)
 						url_backdrop = sub(r'crop-from/top/', '', url_backdrop)
+
+						# Download the image in a separate thread
 						callInThread(self.saveBackdrop, url_backdrop, dwn_backdrop)
+
+						# Check if the backdrop was successfully downloaded
 						if exists(dwn_backdrop):
-							return True, f"[SUCCESS url_backdrop: programmetv-google] {self.title_safe} [{chkType}] => Found self.title_safe : '{get_title}' => {url_ptv} => {url_backdrop} (initial size: {url_backdrop_size}) [{ptv_id}]"
+							return True, f"[SUCCESS url_backdrop: programmetv-google] {self.title_safe} [{chkType}] => Found title: '{get_title}' => {url_ptv} => {url_backdrop} (initial size: {url_backdrop_size}) [{ptv_id}]"
+
+			# If no image found, return skip message
 			return False, f"[SKIP : programmetv-google] {self.title_safe} [{chkType}] => Not found [{ptv_id}] => {url_ptv}"
 
 		except Exception as e:
+			# General exception handling
 			return False, f"[ERROR : programmetv-google] {self.title_safe} [{chkType}] => {url_ptv} ({str(e)})"
+
+		except requests.exceptions.HTTPError as e:
+			# Handle HTTP errors
+			if e.response is not None and e.response.status_code == 404:
+				return False, "No results found on programmetv-google"
+			else:
+				logger.error(f"programmetv-google HTTP error: {str(e)}")
+				return False, "HTTP error during programmetv-google search"
 
 	def search_molotov_google(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None):
 		self.title_safe = title.replace('+', ' ')
-		try:
-			if not exists(dwn_backdrop):
-				return (False, "File not created")
-			url_mgoo = ''
-			chkType, fd = self.checkType(shortdesc, fulldesc)
-			if chkType.startswith("movie"):
-				return False, "[SKIP : molotov-google] {} [{}] => Skip movie title".format(self.title_safe, chkType)
 
+		try:
+			# Check if the file exists
+			if not exists(dwn_backdrop):
+				return False, "File not created"
+
+			url_mgoo = ""
+			chkType, fd = self.checkType(shortdesc, fulldesc)
+
+			# Skip if it's a movie title
+			if chkType.startswith("movie"):
+				return False, f"[SKIP : molotov-google] {self.title_safe} [{chkType}] => Skip movie title"
+
+			# Clean up channel name
 			pchannel = self.UNAC(channel).replace(' ', '') if channel else ''
-			url_mgoo = "site:molotov.tv+" + self.title_safe
+
+			# Construct the Google search URL
+			url_mgoo = f"site:molotov.tv+{self.title_safe}"
 			if channel and self.title_safe.find(channel.split()[0]) < 0:
 				url_mgoo += "+" + quoteEventName(channel)
+
+			# Perform the Google search
 			url_mgoo = f"https://www.google.com/search?q={url_mgoo}&tbm=isch"
 			ff = get(url_mgoo, stream=True, headers=headers, cookies={'CONSENT': 'YES+'}).text
 			if not PY3:
 				ff = ff.encode('utf-8')
 
+			# Search for Molotov images in the results
 			plst = findall(r'https://www.molotov.tv/(.*?)"(?:.*?)?"(.*?)"', ff)
 			molotov_table = [0, 0, None, None, 0]  # [title match, channel match, title, path, id]
 
@@ -505,22 +597,37 @@ class AgbDownloadThread(Thread):
 				get_name = self.UNAC(pl[1])
 				get_title = findall(r'(.*?)[ ]+en[ ]+streaming', get_name) or None
 				get_channel = self.extract_channel(get_name)
+
+				# Match title and channel
 				partialtitle = self.PMATCH(self.title_safe, get_title or '')
 				partialchannel = self.PMATCH(pchannel, get_channel or '')
 
+				# Update the best match found
 				if partialtitle > molotov_table[0]:
 					molotov_table = [partialtitle, partialchannel, get_name, get_path, len(molotov_table)]
 
+				# If both title and channel match perfectly, exit early
 				if partialtitle == 100 and partialchannel == 100:
 					break
 
+			# Handle the result if a match is found
 			if molotov_table[0]:
 				return self.handle_backdrop_result(molotov_table, headers, dwn_backdrop, 'molotov')
 			else:
+				# Fallback in case no result found
 				return self.handle_fallback(ff, pchannel, self.title_safe, headers, dwn_backdrop)
 
 		except Exception as e:
+			# General exception handling
 			return False, f"[ERROR : molotov-google] {self.title_safe} => {str(e)}"
+
+		except requests.exceptions.HTTPError as e:
+			# Handle HTTP errors
+			if e.response is not None and e.response.status_code == 404:
+				return False, "No results found on molotov-google"
+			else:
+				logger.error(f"molotov-google HTTP error: {str(e)}")
+				return False, "HTTP error during molotov-google search"
 
 	def extract_channel(self, get_name):
 		get_channel = findall(r'(?:streaming|replay)?[ ]+sur[ ]+(.*?)[ ]+molotov.tv', get_name) or \
@@ -593,6 +700,14 @@ class AgbDownloadThread(Thread):
 
 		except Exception as e:
 			return False, f"[ERROR : google] {self.title_safe} => {str(e)}"
+
+		except requests.exceptions.HTTPError as e:
+			if e.response is not None and e.response.status_code == 404:
+				# Suppress 404 HTTP errors
+				return False, "No results found on google"
+			else:
+				logger.error("programmetv-google HTTP error: " + str(e))
+				return False, "HTTP error during google search"
 
 	def saveBackdrop(self, url, filepath):
 		if not url:

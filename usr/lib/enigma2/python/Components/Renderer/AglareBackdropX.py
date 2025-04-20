@@ -53,8 +53,15 @@ import NavigationInstance
 
 # Local imports
 from Components.Renderer.AgbDownloadThread import AgbDownloadThread
-from .Agp_Utils import BACKDROP_FOLDER, clean_for_tvdb, logger
-
+from .Agp_Utils import (
+	BACKDROP_FOLDER,
+	check_disk_space,
+	delete_old_files_if_low_disk_space,
+	validate_media_path,
+	# MemClean,
+	clean_for_tvdb,
+	logger
+)
 
 # Constants and global variables
 epgcache = eEPGCache.getInstance()
@@ -473,6 +480,21 @@ class BackdropAutoDB(AgbDownloadThread):
 			"google": False     # Google Images
 		}
 		self.providers = {**default_providers, **(providers or {})}
+		"""
+		# self.backdrop_folder = validate_media_path(
+			# BACKDROP_FOLDER,
+			# media_type="backdrops",
+			# min_space_mb=100
+		# )
+		# self.cleanup_interval = 3600  # 1 our
+		# self.last_cleanup = 0
+		"""
+		self.min_disk_space = 100  # MB minimi richiesti
+		self.max_backdrop_age = 30   # Giorni per la pulizia automatica
+
+		# Inizializza il percorso dei backdrop
+		self.backdrop_folder = self._init_backdrop_folder()
+
 		self.max_backdrops = max_backdrops
 		self.processed_titles = OrderedDict()  # Tracks processed shows
 		self.backdrop_download_count = 0
@@ -511,7 +533,13 @@ class BackdropAutoDB(AgbDownloadThread):
 			try:
 				current_time = time()
 				now = datetime.now()
-
+				"""
+				# periodic cleaning
+				# if current_time - self.last_cleanup > self.cleanup_interval:
+					# self._auto_cleanup()
+					# self.last_cleanup = current_time
+					# MemClean()
+				"""
 				# Check if 2 hours passed since last scan
 				do_time_scan = current_time - self.last_scan > 7200 or not self.last_scan
 
@@ -629,6 +657,9 @@ class BackdropAutoDB(AgbDownloadThread):
 	def _download_backdrop(self, canal):
 		"""Download backdrop with provider fallback logic"""
 		try:
+			# Check space before downloading
+			if not check_disk_space(self.backdrop_folder, 10):  # 10MB minimi
+				self._log("Salto download - spazio insufficiente")
 			if self.backdrop_download_count >= self.max_backdrops:
 				return
 
@@ -688,9 +719,84 @@ class BackdropAutoDB(AgbDownloadThread):
 			if not downloaded:
 				self._log_debug(f"Backdrop download failed for: {self.pstcanal}")
 
+			if not self._check_storage():
+				self._log("Download skipped due to insufficient storage")
+				return False
+
+			# if self.backdrop_download_count % 5 == 0:  # Every 5 downloads
+				# self._auto_cleanup()
+
 		except Exception as e:
 			self._log_error(f"CRITICAL ERROR in _download_backdrop: {str(e)}")
 			print_exc()
+
+	def _init_backdrop_folder(self):
+		"""Inizializza la cartella con validazione"""
+		try:
+			return validate_media_path(
+				BACKDROP_FOLDER,
+				media_type="backdrops",
+				min_space_mb=self.min_disk_space
+			)
+		except Exception as e:
+			self._log_error(f"backdrop folder init failed: {str(e)}")
+			return "/tmp/backdrops"  # Fallback assoluto
+
+	def _load_storage_config(self):
+		"""Carica configurazioni da file"""
+		try:
+			from agp_utils import ConfigParser
+			config = ConfigParser()
+			config.read('/etc/agp.conf')
+
+			self.min_disk_space = config.getint('storage', 'min_space', fallback=100)
+			self.max_backdrop_age = config.getint('storage', 'max_age', fallback=30)
+		except:
+			self.min_disk_space = 100
+			self.max_backdrop_age = 30
+
+	def _check_storage(self):
+		"""Versione ottimizzata usando le utility"""
+		try:
+			if check_disk_space(self.backdrop_folder, self.min_disk_space):
+				return True
+
+			self._log("Low disk space detected, running cleanup...")
+			delete_old_files_if_low_disk_space(
+				self.backdrop_folder,
+				min_free_space_mb=self.min_disk_space,
+				max_age_days=self.max_backdrop_age
+			)
+
+			return check_disk_space(self.backdrop_folder, self.min_disk_space)
+
+		except Exception as e:
+			self._log_error(f"Storage check failed: {str(e)}")
+		return False
+
+	"""
+	# def _auto_cleanup(self):
+		# # 1. Advanced Disk Space Check
+		# if not check_disk_space(self.backdrop_folder, 100):
+			# self._log("Start automatic cleaning for insufficient space")
+			# delete_old_files_if_low_disk_space(
+				# self.backdrop_folder,
+				# min_free_space_mb=100,
+				# max_age_days=30
+			# )
+
+		# # 2. Cleaning force if still insufficient
+		# stat = statvfs(self.backdrop_folder)
+		# free_mb = (stat.f_bavail * stat.f_frsize) / (1024 * 1024)
+		# if free_mb < 50:  # Emergency
+			# self._log("Emergency cleaning - critical space")
+			# free_up_space(
+				# path=self.backdrop_folder,
+				# min_space_mb=100,
+				# media_type="backdrops",
+				# strategy="largest_first"  # Delete larger files
+			# )
+	"""
 
 	def _log(self, message):
 		self._write_log("INFO", message)

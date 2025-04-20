@@ -622,62 +622,100 @@ def validate_media_path(path, media_type, min_space_mb=None):
 	Returns:
 		str: Validated path (original or fallback)
 	"""
-	def _log(message, level='info'):
-		"""Internal logging wrapper"""
-		# Define the log method based on level
-		if level.lower() == 'debug':
-			logger.debug(f"[MediaPath/{media_type}] {message}")
-		elif level.lower() == 'warning':
-			logger.warning(f"[MediaPath/{media_type}] {message}")
-		elif level.lower() == 'error':
-			logger.error(f"[MediaPath/{media_type}] {message}")
-		elif level.lower() == 'critical':
-			logger.critical(f"[MediaPath/{media_type}] {message}")
-		else:  # default to info
-			logger.info(f"[MediaPath/{media_type}] {message}")
-
 	try:
-		start_time = time()
 
-		# 1. Path creation
-		try:
+		if not exists(path):
 			makedirs(path, exist_ok=True)
-			_log(f"Validated path: {path}", 'debug')
-		except OSError as e:
-			_log(f"Creation failed: {str(e)} - Using fallback", 'warning')
-			path = f"/tmp/{media_type}"
-			makedirs(path, exist_ok=True)
-			return path
 
-		# 2. Space validation (if requested)
-		if min_space_mb is not None:
-			try:
-				stat = statvfs(path)
-				free_mb = (stat.f_bavail * stat.f_frsize) / (1024 * 1024)
-
-				if free_mb <= min_space_mb:
-					_log(f"Insufficient space: {free_mb:.1f}MB < {min_space_mb}MB - Using fallback", 'warning')
-					path = f"/tmp/{media_type}"
-					makedirs(path, exist_ok=True)
-			except Exception as e:
-				_log(f"Space check failed: {str(e)} - Using fallback", 'error')
-				path = f"/tmp/{media_type}"
-				makedirs(path, exist_ok=True)
-
-		# 3. Final verification
 		if not access(path, W_OK):
-			_log("Path not writable - Using fallback", 'error')
-			path = f"/tmp/{media_type}"
-			makedirs(path, exist_ok=True)
+			raise PermissionError(f"Path not writable: {path}")
 
-		_log(f"Validation completed in {(time() - start_time):.2f}s - Final path: {path}", 'debug')
+		if min_space_mb is not None:
+			stat = statvfs(path)
+			free_mb = (stat.f_bavail * stat.f_frsize) / (1024 * 1024)
+			if free_mb < min_space_mb:
+				raise OSError(f"Insufficient space: {free_mb}MB < {min_space_mb}MB")
+
 		return path
 
 	except Exception as e:
-		_log(f"Critical failure: {str(e)} - Using fallback", 'critical')
+		print(f"Validation failed: {str(e)}")
+		# Fallback a /tmp
 		fallback = f"/tmp/{media_type}"
 		makedirs(fallback, exist_ok=True)
 		return fallback
+
+
+"""
+# def validate_media_path(path, media_type, min_space_mb=None):
+	# '''
+	# Validate and prepare a media storage path with comprehensive checks
+
+	# Args:
+		# path: Path to validate
+		# media_type: Media type for logging
+		# min_space_mb: Minimum required space
+
+	# Returns:
+		# str: Validated path (original or fallback)
+	# '''
+	# def _log(message, level='info'):
+		# '''Internal logging wrapper'''
+		# # Define the log method based on level
+		# if level.lower() == 'debug':
+			# logger.debug(f"[MediaPath/{media_type}] {message}")
+		# elif level.lower() == 'warning':
+			# logger.warning(f"[MediaPath/{media_type}] {message}")
+		# elif level.lower() == 'error':
+			# logger.error(f"[MediaPath/{media_type}] {message}")
+		# elif level.lower() == 'critical':
+			# logger.critical(f"[MediaPath/{media_type}] {message}")
+		# else:  # default to info
+			# logger.info(f"[MediaPath/{media_type}] {message}")
+
+	# try:
+		# start_time = time()
+
+		# # 1. Path creation
+		# try:
+			# makedirs(path, exist_ok=True)
+			# _log(f"Validated path: {path}", 'debug')
+		# except OSError as e:
+			# _log(f"Creation failed: {str(e)} - Using fallback", 'warning')
+			# path = f"/tmp/{media_type}"
+			# makedirs(path, exist_ok=True)
+			# return path
+
+		# # 2. Space validation (if requested)
+		# if min_space_mb is not None:
+			# try:
+				# stat = statvfs(path)
+				# free_mb = (stat.f_bavail * stat.f_frsize) / (1024 * 1024)
+
+				# if free_mb <= min_space_mb:
+					# _log(f"Insufficient space: {free_mb:.1f}MB < {min_space_mb}MB - Using fallback", 'warning')
+					# path = f"/tmp/{media_type}"
+					# makedirs(path, exist_ok=True)
+			# except Exception as e:
+				# _log(f"Space check failed: {str(e)} - Using fallback", 'error')
+				# path = f"/tmp/{media_type}"
+				# makedirs(path, exist_ok=True)
+
+		# # 3. Final verification
+		# if not access(path, W_OK):
+			# _log("Path not writable - Using fallback", 'error')
+			# path = f"/tmp/{media_type}"
+			# makedirs(path, exist_ok=True)
+
+		# _log(f"Validation completed in {(time() - start_time):.2f}s - Final path: {path}", 'debug')
+		# return path
+
+	# except Exception as e:
+		# _log(f"Critical failure: {str(e)} - Using fallback", 'critical')
+		# fallback = f"/tmp/{media_type}"
+		# makedirs(fallback, exist_ok=True)
+		# return fallback
+"""
 
 
 class MediaStorage:
