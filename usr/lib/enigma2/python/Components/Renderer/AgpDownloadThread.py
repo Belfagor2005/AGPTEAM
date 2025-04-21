@@ -41,8 +41,8 @@ from unicodedata import normalize
 from PIL import Image
 from requests import get, codes, Session
 from requests.adapters import HTTPAdapter, Retry
+from requests.exceptions import HTTPError, Timeout
 from twisted.internet.reactor import callInThread
-import requests
 
 # Enigma2 specific
 from enigma import getDesktop
@@ -200,7 +200,7 @@ class AgpDownloadThread(Thread):
 			else:
 				return False, "TMDb request error: " + str(response.status_code)
 
-		except requests.exceptions.HTTPError as e:
+		except HTTPError as e:
 			if e.response is not None and e.response.status_code == 404:
 				# Suppress 404 HTTP errors
 				return False, "No results found on TMDb"
@@ -296,7 +296,7 @@ class AgpDownloadThread(Thread):
 			else:
 				return False, "[SKIP : tvdb] {} [{}-{}] => {} (Not found)".format(self.title_safe, chkType, year, url_tvdbg)
 
-		except requests.exceptions.HTTPError as e:
+		except HTTPError as e:
 			if e.response is not None and e.response.status_code == 404:
 				return False, "No results found on tvdb"
 			else:
@@ -332,7 +332,7 @@ class AgpDownloadThread(Thread):
 			resp.raise_for_status()
 			mj = resp.json()
 			tvmaze_id = mj.get("externals", {}).get("thetvdb", "-")
-		except requests.exceptions.RequestException as err:
+		except RequestException as err:
 			logger.error("TVMaze error: " + str(err))
 
 		# Step 2: Search poster on fanart.tv
@@ -359,7 +359,7 @@ class AgpDownloadThread(Thread):
 			else:
 				return False, "[SKIP : fanart] {} [{}-{}] => {} (Not found)".format(self.title_safe, chkType, year, url_fanart)
 
-		except requests.exceptions.HTTPError as e:
+		except HTTPError as e:
 			if e.response is not None and e.response.status_code == 404:
 				return False, "No results found on fanart"
 			else:
@@ -455,7 +455,7 @@ class AgpDownloadThread(Thread):
 
 			return False, "[SKIP : imdb] {} [{}-{}] => {} (No Entry found [{}])".format(self.title_safe, chkType, year, url_mimdb, len_imdb)
 
-		except requests.exceptions.HTTPError as e:
+		except HTTPError as e:
 			if e.response is not None and e.response.status_code == 404:
 				return False, "No results found on imdb"
 			else:
@@ -524,7 +524,7 @@ class AgpDownloadThread(Thread):
 		except Exception as e:
 			return False, "[ERROR : programmetv-google] {} [{}] => {} ({})".format(self.title_safe, chkType, url_ptv, str(e))
 
-		except requests.exceptions.HTTPError as e:
+		except HTTPError as e:
 			if e.response is not None and e.response.status_code == 404:
 				return False, "No results found on programmetv-google"
 			else:
@@ -584,7 +584,7 @@ class AgpDownloadThread(Thread):
 		except Exception as e:
 			return False, "[ERROR : molotov-google] {} => {}".format(self.title_safe, str(e))
 
-		except requests.exceptions.HTTPError as e:
+		except HTTPError as e:
 			if e.response is not None and e.response.status_code == 404:
 				return False, "No results found on molotov-google"
 			else:
@@ -663,7 +663,7 @@ class AgpDownloadThread(Thread):
 		except Exception as e:
 			return False, f"[ERROR : google] {self.title_safe} => {str(e)}"
 
-		except requests.exceptions.HTTPError as e:
+		except HTTPError as e:
 			if e.response is not None and e.response.status_code == 404:
 				# Suppress 404 HTTP errors
 				return False, "No results found on google"
@@ -673,7 +673,7 @@ class AgpDownloadThread(Thread):
 
 	def savePoster(self, url, filepath):
 		if not url:
-			return None
+			return False
 
 		if exists(filepath):
 			return True
@@ -683,13 +683,18 @@ class AgpDownloadThread(Thread):
 			response = get(url, headers=headers, timeout=(10, 30))
 			response.raise_for_status()
 
-			if response.status_code == 200:
-				with open(filepath, "wb") as f:
-					f.write(response.content)
-				return True
+			with open(filepath, "wb") as f:
+				f.write(response.content)
+			return True
+
+		except HTTPError as http_err:
+			logger.error("HTTP error saving poster: %s (%s)", str(http_err), url)
+		except Timeout as timeout_err:
+			logger.error("Timeout error saving poster: %s (%s)", str(timeout_err), url)
 		except Exception as e:
-			logger.error(f"Error saving poster: {str(e)}")
-		return None
+			logger.error("Unexpected error saving poster: %s (%s)", str(e), url)
+
+		return False
 
 	def resizePoster(self, dwn_poster):
 		try:
