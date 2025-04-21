@@ -332,7 +332,7 @@ class AgpDownloadThread(Thread):
 			resp.raise_for_status()
 			mj = resp.json()
 			tvmaze_id = mj.get("externals", {}).get("thetvdb", "-")
-		except RequestException as err:
+		except Exception as err:
 			logger.error("TVMaze error: " + str(err))
 
 		# Step 2: Search poster on fanart.tv
