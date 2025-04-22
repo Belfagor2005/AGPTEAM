@@ -249,7 +249,6 @@ class AglareBackdropX(Renderer):
 			# Try to display existing backdrop
 			backdrop_path = join(self.path, f"{self.pstcanal}.jpg")
 			if checkBackdropExistence(backdrop_path):
-				# self.show_timer.start(5, True)
 				self.showBackdrop(backdrop_path)
 			else:
 				# Queue for download if not available
@@ -280,20 +279,43 @@ class AglareBackdropX(Renderer):
 		Thread(target=self.waitBackdrop, daemon=True).start()
 
 	def showBackdrop(self, backdrop_path=None):
-		"""Display the backdrop image"""
+		"""Safe backdrop display with retry logic"""
 		if not self.instance:
 			return
 
-		if self.instance:
+		try:
+			path = backdrop_path or self.backrNm
+			if not path:
+				self.instance.hide()
+				return
+
+			if not self.check_valid_backdrop(path):
+				logger.warning(f"Invalid backdrop file: {path}")
+				self.instance.hide()
+				return
+
+			max_attempts = 3
+			for attempt in range(max_attempts):
+				try:
+					pixmap = loadJPG(path)
+					if pixmap:
+						self.instance.setPixmap(pixmap)
+						self.instance.setScale(1)
+						self.instance.show()
+						# logger.debug(f"Displayed backdrop: {path}")
+						return
+					else:
+						logger.warning(f"Failed to load pixmap (attempt {attempt + 1})")
+						sleep(0.1 * (attempt + 1))
+				except Exception as e:
+					logger.error(f"Pixmap error (attempt {attempt + 1}): {str(e)}")
+					sleep(0.1 * (attempt + 1))
+
 			self.instance.hide()
 
-		# Use cached path if none provided
-		if not backdrop_path and self.backrNm:
-			backdrop_path = self.backrNm
-		if backdrop_path and checkBackdropExistence(backdrop_path):
-			self.instance.setPixmap(loadJPG(backdrop_path))
-			self.instance.setScale(1)
-			self.instance.show()
+		except Exception as e:
+			logger.error(f"Error in showBackdrop: {str(e)}")
+			self.instance.hide()
 
 	def waitBackdrop(self):
 		"""Wait for backdrop download to complete with retries"""
@@ -301,17 +323,41 @@ class AglareBackdropX(Renderer):
 			return
 
 		self.backrNm = None
-		self.instance.hide()
 		pstcanal = clean_for_tvdb(self.canal[5])
-		backrNm = join(self.path, pstcanal + ".jpg")
-		# Retry with increasing delays
+		backdrop_path = join(self.path, f"{pstcanal}.jpg")
+
 		for attempt in range(5):
-			if checkBackdropExistence(backrNm):
-				self.backrNm = backrNm
-				self.show_timer.start(10, True)  # Show after short delay
+			if checkBackdropExistence(backdrop_path):
+				self.backrNm = backdrop_path
+				logger.debug(f"backdrop found after {attempt} attempts")
+
+				# Chiamata diretta senza notifiche
+				self.showBackdrop(backdrop_path)
 				return
 
-			sleep(0.3 * (attempt + 1))  # Progressive delay: 0.3s, 0.6s, 0.9s etc.
+			sleep(0.3 * (attempt + 1))
+
+		logger.warning(f"backdrop not found after retries: {backdrop_path}")
+
+	def check_valid_backdrop(self, path):
+		"""Verify backdrop is valid JPEG and >1KB"""
+		try:
+			if not exists(path):
+				return False
+
+			if getsize(path) < 1024:
+				remove(path)
+				return False
+
+			with open(path, 'rb') as f:
+				header = f.read(2)
+				if header != b'\xFF\xD8':  # JPEG magic number
+					remove(path)
+					return False
+			return True
+		except Exception as e:
+			logger.error(f"backdrop validation error: {str(e)}")
+			return False
 
 	def _log_debug(self, message):
 		self._write_log("DEBUG", message)
@@ -335,10 +381,14 @@ class BackdropDB(AgbDownloadThread):
 	"""Handles backdrop downloading and database management"""
 	def __init__(self, providers=None):
 		super().__init__()
+
+		self.queued_backdrops = set()
+		self.backdrop_cache = {}
+
 		self.executor = ThreadPoolExecutor(max_workers=4)
 		self.extensions = extensions
 		self.logdbg = None
-		self.pstcanal = None  # Current channel being processed
+		self.pstcanal = None
 		self.service_pattern = compile(r'^#SERVICE (\d+):([^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+)')
 
 		self.log_file = "/tmp/agplog/BackdropDB.log"
@@ -401,43 +451,78 @@ class BackdropDB(AgbDownloadThread):
 		try:
 			self.pstcanal = clean_for_tvdb(canal[5])
 			if not self.pstcanal:
-				print(f"Invalid channel name: {canal[0]}")
+				logger.error(f"Invalid channel name: {canal[0]}")
 				return
 
-			if not any(self.providers.values()):
-				self._log_debug("No provider is enabled for backdrop download")
-				return
-
-			# Check if backdrop already exists
 			backdrop_path = join(BACKDROP_FOLDER, f"{self.pstcanal}.jpg")
-			if self.check_backdrop_exists(self.pstcanal):
-				utime(backdrop_path, (time(), time()))  # Update access time
+			if self.pstcanal in self.queued_backdrops:
 				return
 
-			# Try each enabled provider until successful
-			downloaded = False
-			for provider_name, provider_func in self.provider_engines:
-				if downloaded:
-					break
+			self.queued_backdrops.add(self.pstcanal)
+			try:
+				if self.check_valid_backdrop(backdrop_path):
+					logger.debug(f"Valid backdrop exists: {backdrop_path}")
+					self.update_backdrop_cache(self.pstcanal, backdrop_path)
+					return
 
-				try:
-					result = provider_func(backdrop_path, self.pstcanal, canal[4], canal[3], canal[0])
-					if not result or len(result) != 2:
-						continue  # Skip if result is not as expected
+				logger.debug(f"Starting download for: {self.pstcanal}")
+				for provider_name, provider_func in sorted(self.provider_engines,
+														   key=lambda x: self.providers.get(x[0], 0)):
 
-					success, log = result
-					self._log_debug(f"{provider_name}: {log}")
+					try:
+						logger.debug(f"Trying provider: {provider_name}")
+						result = provider_func(backdrop_path, self.pstcanal, canal[4], canal[3], canal[0])
 
-					if success and checkBackdropExistence(backdrop_path):
-						downloaded = True
-					else:
-						self.mark_failed_attempt(self.pstcanal)
-				except Exception as e:
-					self._log_error(f"Error with engine {provider_name}: {str(e)}")
+						if not result or len(result) != 2:
+							continue
+
+						success, log = result
+						logger.debug(f"{provider_name} result: {log}")
+
+						if success and self.check_valid_backdrop(backdrop_path):
+							logger.debug(f"Successfully downloaded: {backdrop_path}")
+							self.update_backdrop_cache(self.pstcanal, backdrop_path)
+							break
+
+					except Exception as e:
+						logger.error(f"Error with {provider_name}: {str(e)}")
+						continue
+
+			finally:
+				self.queued_backdrops.discard(self.pstcanal)
 
 		except Exception as e:
-			self._log_error(f"Processing error: {e}")
-			print_exc()
+			import traceback
+			logger.error(f"Critical error in _process_canal_task: {str(e)}")
+			logger.error(traceback.format_exc())
+
+	def check_valid_backdrop(self, path):
+		"""Verify backdrop is valid JPEG and >1KB"""
+		try:
+			if not exists(path):
+				return False
+
+			if getsize(path) < 1024:
+				remove(path)
+				return False
+
+			with open(path, 'rb') as f:
+				header = f.read(2)
+				if header != b'\xFF\xD8':  # JPEG magic number
+					remove(path)
+					return False
+			return True
+		except Exception as e:
+			logger.error(f"backdrop validation error: {str(e)}")
+			return False
+
+	def update_backdrop_cache(self, backdrop_name, path):
+		"""Force update cache entry"""
+		self.backdrop_cache[backdrop_name] = path
+		# Limit cache size
+		if len(self.backdrop_cache) > 50:
+			oldest = next(iter(self.backdrop_cache))
+			del self.backdrop_cache[oldest]
 
 	def mark_failed_attempt(self, canal_name):
 		"""Track failed download attempts"""
@@ -508,10 +593,9 @@ class BackdropAutoDB(AgbDownloadThread):
 			"google": False
 		}
 
-		self.min_disk_space = 100  # MB minimi richiesti
-		self.max_backdrop_age = 30   # Giorni per la pulizia automatica
+		self.min_disk_space = 100
+		self.max_backdrop_age = 30
 
-		# Inizializza il percorso dei backdrop
 		self.backdrop_folder = self._init_backdrop_folder()
 
 		self.max_backdrops = max_backdrops
@@ -779,7 +863,7 @@ class BackdropAutoDB(AgbDownloadThread):
 			)
 		except Exception as e:
 			self._log_error(f"backdrop folder init failed: {str(e)}")
-			return "/tmp/backdrops"  # Fallback assoluto
+			return "/tmp/backdrops"
 
 	def _load_storage_config(self):
 		"""Carica configurazioni da file"""
@@ -896,4 +980,4 @@ if config.plugins.Aglare.bkddown.value:
 		AgbAutoDB.start()
 else:
 	logger.debug("BackdropAutoDB NOT started - configuration DISABLED")
-	AgbAutoDB = type('DisabledPosterAutoDB', (), {'start': lambda self: None})()
+	AgbAutoDB = type('DisabledbackdropAutoDB', (), {'start': lambda self: None})()

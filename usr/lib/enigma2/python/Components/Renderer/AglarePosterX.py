@@ -302,9 +302,6 @@ class AglarePosterX(Renderer):
 			# Try to display existing poster
 			poster_path = join(self.path, f"{self.pstcanal}.jpg")
 
-			# self._log_debug(f"Event name used for poster: {self.canal[5]}")
-			# self._log_debug(f"Poster path: {poster_path}")
-
 			if checkPosterExistence(poster_path):
 				self.showPoster(poster_path)
 			else:
@@ -336,20 +333,43 @@ class AglarePosterX(Renderer):
 		Thread(target=self.waitPoster, daemon=True).start()
 
 	def showPoster(self, poster_path=None):
-		"""Display the poster image"""
+		"""Safe poster display with retry logic"""
 		if not self.instance:
 			return
 
-		if self.instance:
+		try:
+			path = poster_path or self.backrNm
+			if not path:
+				self.instance.hide()
+				return
+
+			if not self.check_valid_poster(path):
+				logger.warning(f"Invalid poster file: {path}")
+				self.instance.hide()
+				return
+
+			max_attempts = 3
+			for attempt in range(max_attempts):
+				try:
+					pixmap = loadJPG(path)
+					if pixmap:
+						self.instance.setPixmap(pixmap)
+						self.instance.setScale(1)
+						self.instance.show()
+						# logger.debug(f"Displayed poster: {path}")
+						return
+					else:
+						logger.warning(f"Failed to load pixmap (attempt {attempt + 1})")
+						sleep(0.1 * (attempt + 1))
+				except Exception as e:
+					logger.error(f"Pixmap error (attempt {attempt + 1}): {str(e)}")
+					sleep(0.1 * (attempt + 1))
+
 			self.instance.hide()
 
-		# Use cached path if none provided
-		if not poster_path and self.backrNm:
-			poster_path = self.backrNm
-		if poster_path and checkPosterExistence(poster_path):
-			self.instance.setPixmap(loadJPG(poster_path))
-			self.instance.setScale(1)
-			self.instance.show()
+		except Exception as e:
+			logger.error(f"Error in showPoster: {str(e)}")
+			self.instance.hide()
 
 	def waitPoster(self):
 		"""Wait for poster download to complete with retries"""
@@ -357,17 +377,41 @@ class AglarePosterX(Renderer):
 			return
 
 		self.backrNm = None
-		self.instance.hide()
 		pstcanal = clean_for_tvdb(self.canal[5])
-		backrNm = join(self.path, pstcanal + ".jpg")
-		# Retry with increasing delays
+		poster_path = join(self.path, f"{pstcanal}.jpg")
+
 		for attempt in range(5):
-			if checkPosterExistence(backrNm):
-				self.backrNm = backrNm
-				self.show_timer.start(10, True)  # Show after short delay
+			if checkPosterExistence(poster_path):
+				self.backrNm = poster_path
+				logger.debug(f"Poster found after {attempt} attempts")
+
+				# Chiamata diretta senza notifiche
+				self.showPoster(poster_path)
 				return
 
-			sleep(0.3 * (attempt + 1))  # Progressive delay: 0.3s, 0.6s, 0.9s etc.
+			sleep(0.3 * (attempt + 1))
+
+		logger.warning(f"Poster not found after retries: {poster_path}")
+
+	def check_valid_poster(self, path):
+		"""Verify poster is valid JPEG and >1KB"""
+		try:
+			if not exists(path):
+				return False
+
+			if getsize(path) < 1024:
+				remove(path)
+				return False
+
+			with open(path, 'rb') as f:
+				header = f.read(2)
+				if header != b'\xFF\xD8':  # JPEG magic number
+					remove(path)
+					return False
+			return True
+		except Exception as e:
+			logger.error(f"Poster validation error: {str(e)}")
+			return False
 
 	def _log_debug(self, message):
 		self._write_log("DEBUG", message)
@@ -391,10 +435,14 @@ class PosterDB(AgpDownloadThread):
 	"""Handles poster downloading and database management"""
 	def __init__(self, providers=None):
 		super().__init__()
+
+		self.queued_posters = set()
+		self.poster_cache = {}
+
 		self.executor = ThreadPoolExecutor(max_workers=4)
 		self.extensions = extensions
 		self.logdbg = None
-		self.pstcanal = None  # Current channel being processed
+		self.pstcanal = None
 		self.service_pattern = compile(r'^#SERVICE (\d+):([^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+)')
 
 		self.log_file = "/tmp/agplog/PosterDB.log"
@@ -402,11 +450,11 @@ class PosterDB(AgpDownloadThread):
 			makedirs("/tmp/agplog")
 
 		default_providers = {
-			"tmdb": True,       # The Movie Database
-			"tvdb": True,      # The TV Database
-			"imdb": True,      # Internet Movie Database
-			"fanart": False,    # Fanart.tv
-			"google": False     # Google Images
+			"tmdb": True,        # The Movie Database
+			"tvdb": True,       # The TV Database
+			"imdb": True,       # Internet Movie Database
+			"fanart": False,     # Fanart.tv
+			"google": False      # Google Images
 		}
 		self.providers = {**default_providers, **(providers or {})}
 		self.provider_engines = self.build_providers()
@@ -457,43 +505,78 @@ class PosterDB(AgpDownloadThread):
 		try:
 			self.pstcanal = clean_for_tvdb(canal[5])
 			if not self.pstcanal:
-				print(f"Invalid channel name: {canal[0]}")
+				logger.error(f"Invalid channel name: {canal[0]}")
 				return
 
-			if not any(self.providers.values()):
-				self._log_debug("No provider is enabled for poster download")
-				return
-
-			# Check if poster already exists
 			poster_path = join(POSTER_FOLDER, f"{self.pstcanal}.jpg")
-			if self.check_poster_exists(self.pstcanal):
-				utime(poster_path, (time(), time()))
+			if self.pstcanal in self.queued_posters:
 				return
 
-			# Try each enabled provider until successful
-			downloaded = False
-			for provider_name, provider_func in self.provider_engines:
-				if downloaded:
-					break
+			self.queued_posters.add(self.pstcanal)
+			try:
+				if self.check_valid_poster(poster_path):
+					logger.debug(f"Valid poster exists: {poster_path}")
+					self.update_poster_cache(self.pstcanal, poster_path)
+					return
 
-				try:
-					result = provider_func(poster_path, self.pstcanal, canal[4], canal[3], canal[0])
-					if not result or len(result) != 2:
-						continue  # Skip if result is not as expected
+				logger.debug(f"Starting download for: {self.pstcanal}")
+				for provider_name, provider_func in sorted(self.provider_engines,
+														   key=lambda x: self.providers.get(x[0], 0)):
 
-					success, log = result
-					self._log_debug(f"{provider_name}: {log}")
+					try:
+						logger.debug(f"Trying provider: {provider_name}")
+						result = provider_func(poster_path, self.pstcanal, canal[4], canal[3], canal[0])
 
-					if success and checkPosterExistence(poster_path):
-						downloaded = True
-					else:
-						self.mark_failed_attempt(self.pstcanal)
-				except Exception as e:
-					self._log_error(f"Error with engine {provider_name}: {str(e)}")
+						if not result or len(result) != 2:
+							continue
+
+						success, log = result
+						logger.debug(f"{provider_name} result: {log}")
+
+						if success and self.check_valid_poster(poster_path):
+							logger.debug(f"Successfully downloaded: {poster_path}")
+							self.update_poster_cache(self.pstcanal, poster_path)
+							break
+
+					except Exception as e:
+						logger.error(f"Error with {provider_name}: {str(e)}")
+						continue
+
+			finally:
+				self.queued_posters.discard(self.pstcanal)
 
 		except Exception as e:
-			self._log_error(f"Processing error: {e}")
-			print_exc()
+			import traceback
+			logger.error(f"Critical error in _process_canal_task: {str(e)}")
+			logger.error(traceback.format_exc())
+
+	def check_valid_poster(self, path):
+		"""Verify poster is valid JPEG and >1KB"""
+		try:
+			if not exists(path):
+				return False
+
+			if getsize(path) < 1024:
+				remove(path)
+				return False
+
+			with open(path, 'rb') as f:
+				header = f.read(2)
+				if header != b'\xFF\xD8':  # JPEG magic number
+					remove(path)
+					return False
+			return True
+		except Exception as e:
+			logger.error(f"Poster validation error: {str(e)}")
+			return False
+
+	def update_poster_cache(self, poster_name, path):
+		"""Force update cache entry"""
+		self.poster_cache[poster_name] = path
+		# Limit cache size
+		if len(self.poster_cache) > 50:
+			oldest = next(iter(self.poster_cache))
+			del self.poster_cache[oldest]
 
 	def mark_failed_attempt(self, canal_name):
 		"""Track failed download attempts"""
@@ -564,10 +647,9 @@ class PosterAutoDB(AgpDownloadThread):
 			"google": False
 		}
 
-		self.min_disk_space = 100  # MB minimi richiesti
-		self.max_poster_age = 30   # Giorni per la pulizia automatica
+		self.min_disk_space = 100
+		self.max_poster_age = 30
 
-		# Inizializza il percorso dei poster
 		self.poster_folder = self._init_poster_folder()
 
 		self.max_posters = max_posters
@@ -835,7 +917,7 @@ class PosterAutoDB(AgpDownloadThread):
 			)
 		except Exception as e:
 			self._log_error(f"Poster folder init failed: {str(e)}")
-			return "/tmp/posters"  # Fallback assoluto
+			return "/tmp/posters"
 
 	def _load_storage_config(self):
 		"""Carica configurazioni da file"""

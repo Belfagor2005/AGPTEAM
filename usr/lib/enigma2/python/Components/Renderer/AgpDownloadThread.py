@@ -29,8 +29,8 @@ __author__ = "Lululla"
 __copyright__ = "AGP Team"
 
 # Standard library
-from os import remove
-from os.path import exists
+from os import remove, rename
+from os.path import exists, getsize
 from re import compile, findall, DOTALL, search, sub
 from threading import Thread
 from json import loads
@@ -42,7 +42,7 @@ from time import sleep
 from PIL import Image
 from requests import get, codes, Session
 from requests.adapters import HTTPAdapter, Retry
-from requests.exceptions import HTTPError, Timeout, RequestException
+from requests.exceptions import HTTPError, RequestException
 from twisted.internet.reactor import callInThread
 
 # Enigma2 specific
@@ -531,7 +531,7 @@ class AgpDownloadThread(Thread):
 				self.title_safe, chkType, ptv_id, url_ptv
 			)
 		except Exception as e:
-			return False, "[ERROR : programmetv-google] {} [{}] => {} ({})".format(self.title_safe, chkType, url_ptv, str(e))
+			return False, f"[ERROR : programmetv-google] {self.title_safe} [{chkType}] => {url_ptv} ({str(e)})"
 
 		except HTTPError as e:
 			if e.response is not None and e.response.status_code == 404:
@@ -674,12 +674,26 @@ class AgpDownloadThread(Thread):
 				return False, "HTTP error during google search"
 
 	def savePoster(self, url, filepath):
+		"""Robust poster download with atomic writes and validation"""
 		if not url:
+			logger.debug("Empty URL provided")
 			return False
 
+		# Verify existing file
 		if exists(filepath):
-			return True
+			try:
+				with open(filepath, 'rb') as f:
+					if f.read(2) == b'\xFF\xD8' and getsize(filepath) > 1024:
+						logger.debug(f"Valid poster exists: {filepath}")
+						return True
+				logger.warning("Removing corrupted existing file")
+				remove(filepath)
+			except Exception as e:
+				logger.error(f"File check failed: {str(e)}")
+				if exists(filepath):
+					remove(filepath)
 
+		temp_path = f"{filepath}.tmp"
 		max_retries = 3
 		retry_delay = 2
 
@@ -687,43 +701,43 @@ class AgpDownloadThread(Thread):
 			try:
 				headers = {
 					"User-Agent": choice(AGENTS),
-					"Accept": "image/webp,image/*,*/*;q=0.8",  # Aggiungi header Accept
-					"Accept-Encoding": "gzip, deflate"
+					"Accept": "image/jpeg",
+					"Accept-Encoding": "gzip"
 				}
 
-				response = get(url, headers=headers, timeout=(5, 15), verify=False)
+				# Download with stream and timeout
+				response = get(url, headers=headers, stream=True, timeout=(5, 15))
 				response.raise_for_status()
 
-				if not response.headers.get('Content-Type', '').startswith('image/'):
-					logger.error("Invalid content type: %s", response.headers.get('Content-Type'))
-					return False
+				# Verify content type
+				if 'image/jpeg' not in response.headers.get('Content-Type', '').lower():
+					raise ValueError(f"Invalid content type: {response.headers.get('Content-Type')}")
 
-				with open(filepath, "wb") as f:
-					f.write(response.content)
+				# Atomic write to temp file
+				with open(temp_path, 'wb') as f:
+					for chunk in response.iter_content(chunk_size=8192):
+						if chunk:  # Filter out keep-alive chunks
+							f.write(chunk)
 
-				logger.debug("Successfully saved poster: %s", url)
+				# Validate downloaded file
+				with open(temp_path, 'rb') as f:
+					if f.read(2) != b'\xFF\xD8' or getsize(temp_path) < 1024:
+						raise ValueError("Invalid JPEG file")
+
+				# Final atomic move
+				rename(temp_path, filepath)
+				logger.debug(f"Successfully saved: {url}")
 				return True
 
-			except HTTPError as http_err:
-				if http_err.response.status_code == 504 and attempt < max_retries - 1:
-					logger.warning("Attempt %d/%d: 504 Error, retrying...", attempt + 1, max_retries)
-					sleep(retry_delay * (attempt + 1))
-					continue
-				logger.error("HTTP error saving poster: %s (%s)", str(http_err), url)
-				return False
-
-			except Timeout as timeout_err:
-				if attempt < max_retries - 1:
-					logger.warning("Attempt %d/%d: Timeout, retrying...", attempt + 1, max_retries)
-					sleep(retry_delay * (attempt + 1))
-					continue
-				logger.error("Timeout error saving poster: %s (%s)", str(timeout_err), url)
-				return False
-
 			except Exception as e:
-				logger.error("Unexpected error saving poster: %s (%s)", str(e), url)
-				return False
+				logger.warning(f"Attempt {attempt + 1} failed: {str(e)}")
+				if exists(temp_path):
+					remove(temp_path)
+				if attempt < max_retries - 1:
+					sleep(retry_delay * (attempt + 1))
+				continue
 
+		logger.error(f"Failed after {max_retries} attempts: {url}")
 		return False
 
 	def resizePoster(self, dwn_poster):
