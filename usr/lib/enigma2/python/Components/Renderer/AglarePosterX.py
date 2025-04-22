@@ -142,8 +142,8 @@ class AglarePosterX(Renderer):
 		# Initialize default providers configuration
 		self.providers = {
 			"tmdb": True,       # The Movie Database
-			"tvdb": False,      # The TV Database
-			"imdb": False,      # Internet Movie Database
+			"tvdb": True,      # The TV Database
+			"imdb": True,      # Internet Movie Database
 			"fanart": False,    # Fanart.tv
 			"google": False     # Google Images
 		}
@@ -400,8 +400,8 @@ class PosterDB(AgpDownloadThread):
 			makedirs("/tmp/agplog")
 		default_providers = {
 			"tmdb": True,       # The Movie Database
-			"tvdb": False,      # The TV Database
-			"imdb": False,      # Internet Movie Database
+			"tvdb": True,      # The TV Database
+			"imdb": True,      # Internet Movie Database
 			"fanart": False,    # Fanart.tv
 			"google": False     # Google Images
 		}
@@ -540,8 +540,8 @@ class PosterAutoDB(AgpDownloadThread):
 		# Initialize with provided configuration or defaults
 		self.providers = providers or {
 			"tmdb": True,
-			"tvdb": False,
-			"imdb": False,
+			"tvdb": True,
+			"imdb": True,
 			"fanart": False,
 			"google": False
 		}
