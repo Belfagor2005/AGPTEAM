@@ -516,7 +516,7 @@ class PosterDB(AgpDownloadThread):
 			try:
 				if self.check_valid_poster(poster_path):
 					logger.debug(f"Valid poster exists: {poster_path}")
-					self.update_poster_cache(self.pstcanal, poster_path)
+					# self.update_poster_cache(self.pstcanal, poster_path)
 					return
 
 				logger.debug(f"Starting download for: {self.pstcanal}")
@@ -535,7 +535,7 @@ class PosterDB(AgpDownloadThread):
 
 						if success and self.check_valid_poster(poster_path):
 							logger.debug(f"Successfully downloaded: {poster_path}")
-							self.update_poster_cache(self.pstcanal, poster_path)
+							# self.update_poster_cache(self.pstcanal, poster_path)
 							break
 
 					except Exception as e:

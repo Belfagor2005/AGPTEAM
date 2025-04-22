@@ -462,7 +462,7 @@ class BackdropDB(AgbDownloadThread):
 			try:
 				if self.check_valid_backdrop(backdrop_path):
 					logger.debug(f"Valid backdrop exists: {backdrop_path}")
-					self.update_backdrop_cache(self.pstcanal, backdrop_path)
+					# self.update_backdrop_cache(self.pstcanal, backdrop_path)
 					return
 
 				logger.debug(f"Starting download for: {self.pstcanal}")
@@ -481,7 +481,7 @@ class BackdropDB(AgbDownloadThread):
 
 						if success and self.check_valid_backdrop(backdrop_path):
 							logger.debug(f"Successfully downloaded: {backdrop_path}")
-							self.update_backdrop_cache(self.pstcanal, backdrop_path)
+							# self.update_backdrop_cache(self.pstcanal, backdrop_path)
 							break
 
 					except Exception as e:
@@ -520,7 +520,7 @@ class BackdropDB(AgbDownloadThread):
 		"""Force update cache entry"""
 		self.backdrop_cache[backdrop_name] = path
 		# Limit cache size
-		if len(self.backdrop_cache) > 50:
+		if len(self.backdrop_cache) > 20:
 			oldest = next(iter(self.backdrop_cache))
 			del self.backdrop_cache[oldest]
 
