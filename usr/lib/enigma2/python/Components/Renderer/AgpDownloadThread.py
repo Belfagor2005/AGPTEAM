@@ -243,7 +243,7 @@ class AgpDownloadThread(Thread):
 					callInThread(self.savePoster, poster, dwn_poster)
 					if exists(dwn_poster):
 						return True, f"[SUCCESS] Poster avviato: {title}"
-		return False, "[SKIP] Nessun risultato valido"
+		return False, "[SKIP] No valid result"
 
 	def search_tvdb(self, dwn_poster, title, shortdesc, fulldesc, channel=None):
 		self.title_safe = title.replace('+', ' ')

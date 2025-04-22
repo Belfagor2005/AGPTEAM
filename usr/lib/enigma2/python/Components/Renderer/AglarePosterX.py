@@ -139,28 +139,7 @@ class AglarePosterX(Renderer):
 		self.log_file = "/tmp/agplog/AglarePosterX.log"
 		if not exists("/tmp/agplog"):
 			makedirs("/tmp/agplog")
-		self.providers = {}  # Poster providers configuration
-		clear_all_log()
-
-		self.queued_posters = set()
-		self.loaded_posters = set()
-
-		self.poster_cache = {}
-		if len(self.poster_cache) > 50:
-			self.poster_cache.clear()
-
-		self.last_service = None
-
-		self.show_timer = eTimer()
-		self.show_timer.callback.append(self.showPoster)
-
-	def applySkin(self, desktop, parent):
-		"""Apply skin configuration and settings"""
-		global SCAN_TIME
-		attribs = []
-		scan_time = SCAN_TIME
-
-		# Default provider configuration
+		# Initialize default providers configuration
 		self.providers = {
 			"tmdb": True,       # The Movie Database
 			"tvdb": False,      # The TV Database
@@ -168,6 +147,28 @@ class AglarePosterX(Renderer):
 			"fanart": False,    # Fanart.tv
 			"google": False     # Google Images
 		}
+
+		clear_all_log()
+
+		self.queued_posters = set()
+		self.loaded_posters = set()
+		self.poster_cache = {}
+		if len(self.poster_cache) > 50:
+			self.poster_cache.clear()
+
+		self.last_service = None
+		self.show_timer = eTimer()
+		self.show_timer.callback.append(self.showPoster)
+
+		# Initialize helper classes with providers config
+		self.poster_db = PosterDB(providers=self.providers)
+		self.poster_auto_db = PosterAutoDB(providers=self.providers)
+
+	def applySkin(self, desktop, parent):
+		"""Apply skin configuration and settings"""
+		global SCAN_TIME
+		attribs = []
+		scan_time = SCAN_TIME
 
 		for (attrib, value) in self.skinAttributes:
 			if attrib == "nexts":
@@ -178,6 +179,9 @@ class AglarePosterX(Renderer):
 				provider = attrib.split(".")[1]
 				if provider in self.providers:
 					self.providers[provider] = value.lower() == "true"
+					# Update providers in helper classes
+					self.poster_db.update_providers(self.providers)
+					self.poster_auto_db.update_providers(self.providers)
 			if attrib == "scan_time":
 				scan_time = str(value)  # Set scan time from skin
 
@@ -415,6 +419,11 @@ class PosterDB(AgpDownloadThread):
 		}
 		return [engine for key, engine in mapping.items() if self.providers.get(key)]
 
+	def update_providers(self, new_providers):
+		"""Update providers configuration"""
+		self.providers = new_providers
+		self.provider_engines = self.build_providers()
+
 	def run(self):
 		"""Main processing loop - handles incoming channel requests"""
 		while True:
@@ -528,23 +537,15 @@ class PosterAutoDB(AgpDownloadThread):
 		self.apdb = OrderedDict()  # Active services database
 		self.max_retries = 3
 		self.current_retry = 0
-		default_providers = {
-			"tmdb": True,       # The Movie Database
-			"tvdb": False,      # The TV Database
-			"imdb": False,      # Internet Movie Database
-			"fanart": False,    # Fanart.tv
-			"google": False     # Google Images
+		# Initialize with provided configuration or defaults
+		self.providers = providers or {
+			"tmdb": True,
+			"tvdb": False,
+			"imdb": False,
+			"fanart": False,
+			"google": False
 		}
-		self.providers = {**default_providers, **(providers or {})}
-		"""
-		# self.poster_folder = validate_media_path(
-			# POSTER_FOLDER,
-			# media_type="posters",
-			# min_space_mb=100
-		# )
-		# self.cleanup_interval = 3600  # 1 our
-		# self.last_cleanup = 0
-		"""
+
 		self.min_disk_space = 100  # MB minimi richiesti
 		self.max_poster_age = 30   # Giorni per la pulizia automatica
 
@@ -580,6 +581,11 @@ class PosterAutoDB(AgpDownloadThread):
 			"google": ("Google", self.search_google)
 		}
 		return [engine for key, engine in mapping.items() if self.providers.get(key)]
+
+	def update_providers(self, new_providers):
+		"""Update providers configuration"""
+		self.providers = new_providers
+		self.provider_engines = self.build_providers()
 
 	def run(self):
 		"""Main execution loop - handles scheduled operations"""

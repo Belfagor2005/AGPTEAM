@@ -243,7 +243,7 @@ class AgbDownloadThread(Thread):
 					callInThread(self.saveBackdrop, backdrop, dwn_backdrop)
 					if exists(dwn_backdrop):
 						return True, f"[SUCCESS] Backdrop avviato: {title}"
-		return False, "[SKIP] Nessun risultato valido"
+		return False, "[SKIP] No valid result"
 
 	def search_tvdb(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None):
 		self.title_safe = title.replace("+", " ")
