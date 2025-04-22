@@ -37,7 +37,7 @@ BACKDROP_FOLDER = "/YOUR_DEVICE/backdrops"
 ```
 # or/and put tag -->  path="/media/hdd/poster"
 
-### ADVANCED CONFIGURATIONS:
+### ADVANCED CONFIGURATIONS (for poster and backdrop):
 ```xml
 <widget source="ServiceEvent" render="AglarePosterX"
        nexts="1"
@@ -68,7 +68,7 @@ BACKDROP_FOLDER = "/YOUR_DEVICE/backdrops"
 
 ### CHANNELS
 ```xml
-<widget source="ServiceEvent" render="AglareBackdropX" position="100,100" size="680,1000" nexts="2" />
+<widget source="ServiceEvent" render="AglareBackdropX" position="100,100" size="680,1000" nexts="1" />
 <widget source="ServiceEvent" render="AglareBackdropX" position="100,100" size="185,278" nexts="2" />
 ```
 
