@@ -162,15 +162,6 @@ class AglareBackdropX(Renderer):
 		attribs = []
 		scan_time = SCAN_TIME
 
-		# Default provider configuration
-		self.providers = {
-			"tmdb": True,       # The Movie Database
-			"tvdb": True,      # The TV Database
-			"imdb": True,      # Internet Movie Database
-			"fanart": False,    # Fanart.tv
-			"google": False     # Google Images
-		}
-
 		for (attrib, value) in self.skinAttributes:
 			if attrib == "nexts":
 				self.nxts = int(value)  # Set next service flag
@@ -354,8 +345,8 @@ class BackdropDB(AgbDownloadThread):
 
 		default_providers = {
 			"tmdb": True,        # The Movie Database
-			"tvdb": False,       # The TV Database
-			"imdb": False,       # Internet Movie Database
+			"tvdb": True,       # The TV Database
+			"imdb": True,       # Internet Movie Database
 			"fanart": False,     # Fanart.tv
 			"google": False      # Google Images
 		}
@@ -494,8 +485,8 @@ class BackdropAutoDB(AgbDownloadThread):
 		# Initialize with provided configuration or defaults
 		self.providers = providers or {
 			"tmdb": True,
-			"tvdb": False,
-			"imdb": False,
+			"tvdb": True,
+			"imdb": True,
 			"fanart": False,
 			"google": False
 		}
@@ -676,6 +667,7 @@ class BackdropAutoDB(AgbDownloadThread):
 			# Check space before downloading
 			if not check_disk_space(self.backdrop_folder, 10):  # 10MB minimi
 				self._log("Salto download - spazio insufficiente")
+				return False
 			if self.backdrop_download_count >= self.max_backdrops:
 				return
 

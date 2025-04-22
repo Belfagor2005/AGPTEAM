@@ -288,7 +288,7 @@ class AglarePosterX(Renderer):
 				self.instance.hide()
 
 			self.oldCanal = curCanal
-			self.pstcanal = clean_for_tvdb(self.canal[5])  # if self.canal[5] else None
+			self.pstcanal = clean_for_tvdb(self.canal[5])
 			if not self.pstcanal:
 				return
 
@@ -395,9 +395,11 @@ class PosterDB(AgpDownloadThread):
 		self.logdbg = None
 		self.pstcanal = None  # Current channel being processed
 		self.service_pattern = compile(r'^#SERVICE (\d+):([^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+)')
+
 		self.log_file = "/tmp/agplog/PosterDB.log"
 		if not exists("/tmp/agplog"):
 			makedirs("/tmp/agplog")
+
 		default_providers = {
 			"tmdb": True,       # The Movie Database
 			"tvdb": True,      # The TV Database
