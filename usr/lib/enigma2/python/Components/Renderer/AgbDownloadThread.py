@@ -58,12 +58,25 @@ from .Agp_Utils import logger
 # DISABLE URLLIB3 DEBUG LOGS
 # ========================
 import urllib3
+"""
 import logging
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 for lib in ['urllib3', 'requests', 'requests.packages.urllib3']:
 	logging.getLogger(lib).setLevel(logging.CRITICAL)
 	logging.getLogger(lib).propagate = False
 logging.captureWarnings(True)
+logger.debug("Configured complete silence for urllib3/requests")
+"""
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+
+def _silence_http_logs():
+	import requests
+	requests.adapters.HTTPAdapter.debuglevel = 0  # Disabilita debug HTTP
+	requests.packages.urllib3.connectionpool.log.debug = lambda *args, **kwargs: None
+	requests.packages.urllib3.connectionpool.log.info = lambda *args, **kwargs: None
+
+
+_silence_http_logs()
 logger.debug("Configured complete silence for urllib3/requests")
 
 

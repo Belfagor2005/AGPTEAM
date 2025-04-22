@@ -276,7 +276,8 @@ class AglareBackdropX(Renderer):
 			# if str(self.providers[provider]).lower() == "true":
 				# self._log_debug(f"Providers attivi: {provider}")
 		"""
-		Thread(target=self.waitBackdrop).start()
+		# Thread(target=self.waitBackdrop).start()
+		Thread(target=self.waitBackdrop, daemon=True).start()
 
 	def showBackdrop(self, backdrop_path=None):
 		"""Display the backdrop image"""

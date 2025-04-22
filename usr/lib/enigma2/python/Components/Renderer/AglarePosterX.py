@@ -332,8 +332,8 @@ class AglarePosterX(Renderer):
 			# if str(self.providers[provider]).lower() == "true":
 				# self._log_debug(f"Providers attivi: {provider}")
 		"""
-		Thread(target=self.waitPoster).start()
-		# Thread(target=self.waitPoster, daemon=True).start()
+		# Thread(target=self.waitPoster).start()
+		Thread(target=self.waitPoster, daemon=True).start()
 
 	def showPoster(self, poster_path=None):
 		"""Display the poster image"""
