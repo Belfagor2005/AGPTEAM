@@ -159,9 +159,9 @@ class AglareBackdropX(Renderer):
 
 	def applySkin(self, desktop, parent):
 		"""Apply skin configuration and settings"""
-		global SCAN_TIME
+		# global SCAN_TIME
 		attribs = []
-		scan_time = SCAN_TIME
+		# scan_time = SCAN_TIME
 
 		for (attrib, value) in self.skinAttributes:
 			if attrib == "nexts":
@@ -175,12 +175,12 @@ class AglareBackdropX(Renderer):
 					# Update providers in helper classes
 					self.backdrop_db.update_providers(self.providers)
 					self.backdrop_auto_db.update_providers(self.providers)
-			if attrib == "scan_time":
-				scan_time = str(value)  # Set scan time from skin
+			# if attrib == "scan_time":
+				# scan_time = str(value)  # Set scan time from skin
 
 			attribs.append((attrib, value))
 
-		SCAN_TIME = scan_time
+		# SCAN_TIME = scan_time
 		self.skinAttributes = attribs
 		return Renderer.applySkin(self, desktop, parent)
 
@@ -601,12 +601,16 @@ class BackdropAutoDB(AgbDownloadThread):
 		self.max_backdrops = max_backdrops
 		self.processed_titles = OrderedDict()  # Tracks processed shows
 		self.backdrop_download_count = 0
+
 		try:
-			hour, minute = map(int, SCAN_TIME.split(":"))
+			# Get scan time from config instead of global
+			scan_time = config.plugins.Aglare.bscan_time.value
+			hour, minute = map(int, scan_time.split(":"))
 			self.scheduled_hour = hour
 			self.scheduled_minute = minute
-		except ValueError:
-			self.scheduled_hour = 0
+		except Exception as e:
+			logger.error(f"Error parsing scan time: {str(e)}")
+			self.scheduled_hour = 0  # Default to midnight
 			self.scheduled_minute = 0
 
 		self.last_scheduled_run = None
