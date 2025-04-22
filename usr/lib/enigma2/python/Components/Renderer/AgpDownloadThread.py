@@ -36,6 +36,7 @@ from threading import Thread
 from json import loads
 from random import choice
 from unicodedata import normalize
+from time import sleep
 
 # Third-party libraries
 from PIL import Image
@@ -53,15 +54,17 @@ from .Agp_lib import quoteEventName
 from .Agp_apikeys import tmdb_api, thetvdb_api, fanart_api  # , omdb_api
 from .Agp_Utils import logger
 
-
 # ========================
 # DISABLE URLLIB3 DEBUG LOGS
 # ========================
-import logging
 import urllib3
+import logging
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-logging.getLogger("urllib3").setLevel(logging.WARNING)
-logging.getLogger("requests").setLevel(logging.WARNING)
+for lib in ['urllib3', 'requests', 'requests.packages.urllib3']:
+	logging.getLogger(lib).setLevel(logging.CRITICAL)
+	logging.getLogger(lib).propagate = False
+logging.captureWarnings(True)
+logger.debug("Configured complete silence for urllib3/requests")
 
 
 global my_cur_skin, srch
@@ -664,21 +667,49 @@ class AgpDownloadThread(Thread):
 		if exists(filepath):
 			return True
 
-		try:
-			headers = {"User-Agent": choice(AGENTS)}
-			response = get(url, headers=headers, timeout=(10, 30))
-			response.raise_for_status()
+		max_retries = 3
+		retry_delay = 2
 
-			with open(filepath, "wb") as f:
-				f.write(response.content)
-			return True
+		for attempt in range(max_retries):
+			try:
+				headers = {
+					"User-Agent": choice(AGENTS),
+					"Accept": "image/webp,image/*,*/*;q=0.8",  # Aggiungi header Accept
+					"Accept-Encoding": "gzip, deflate"
+				}
 
-		except HTTPError as http_err:
-			logger.error("HTTP error saving poster: %s (%s)", str(http_err), url)
-		except Timeout as timeout_err:
-			logger.error("Timeout error saving poster: %s (%s)", str(timeout_err), url)
-		except Exception as e:
-			logger.error("Unexpected error saving poster: %s (%s)", str(e), url)
+				response = get(url, headers=headers, timeout=(5, 15), verify=False)
+				response.raise_for_status()
+
+				if not response.headers.get('Content-Type', '').startswith('image/'):
+					logger.error("Invalid content type: %s", response.headers.get('Content-Type'))
+					return False
+
+				with open(filepath, "wb") as f:
+					f.write(response.content)
+
+				logger.debug("Successfully saved poster: %s", url)
+				return True
+
+			except HTTPError as http_err:
+				if http_err.response.status_code == 504 and attempt < max_retries - 1:
+					logger.warning("Attempt %d/%d: 504 Error, retrying...", attempt + 1, max_retries)
+					sleep(retry_delay * (attempt + 1))
+					continue
+				logger.error("HTTP error saving poster: %s (%s)", str(http_err), url)
+				return False
+
+			except Timeout as timeout_err:
+				if attempt < max_retries - 1:
+					logger.warning("Attempt %d/%d: Timeout, retrying...", attempt + 1, max_retries)
+					sleep(retry_delay * (attempt + 1))
+					continue
+				logger.error("Timeout error saving poster: %s (%s)", str(timeout_err), url)
+				return False
+
+			except Exception as e:
+				logger.error("Unexpected error saving poster: %s (%s)", str(e), url)
+				return False
 
 		return False
 

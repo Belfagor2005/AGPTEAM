@@ -43,6 +43,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 # Enigma2/Dreambox specific imports
 from enigma import ePixmap, loadJPG, eEPGCache, eTimer
+from Components.config import config
 from Components.Renderer.Renderer import Renderer
 from Components.Sources.Event import Event
 from Components.Sources.EventInfo import EventInfo
@@ -529,9 +530,24 @@ class PosterAutoDB(AgpDownloadThread):
 	- scan_time: Set via SCAN_TIME global
 	- providers: Configured via skin parameters
 	"""
+	_instance = None
+
 	def __init__(self, providers=None, max_posters=2000):
 		"""Initialize the poster downloader with provider configurations"""
+		if hasattr(self, '_initialized') and self._initialized:
+			return
+
 		super().__init__()
+		self._initialized = True
+
+		if not config.plugins.Aglare.pstdown.value:
+			logger.debug("PosterAutoDB: Automatic downloads DISABLED in configuration")
+			self.active = False
+			return
+
+		logger.debug("PosterAutoDB: Automatic downloads ENABLED in configuration")
+		self.active = True
+
 		self.pstcanal = None  # Current channel being processed
 		self.extensions = extensions
 		self.service_queue = []
@@ -573,6 +589,11 @@ class PosterAutoDB(AgpDownloadThread):
 		self.provider_engines = self.build_providers()
 		self._log("=== INITIALIZATION COMPLETE ===")
 
+	def __new__(cls, *args, **kwargs):
+		if cls._instance is None:
+			cls._instance = super().__new__(cls)
+		return cls._instance
+
 	def build_providers(self):
 		"""Initialize enabled provider search engines"""
 		mapping = {
@@ -592,6 +613,14 @@ class PosterAutoDB(AgpDownloadThread):
 	def run(self):
 		"""Main execution loop - handles scheduled operations"""
 		self._log("Renderer initialized - Starting main loop")
+
+		if not hasattr(self, 'active') or not self.active:
+			logger.debug("PosterAutoDB thread terminated - disabled in configuration")
+			return
+
+		if not config.plugins.Aglare.pstdown:
+			self._log("Auto download disabled - thread termination")
+			return
 
 		while True:
 			try:
@@ -915,6 +944,12 @@ AgpDB.daemon = True
 AgpDB.start()
 
 # automatic download
-AgpAutoDB = PosterAutoDB()
-AgpAutoDB.daemon = True
-AgpAutoDB.start()
+if config.plugins.Aglare.pstdown.value:
+	logger.debug("Start PosterAutoDB - configuration ENABLED")
+	AgpAutoDB = PosterAutoDB()
+	if AgpAutoDB.active:
+		AgpAutoDB.daemon = True
+		AgpAutoDB.start()
+else:
+	logger.debug("PosterAutoDB NOT started - configuration DISABLED")
+	AgpAutoDB = type('DisabledPosterAutoDB', (), {'start': lambda self: None})()

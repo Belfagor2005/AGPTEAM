@@ -43,6 +43,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 # Enigma2/Dreambox specific imports
 from enigma import ePixmap, loadJPG, eEPGCache, eTimer
+from Components.config import config
 from Components.Renderer.Renderer import Renderer
 from Components.Sources.Event import Event
 from Components.Sources.EventInfo import EventInfo
@@ -472,9 +473,24 @@ class BackdropAutoDB(AgbDownloadThread):
 	- scan_time: Set via SCAN_TIME global
 	- providers: Configured via skin parameters
 	"""
+	_instance = None
+
 	def __init__(self, providers=None, max_backdrops=1000):
 		"""Initialize the backdrop downloader with provider configurations"""
+		if hasattr(self, '_initialized') and self._initialized:
+			return
+
 		super().__init__()
+		self._initialized = True
+
+		if not config.plugins.Aglare.bkddown.value:
+			logger.debug("BackdropAutoDB: Automatic downloads DISABLED in configuration")
+			self.active = False
+			return
+
+		logger.debug("BackdropAutoDB: Automatic downloads ENABLED in configuration")
+		self.active = True
+
 		self.pstcanal = None  # Current channel being processed
 		self.extensions = extensions
 		self.service_queue = []
@@ -516,6 +532,11 @@ class BackdropAutoDB(AgbDownloadThread):
 		self.provider_engines = self.build_providers()
 		self._log("=== INITIALIZATION COMPLETE ===")
 
+	def __new__(cls, *args, **kwargs):
+		if cls._instance is None:
+			cls._instance = super().__new__(cls)
+		return cls._instance
+
 	def build_providers(self):
 		"""Initialize enabled provider search engines"""
 		mapping = {
@@ -535,6 +556,14 @@ class BackdropAutoDB(AgbDownloadThread):
 	def run(self):
 		"""Main execution loop - handles scheduled operations"""
 		self._log("Renderer initialized - Starting main loop")
+
+		if not hasattr(self, 'active') or not self.active:
+			logger.debug("BackdropAutoDB thread terminated - disabled in configuration")
+			return
+
+		if not config.plugins.Aglare.bkddown:
+			self._log("Auto download disabled - thread termination")
+			return
 
 		while True:
 			try:
@@ -668,6 +697,7 @@ class BackdropAutoDB(AgbDownloadThread):
 			if not check_disk_space(self.backdrop_folder, 10):  # 10MB minimi
 				self._log("Salto download - spazio insufficiente")
 				return False
+
 			if self.backdrop_download_count >= self.max_backdrops:
 				return
 
@@ -852,11 +882,17 @@ def clear_all_log():
 
 
 # download on requests
-AgpDB = BackdropDB()
-AgpDB.daemon = True
-AgpDB.start()
+AgbDB = BackdropDB()
+AgbDB.daemon = True
+AgbDB.start()
 
 # automatic download
-AgpAutoDB = BackdropAutoDB()
-AgpAutoDB.daemon = True
-AgpAutoDB.start()
+if config.plugins.Aglare.bkddown.value:
+	logger.debug("Start BackdropAutoDB - configuration ENABLED")
+	AgbAutoDB = BackdropAutoDB()
+	if AgbAutoDB.active:
+		AgbAutoDB.daemon = True
+		AgbAutoDB.start()
+else:
+	logger.debug("BackdropAutoDB NOT started - configuration DISABLED")
+	AgbAutoDB = type('DisabledPosterAutoDB', (), {'start': lambda self: None})()
