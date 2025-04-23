@@ -89,7 +89,6 @@ def _load_api_keys():
 	Returns:
 		bool: True if any keys were loaded successfully, False otherwise
 	"""
-	global api_lock  # Reference the lock here
 	try:
 		cur_skin = config.skin.primary_skin.value.replace("/skin.xml", "")
 		skin_path = Path(f"/usr/share/enigma2/{cur_skin}")
