@@ -89,6 +89,7 @@ def _load_api_keys():
 	Returns:
 		bool: True if any keys were loaded successfully, False otherwise
 	"""
+	global api_lock  # Reference the lock here
 	try:
 		cur_skin = config.skin.primary_skin.value.replace("/skin.xml", "")
 		skin_path = Path(f"/usr/share/enigma2/{cur_skin}")
@@ -106,18 +107,19 @@ def _load_api_keys():
 		}
 
 		keys_loaded = False
+		with api_lock:  # Lock to ensure thread-safety when accessing API key files
 
-		for key_name, file_path in key_files.items():
-			if file_path.exists():
-				try:
-					with open(file_path, "r") as f:
-						API_KEYS[key_name] = f.read().strip()
-					print(f"[API Config] Loaded {key_name} from {file_path}")
-					keys_loaded = True
-				except Exception as e:
-					print(f"[API Config] Error reading {file_path}: {str(e)}")
-			else:
-				print(f"[API Config] Using default key for {key_name}")
+			for key_name, file_path in key_files.items():
+				if file_path.exists():
+					try:
+						with open(file_path, "r") as f:
+							API_KEYS[key_name] = f.read().strip()
+						print(f"[API Config] Loaded {key_name} from {file_path}")
+						keys_loaded = True
+					except Exception as e:
+						print(f"[API Config] Error reading {file_path}: {str(e)}")
+				else:
+					print(f"[API Config] Using default key for {key_name}")
 
 		# Update global namespace with current API keys
 		globals().update(API_KEYS)
