@@ -46,12 +46,6 @@ BACKDROP_FOLDER = "/YOUR_DEVICE/backdrops"
        cornerRadius="20"
        zPosition="95"
        path="/path/to/custom_folder"  <!-- Optional -->
-       service.tmdb="true"            <!-- Enable TMDB -->
-       service.tvdb="false"           <!-- Disable TVDB -->
-       service.imdb="false"           <!-- Disable IMDB -->
-       service.fanart="false"         <!-- Disable Fanart -->
-       service.google="false"         <!-- Disable Google -->
-       scan_time="00:00"              <!-- Set the start time for backdrop download -->
 />
 ```
 
@@ -88,12 +82,6 @@ BACKDROP_FOLDER = "/YOUR_DEVICE/backdrops"
        cornerRadius="20"
        zPosition="95"
        path="/path/to/custom_folder"  <!-- Optional -->
-       service.tmdb="true"            <!-- Enable TMDB -->
-       service.tvdb="false"           <!-- Disable TVDB -->
-       service.imdb="false"           <!-- Disable IMDB -->
-       service.fanart="false"         <!-- Disable Fanart -->
-       service.google="false"         <!-- Disable Google -->
-       scan_time="02:00"              <!-- Set the start time for backdrop download -->
 />
 ```
 
@@ -132,22 +120,9 @@ chown root:root /usr/share/enigma2/AglareFHD/tmdb_api
 ```
 
 
-Here's the complete GitHub-ready README.md section explaining the `scan_time` parameter with proper formatting:
-
 ```markdown
 ## ⏰ Scheduled Downloads Configuration
-
-The `scan_time` parameter controls when AGP performs automatic media downloads:
-
-```xml
-<!-- Example with all options -->
-<widget 
-    source="ServiceEvent"
-    render="AglareBackdropX"
-    scan_time="02:30"  <!-- 24-hour format (HH:MM) -->
-    ...
-/>
-```
+USE PLUGIN SETUP FOR THIS  (UPDATED)
 
 ### Key Features:
 - 🌙 **Low-traffic hours** recommended (e.g., `02:00`-`04:00`)
