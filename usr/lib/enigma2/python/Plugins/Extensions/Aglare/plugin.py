@@ -79,7 +79,7 @@ from . import _
 from Plugins.Plugin import PluginDescriptor
 
 
-from urllib.request import Request
+from urllib.request import Request,  urlopen
 
 version = '5.4'
 
