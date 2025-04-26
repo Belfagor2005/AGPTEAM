@@ -124,10 +124,17 @@ if cur_skin == "AglareFHD":
 chmod 755 /usr/share/enigma2/AglareFHD
 chown root:root /usr/share/enigma2/AglareFHD/tmdb_api
 ```
+
 **Solution**: Remove Png:
 ```
 Open Plugin Setup and remove all png
 ```
+
+
+## Scheduled
+## ⏰ Scheduled Downloads Configuration
+USE PLUGIN SETUP FOR THIS  (UPDATED)
+
 
 
 ## Key Features:
