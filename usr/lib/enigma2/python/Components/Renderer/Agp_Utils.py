@@ -14,10 +14,20 @@ from __future__ import absolute_import, print_function
 #                                                       #
 #  Credits:                                             #
 #  - Original concept by Lululla                        #
+#  - Advanced download management system                #
+#  - Atomic file operations                             #
+#  - Thread-safe resource locking                       #
 #  - TMDB API integration                               #
 #  - TVDB API integration                               #
 #  - OMDB API integration                               #
+#  - FANART API integration                             #
+#  - IMDB API integration                               #
+#  - ELCINEMA API integration                           #
+#  - GOOGLE API integration                             #
+#  - PROGRAMMETV integration                            #
+#  - MOLOTOV API integration                            #
 #  - Advanced caching system                            #
+#  - Fully configurable via AGP Setup Plugin            #
 #                                                       #
 #  Usage of this code without proper attribution        #
 #  is strictly prohibited.                              #
@@ -31,7 +41,6 @@ __copyright__ = "AGP Team"
 # ========================
 # SYSTEM IMPORTS
 # ========================
-# Import platform for OS information (currently commented out)
 from sys import version_info, version, stdout
 from os import (
 	makedirs,
@@ -42,7 +51,7 @@ from os import (
 	W_OK,
 	system
 )
-from os.path import (  # Path manipulation utilities
+from os.path import (
 	join,
 	exists,
 	isfile,
@@ -52,8 +61,8 @@ from os.path import (  # Path manipulation utilities
 	basename,
 
 )
-from pathlib import Path  # Object-oriented path handling
-import glob              # Pattern-based file searching
+from pathlib import Path
+import glob
 # from functools import lru_cache
 
 # ========================
@@ -115,7 +124,7 @@ class ColorLogger:
 
 
 # Initialize enhanced logger
-def setup_logging(log_file='/tmp/agplog/agp_utils.log', max_log_size=5, backup_count=3):
+def setup_logging(log_file='/tmp/agplog/agp_utils.log', max_log_size=2, backup_count=2):
 	"""
 	Configure comprehensive logging for AGP application with:
 	- Console output with colors
@@ -210,7 +219,7 @@ def cleanup_old_logs(log_file, max_days=7):
 					print(f"Errore cancellazione {f}: {str(e)}")
 
 
-def schedule_log_cleanup(interval_hours=12):
+def schedule_log_cleanup(interval_hours=6):
 	"""Auto-schedule log cleanup every X hours"""
 	def wrapper():
 		cleanup_old_logs('/tmp/agp/agp_utils.log')
@@ -734,7 +743,7 @@ class MediaStorage:
 			("/media/mmc", f"/media/mmc/{media_type}"),
 			("/media/nas", f"/media/nas/{media_type}"),
 			("/mnt/media", f"/mnt/media/{media_type}"),
-			("/media/network", f"/media/network/{media_type}"),
+			("/media/network", f"/media/net/{media_type}"),
 			("/tmp", f"/tmp/{media_type}"),
 			("/var/tmp", f"/var/tmp/{media_type}")
 		]
@@ -846,7 +855,6 @@ api_lock = threading_Lock()
 # Default API keys
 tmdb_api = "3c3efcf47c3577558812bb9d64019d65"
 thetvdb_api = "a99d487bb3426e5f3a60dea6d3d3c7ef"
-# thetvdb_api = 'D19315B88B2DE21F'
 omdb_api = "cb1d9f55"
 fanart_api = "6d231536dea4318a88cb2520ce89473b"
 

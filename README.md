@@ -46,12 +46,6 @@ BACKDROP_FOLDER = "/YOUR_DEVICE/backdrops"
        cornerRadius="20"
        zPosition="95"
        path="/path/to/custom_folder"  <!-- Optional -->
-       service.tmdb="true"            <!-- Enable TMDB -->
-       service.tvdb="false"           <!-- Disable TVDB -->
-       service.imdb="false"           <!-- Disable IMDB -->
-       service.fanart="false"         <!-- Disable Fanart -->
-       service.google="false"         <!-- Disable Google -->
-       scan_time="00:00"              <!-- Set the start time for backdrop download -->
 />
 ```
 
@@ -88,15 +82,8 @@ BACKDROP_FOLDER = "/YOUR_DEVICE/backdrops"
        cornerRadius="20"
        zPosition="95"
        path="/path/to/custom_folder"  <!-- Optional -->
-       service.tmdb="true"            <!-- Enable TMDB -->
-       service.tvdb="false"           <!-- Disable TVDB -->
-       service.imdb="false"           <!-- Disable IMDB -->
-       service.fanart="false"         <!-- Disable Fanart -->
-       service.google="false"         <!-- Disable Google -->
-       scan_time="02:00"              <!-- Set the start time for backdrop download -->
 />
 ```
-
 
 ### Channel Selection
 ```python
@@ -110,18 +97,25 @@ self["poster"] = Renderer.AglarePosterX(
 
 ## Aglare-Specific Setup
 1. **API Keys**:  
-   Create in `/usr/share/enigma2/AglareFHD/`:
+   The API keys can be managed/loaded/inserted through the Plugin Setup, but can also be manually added in `/usr/share/enigma2/AglareFHD/`:
    ```bash
    echo "your_api_key" > tmdb_api
    chmod 644 tmdb_api
    ```
+Create files in /usr/share/enigma2/<your_skin>/:
+```
+	tmdb_api → Your TMDB API key
+	omdb_api → Fanart.tv key
+	thetvdb_api → Your TMDB API key
+	fanart_api → Fanart.tv key	
+```
 
 2. **Custom Paths** (in `Agp_Utils.py`):
 ```python
 if cur_skin == "AglareFHD":
     POSTER_FOLDER = "/media/usb/AGP/posters"  # USB for performance
-    SCAN_TIME = "00:00"  # After EPG updates
 ```
+
 
 ## Troubleshooting
 **Issue**: Images not loading  
@@ -130,41 +124,30 @@ if cur_skin == "AglareFHD":
 chmod 755 /usr/share/enigma2/AglareFHD
 chown root:root /usr/share/enigma2/AglareFHD/tmdb_api
 ```
-
-
-Here's the complete GitHub-ready README.md section explaining the `scan_time` parameter with proper formatting:
-
-```markdown
-## ⏰ Scheduled Downloads Configuration
-
-The `scan_time` parameter controls when AGP performs automatic media downloads:
-
-```xml
-<!-- Example with all options -->
-<widget 
-    source="ServiceEvent"
-    render="AglareBackdropX"
-    scan_time="02:30"  <!-- 24-hour format (HH:MM) -->
-    ...
-/>
+**Solution**: Remove Png:
+```
+Open Plugin Setup and remove all png
 ```
 
-### Key Features:
+
+## Key Features:
 - 🌙 **Low-traffic hours** recommended (e.g., `02:00`-`04:00`)
 - 🔄 **Daily automatic execution** (runs at specified time)
 - ⏸️ **Pauses during active viewing** (no system impact)
+- ⚙️ **Configurable via Setup Plugin** (active when at least one provider is enabled)
 
 ### Technical Details:
-| Value | Behavior | Recommended For |
-|-------|----------|-----------------|
-| `00:00` | Midnight update | 24/7 receivers |
-| `04:30` | Post-EPG refresh | Fresh EPG data |
-| `disable` | Manual mode | Low-power devices |
+| Value      | Behavior              | Recommended For  |
+|------------|-----------------------|-----------------|
+| `00:00`    | Midnight update       | 24/7 receivers  |
+| `04:30`    | Post-EPG refresh      | Fresh EPG data  |
+| `disable`  | Manual mode           | Low-power devices |
 
 ```python
 # Default system-wide setting (in Agp_Utils.py)
 SCAN_TIME = "02:00"  # Global fallback if widget unspecified
 ```
+
 
 > 💡 **Pro Tip**: Combine with `path="/media/usb/backdrops"` for better HDD longevity
 
@@ -179,16 +162,6 @@ if os.path.exists("/tmp/AGP"):
 > Aglare FHD uses zPosition 2-5 for AGP components. Avoid conflicts with other renderers.
 
 
-**Configuration**:
-## API Keys Setup
-Create files in /usr/share/enigma2/<your_skin>/:
-
-	tmdb_api → Your TMDB API key
-	omdb_api → Fanart.tv key
-	thetvdb_api → Your TMDB API key
-	fanart_api → Fanart.tv key	
-
-Or edit Agp_apikeys.py directly.
 
 # Performance
 **Cache System**: Auto-purges files >30 days old

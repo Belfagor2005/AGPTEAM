@@ -14,10 +14,20 @@ from __future__ import absolute_import, print_function
 #                                                       #
 #  Credits:                                             #
 #  - Original concept by Lululla                        #
+#  - Advanced download management system                #
+#  - Atomic file operations                             #
+#  - Thread-safe resource locking                       #
 #  - TMDB API integration                               #
 #  - TVDB API integration                               #
 #  - OMDB API integration                               #
+#  - FANART API integration                             #
+#  - IMDB API integration                               #
+#  - ELCINEMA API integration                           #
+#  - GOOGLE API integration                             #
+#  - PROGRAMMETV integration                            #
+#  - MOLOTOV API integration                            #
 #  - Advanced caching system                            #
+#  - Fully configurable via AGP Setup Plugin            #
 #                                                       #
 #  Usage of this code without proper attribution        #
 #  is strictly prohibited.                              #
@@ -29,24 +39,31 @@ __author__ = "Lululla"
 __copyright__ = "AGP Team"
 
 # Third-party libraries
-import requests
-from collections import namedtuple
-from random import choices
-from requests.adapters import HTTPAdapter
-
-# ========================
-# DISABLE URLLIB3 DEBUG LOGS
-# ========================
 import logging
 import urllib3
+from random import choices
+from threading import Lock
+from os import remove, makedirs  # rename
+from os.path import exists, getsize, splitext, dirname
+from collections import namedtuple
+from requests.adapters import HTTPAdapter
+
+# Third-party libraries
+from PIL import Image
+from requests import Session
+from requests.exceptions import RequestException
+
+# Local imports
+from .Agp_Utils import logger
+# ========================
+# SECURITY CONFIGURATION
+# ========================
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 logging.getLogger("requests").setLevel(logging.WARNING)
 
-# Define User Agent structure with percentage distribution
 UserAgent = namedtuple('UserAgent', ['ua', 'weight'])
 
-# Updated list of user agents with real-world distribution as of March 2025
 USER_AGENTS_2025 = [
 	UserAgent(ua="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.10 Safari/605.1.1", weight=43.03),
 	UserAgent(ua="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.3", weight=21.05),
@@ -63,11 +80,14 @@ USER_AGENTS_2025 = [
 ]
 
 
+WEBP_SUPPORTED = False  # Forza disabilitazione WEBP
+
+
 class RequestAgent:
-	"""Advanced User Agent management with percentage-based distribution"""
+	"""Advanced request manager with atomic download operations"""
 
 	def __init__(self):
-		"""Initialize the RequestAgent with default settings"""
+		"""Initialize the download management system"""
 		self.agents = USER_AGENTS_2025
 		self.weights = [ua.weight for ua in self.agents]
 		self.session = None
@@ -76,6 +96,16 @@ class RequestAgent:
 		self.max_retries = 2        # Maximum number of retries
 		self.pool_connections = 3   # Number of connection pools
 		self.pool_maxsize = 3       # Maximum size of connection pool
+
+		self.download_lock = Lock()
+		self.file_lock = Lock()
+		self.active_downloads = set()
+		self.verified_files = set()
+
+		# Network configuration
+		self.timeout = (3.05, 10)
+		self.retry_delay = 2
+		self.chunk_size = 8192
 
 	def get_random_ua(self):
 		"""
@@ -90,7 +120,7 @@ class RequestAgent:
 			k=1
 		)[0]
 
-	def create_session(self, retries=2, backoff_factor=0.5):
+	def create_session(self):
 		"""
 		Create and configure a requests session
 
@@ -101,9 +131,7 @@ class RequestAgent:
 		Returns:
 			requests.Session: Configured session object
 		"""
-		self.session = requests.Session()
-
-		# Configure HTTP adapters with retry settings
+		self.session = Session()
 		adapter = HTTPAdapter(
 			max_retries=self.max_retries,
 			pool_connections=self.pool_connections,
@@ -126,7 +154,6 @@ class RequestAgent:
 			'Sec-Fetch-Site': 'none',
 			'Sec-Fetch-User': '?1'
 		})
-
 		return self.session
 
 	def smart_request(self, url, method='GET', **kwargs):
@@ -149,41 +176,99 @@ class RequestAgent:
 			self.create_session()
 
 		try:
-
 			response = self.session.request(method, url, **kwargs)
-
 			response.raise_for_status()
-
 			return response
-		except requests.exceptions.RequestException as e:
-			print(f"Request failed: {str(e)}")
+		except RequestException as e:
+			logging.error(f"Request failed: {str(e)}")
 			raise
 
+	def atomic_download(self, url, dst_path):
+		"""Download diretto solo JPG senza conversioni"""
+		try:
+			dst_path = splitext(dst_path)[0] + '.jpg'
 
-# Preconfigured global instance for convenience
+			makedirs(dirname(dst_path), exist_ok=True)
+
+			with self.session.get(url, stream=True, timeout=10) as r:
+				r.raise_for_status()
+
+				with open(dst_path, 'wb') as f:
+					for chunk in r.iter_content(8192):
+						f.write(chunk)
+
+			if getsize(dst_path) < 1024:
+				remove(dst_path)
+				return False, "File troppo piccolo"
+
+			return True, "Download completato"
+
+		except Exception as e:
+			if exists(dst_path):
+				try:
+					remove(dst_path)
+				except:
+					pass
+			return False, f"Errore: {str(e)}"
+
+	def validate_image(self, path):
+		"""Verifica solo header JPG"""
+		try:
+			with open(path, 'rb') as f:
+				return f.read(2) == b'\xFF\xD8'  # Magic number JPEG
+		except:
+			return False
+
+	def convert_to_jpg(self, path):
+		try:
+			with Image.open(path) as img:
+				if img.format == 'WEBP' and WEBP_SUPPORTED:
+					jpg_path = splitext(path)[0] + '.jpg'
+					img.convert('RGB').save(jpg_path, 'JPEG', quality=90)
+					remove(path)
+					return jpg_path
+			return path
+		except Exception as e:
+			logger.error(f"Conversione fallita: {str(e)}")
+			remove(path)
+			return None
+
+	def _get_file_debug_info(self, path):
+		"""Ottieni informazioni di debug sul file"""
+		try:
+			with open(path, 'rb') as f:
+				header = f.read(512)
+				return {
+					'size': getsize(path),
+					'header': header.hex()[:100],
+					'ascii': header.decode('ascii', 'ignore')[:50]
+				}
+		except Exception as e:
+			return f"Errore lettura file: {str(e)}"
+
+	def _is_file_valid(self, path):
+		"""Quick validation without full lock"""
+		if path in self.verified_files:
+			return True
+
+		if exists(path) and getsize(path) > 1024:
+			with self.file_lock:
+				if open(path, 'rb').read(2) == b'\xFF\xD8':
+					self.verified_files.add(path)
+					return True
+		return False
+
+	def safe_resize(self, image_path, max_size=(500, 750)):
+		"""Thread-safe image resizing"""
+		with self.file_lock:
+			try:
+				with Image.open(image_path) as img:
+					img.thumbnail(max_size, Image.Resampling.LANCZOS)
+					img.save(image_path, optimize=True, quality=85)
+					return True
+			except Exception as e:
+				logging.error(f"Resize failed: {str(e)}")
+				return False
+
+
 request_agent = RequestAgent()
-
-
-"""
-Example usage for single session request:
-
-from .Agp_Requests import request_agent
-
-try:
-	response = request_agent.smart_request('https://api.example.com/data')
-	data = response.json()
-except Exception as e:
-	logger.error(f"API request failed: {e}")
-"""
-
-"""
-Example usage for personal session:
-
-from .Agp_Requests import RequestAgent
-custom_agent = RequestAgent()
-session = custom_agent.create_session(retries=5)
-
-# Use session for multiple requests
-response1 = session.get('https://api.example.com/data1')
-response2 = session.get('https://api.example.com/data2')
-"""

@@ -1,0 +1,111 @@
+<screen name="EventView" position="0,0" size="1920,1080" title="Eventview" backgroundColor="background" flags="wfNoBorder">
+  <panel name="ScreenTemplateAllColorButtons_menu" />
+  <panel name="timedate" />
+<eLabel backgroundColor="buttonsc" cornerRadius="3" position="36,82" size="1230,3" zPosition="99" />
+  <ePixmap pixmap="top_logo.png" position="42,39" size="40,40" alphatest="on" transparent="0" zPosition="98" />
+  <eLabel name="" position="27,30" size="1251,520" zPosition="-91" cornerRadius="20" backgroundColor="mcolor2" foregroundColor="mcolor2" />
+  <eLabel backgroundColor="wpmc" cornerRadius="20" position="2,0" size="1918,1080" zPosition="-99" />
+  <eLabel backgroundColor="buttonsc" cornerRadius="30" position="20,1014" size="1880,60" zPosition="-80" />
+  <widget source="session.VideoPicture" render="Pig" position="1376,110" zPosition="1" size="494,272" backgroundColor="transparent" transparent="0" cornerRadius="14" />
+  <eLabel name="" position="1598,1018" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Regular; 17" zPosition="1" text="OK" />
+  <eLabel name="" position="1658,1018" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Regular; 17" zPosition="1" text="MENU" />
+  <eLabel name="" position="1718,1018" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Regular; 17" zPosition="1" text="EPG" />
+  <eLabel name="" position="1778,1018" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Regular; 17" zPosition="1" text="INFO" />
+  <eLabel name="" position="1838,1018" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Regular; 17" zPosition="1" text="EXIT" />
+  <widget source="Event" render="Label" position="1701,460" size="172,30" font="Regular; 26" transparent="1" halign="right" valign="center" zPosition="99" backgroundColor="background">
+    <convert type="EventTime">Remaining</convert>
+    <convert type="RemainingToText">InMinutes</convert>
+  </widget>
+  <widget source="Event" render="Progress" position="1376,444" size="500,10" pixmap="main/progfg50010.png" cornerRadius="5" zPosition="99" backgroundColor="progbg">
+  <convert type="EventTime">Progress</convert>
+</widget>
+  <widget source="session.Event_Next" render="AglareRunningText" options="movetype=running,startpoint=0,direction=top,steptime=100,startdelay=4000,wrap,always=0" position="32,594" zPosition="2" size="1251,100" font="Regular; 30" halign="left" backgroundColor="background" transparent="1" valign="top">
+    <convert type="EventName">ExtendedDescription</convert>
+  </widget>
+  <!-- /* separate -->
+  <widget name="epg_description" position="350,90" size="920,450" zPosition="1" font="Regular; 30" backgroundColor="background" transparent="1" scrollbarMode="showOnDemand" valign="top" halign="center" />
+  <widget source="session.Event_Next" render="Label" position="32,550" size="1240,40" halign="left" font="Regular; 36" backgroundColor="background" transparent="1" valign="center" noWrap="1" foregroundColor="white2">
+    <convert type="EventName">Name</convert>
+  </widget>
+  <widget source="session.CurrentService" render="Label" position="1376,394" size="494,38" font="Regular; 28" borderWidth="1" backgroundColor="background" transparent="1" halign="center" zPosition="5" valign="center" noWrap="1" foregroundColor="white">
+    <convert type="ServiceName">Name</convert>
+  </widget>
+  <eLabel name="" position="30,698" size="204,304" zPosition="-90" cornerRadius="18" backgroundColor="mcolor2" foregroundColor="mcolor2" />
+  <eLabel name="" position="240,698" size="204,304" zPosition="-90" cornerRadius="18" backgroundColor="mcolor2" foregroundColor="mcolor2" />
+  <eLabel name="" position="450,698" size="204,304" zPosition="-90" cornerRadius="18" backgroundColor="mcolor2" foregroundColor="mcolor2" />
+  <eLabel name="" position="660,698" size="204,304" zPosition="-90" cornerRadius="18" backgroundColor="mcolor2" foregroundColor="mcolor2" />
+  <eLabel name="" position="870,698" size="204,304" zPosition="-90" cornerRadius="18" backgroundColor="mcolor2" foregroundColor="mcolor2" />
+  <eLabel name="" position="1080,698" size="204,304" zPosition="-90" cornerRadius="18" backgroundColor="mcolor2" foregroundColor="mcolor2" />
+  <eLabel name="" position="34,88" size="304,454" zPosition="-90" cornerRadius="20" backgroundColor="mcolor2" foregroundColor="mcolor2" />
+  <!--##################-->
+  <widget source="session.CurrentService" render="FixedLabel" position="1376,534" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Bold; 24" zPosition="9" text="FHD">
+    <convert type="ServiceInfo">VideoWidth</convert>
+    <convert type="ValueRange">1440,1920</convert>
+    <convert type="ConditionalShowHide" />
+  </widget>
+  <widget source="session.CurrentService" render="FixedLabel" position="1376,534" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Bold; 24" zPosition="2" text="HD">
+    <convert type="ServiceInfo">VideoWidth</convert>
+    <convert type="ValueRange">1280,1439</convert>
+    <convert type="ConditionalShowHide" />
+  </widget>
+  <widget source="session.CurrentService" render="FixedLabel" position="1376,534" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Bold; 24" zPosition="1" text="SD">
+    <convert type="ServiceInfo">VideoWidth</convert>
+    <convert type="ValueRange">0,720</convert>
+    <convert type="ConditionalShowHide" />
+  </widget>
+  <widget source="session.CurrentService" render="FixedLabel" position="1376,534" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Bold; 24" zPosition="4" text="4K">
+    <convert type="ServiceInfo">VideoWidth</convert>
+    <convert type="ValueRange">3440,4096</convert>
+    <convert type="ConditionalShowHide" />
+  </widget>
+  <widget source="session.CurrentService" render="FixedLabel" position="1466,534" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Bold; 24" zPosition="4" text="4:3">
+    <convert type="ServiceInfo">IsNotWidescreen</convert>
+    <convert type="ConditionalShowHide" />
+  </widget>
+  <widget source="session.CurrentService" render="FixedLabel" position="1466,534" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Bold; 24" zPosition="4" text="16:9">
+    <convert type="ServiceInfo">IsWidescreen</convert>
+    <convert type="ConditionalShowHide" />
+  </widget>
+  <widget source="session.CurrentService" render="FixedLabel" position="1554,534" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="icomoon; 34" text="" zPosition="4">
+    <convert type="AglareServiceInfoEX">IsCrypted</convert>
+    <convert type="ConditionalShowHide" />
+  </widget>
+  <widget source="session.CurrentService" render="FixedLabel" position="1816,534" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Bold; 24" zPosition="4" text="Hbb">
+    <convert type="ServiceInfo">HasHBBTV</convert>
+    <convert type="ConditionalShowHide" />
+  </widget>
+  <widget source="session.CurrentService" render="FixedLabel" position="1732,534" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" zPosition="4" font="icomoon; 34" text="">
+    <convert type="ServiceInfo">IsMultichannel</convert>
+    <convert type="ConditionalShowHide" />
+  </widget>
+  <eLabel name="" position="1554,534" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Regular; 26" zPosition="1" text="FTA" />
+  <widget source="session.CurrentService" render="FixedLabel" position="1646,534" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="icomoon; 34" text="" zPosition="4">
+    <convert type="ServiceInfo">SubtitlesAvailable</convert>
+    <convert type="ConditionalShowHide" />
+  </widget>
+  <eLabel name="" position="1646,534" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Regular; 17" zPosition="0" text=" " />
+  <eLabel name="" position="1732,534" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Regular; 17" zPosition="0" text=" " />
+  <eLabel name="" position="1816,534" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Regular; 17" zPosition="0" text=" " />
+  <widget source="Service" render="AglareEventListDisplay" position="1319,700" size="580,300" backgroundColor="buttonsc" column0="10,100,yellow,Regular,30,0,0" column1="110,470,white,Regular,30,1,1" primetimeoffset="0" rowHeight="50" transparent="1" zPosition="50">
+    <convert type="AglareEventList">beginOnly=yes,primetime=yes,eventcount=6</convert>
+  </widget>
+  <widget source="Event" render="AglarePosterX" nexts="1" position="32,700" size="200,300" zPosition="99" cornerRadius="20" />
+  <widget source="Event" render="AglarePosterX" nexts="2" position="242,700" size="200,300" zPosition="99" cornerRadius="20" />
+  <widget source="Event" render="AglarePosterX" nexts="3" position="452,700" size="200,300" zPosition="99" cornerRadius="20" />
+  <widget source="Event" render="AglarePosterX" nexts="4" position="662,700" size="200,300" zPosition="99" cornerRadius="20" />
+  <widget source="Event" render="AglarePosterX" nexts="5" position="872,700" size="200,300" zPosition="99" cornerRadius="20" />
+  <widget source="Event" render="AglarePosterX" nexts="6" position="1082,700" size="200,300" zPosition="99" cornerRadius="20" />
+  <widget source="Event" render="AglarePosterX" position="36,90" size="300,450" zPosition="88" cornerRadius="14" />
+  <widget source="Event" render="xtraPoster" position="36,90" size="300,450" zPosition="99" cornerRadius="14" />
+  <ePixmap name="" position="30,698" size="204,304" alphatest="on" pixmap="main/noposter.png" zPosition="2" />
+  <ePixmap name="" position="240,698" size="204,304" alphatest="on" pixmap="main/noposter.png" zPosition="2" />
+  <ePixmap name="" position="450,698" size="204,304" alphatest="on" pixmap="main/noposter.png" zPosition="2" />
+  <ePixmap name="" position="660,698" size="204,304" alphatest="on" pixmap="main/noposter.png" zPosition="2" />
+  <ePixmap name="" position="870,698" size="204,304" alphatest="on" pixmap="main/noposter.png" zPosition="2" />
+  <ePixmap name="" position="1080,698" size="204,304" alphatest="on" pixmap="main/noposter.png" zPosition="2" />
+  <ePixmap name="" position="34,88" size="304,454" alphatest="on" pixmap="main/noposter454.png" zPosition="2" />
+  <ePixmap position="350,90" size="920,450" pixmap="menu/backgtr.png" alphatest="blend" zPosition="-79" cornerRadius="30" />
+  <widget source="Event" render="AglareBackdropX" position="350,90" size="920,450" alphatest="blend" transparent="1" scale="fill" zPosition="-81" cornerRadius="30" />
+  <widget source="Event" render="xtraBackdrop" position="350,90" size="920,450" alphatest="blend" transparent="1" scale="fill" zPosition="-80" cornerRadius="30" />
+  <widget source="Title" render="Label" position="90,34" size="863,52" font="Regular; 32" noWrap="1" transparent="1" valign="center" zPosition="1" halign="left" />
+</screen>

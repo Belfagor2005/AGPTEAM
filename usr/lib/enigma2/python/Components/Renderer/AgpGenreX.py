@@ -13,12 +13,21 @@ from __future__ import absolute_import, print_function
 #  Last Modified: "15:14 - 20250401"                    #
 #                                                       #
 #  Credits:                                             #
-#   by base code from digiteng 2022                     #
 #  - Original concept by Lululla                        #
+#  - Advanced download management system                #
+#  - Atomic file operations                             #
+#  - Thread-safe resource locking                       #
 #  - TMDB API integration                               #
 #  - TVDB API integration                               #
 #  - OMDB API integration                               #
+#  - FANART API integration                             #
+#  - IMDB API integration                               #
+#  - ELCINEMA API integration                           #
+#  - GOOGLE API integration                             #
+#  - PROGRAMMETV integration                            #
+#  - MOLOTOV API integration                            #
 #  - Advanced caching system                            #
+#  - Fully configurable via AGP Setup Plugin            #
 #                                                       #
 #  Usage of this code without proper attribution        #
 #  is strictly prohibited.                              #
@@ -39,7 +48,6 @@ from Components.Renderer.Renderer import Renderer
 from Components.config import config
 from enigma import ePixmap, loadPNG
 
-
 # Local imports
 from .Agp_Utils import clean_for_tvdb, get_valid_storage_path, logger  # , noposter
 
@@ -47,27 +55,112 @@ from .Agp_Utils import clean_for_tvdb, get_valid_storage_path, logger  # , nopos
 GENRE_PIC_PATH = f'/usr/share/enigma2/{config.skin.primary_skin.value.replace("/skin.xml", "")}/genre_pic/'
 
 
-class AglareGenreX(Renderer):
+class AgpGenreX(Renderer):
 	"""Advanced genre icon renderer with AGP ecosystem integration"""
 
 	GUI_WIDGET = ePixmap
 
-	# Genre mapping compatible with EPG levels
+	# Genre mapping compatible with last EPG levels
 	GENRE_MAP = {
 		1: {
 			'default': 'general',
 			1: 'action', 2: 'thriller', 3: 'drama', 4: 'movie',
 			16: 'animation', 35: 'comedy'
 		},
-		5: {'default': 'kids', 1: 'cartoon'},
-		12: {'default': 'adventure'},
-		14: {'default': 'fantasy'}
+		5: {
+			'default': 'kids',
+			1: 'cartoon'
+		},
+		12: {
+			'default': 'adventure'
+		},
+		14: {
+			'default': 'fantasy'
+		},
+		16: {
+			'default': 'animation'
+		},
+		18: {
+			'default': 'drama'
+		},
+		27: {
+			'default': 'horror'
+		},
+		28: {
+			'default': 'action'
+		},
+		35: {
+			'default': 'comedy'
+		},
+		36: {
+			'default': 'history'
+		},
+		37: {
+			'default': 'western'
+		},
+		53: {
+			'default': 'thriller'
+		},
+		80: {
+			'default': 'crime'
+		},
+		99: {
+			'default': 'documentary'
+		},
+		878: {
+			'default': 'sciencefiction'
+		},
+		9648: {
+			'default': 'mystery'
+		},
+		10402: {
+			'default': 'music'
+		},
+		10749: {
+			'default': 'romance'
+		},
+		10751: {
+			'default': 'family'
+		},
+		10752: {
+			'default': 'war'
+		},
+		10763: {
+			'default': 'news'
+		},
+		10764: {
+			'default': 'reality'
+		},
+		10765: {
+			'default': 'science'
+		},
+		10766: {
+			'default': 'soap'
+		},
+		10767: {
+			'default': 'talk'
+		},
+		10768: {
+			'default': 'warpolitics'
+		},
+		10769: {
+			'default': 'gameshow'
+		},
+		10770: {
+			'default': 'tvmovie'
+		},
+		10771: {
+			'default': 'variety'
+		},
+		10772: {
+			'default': 'familykids'
+		}
 	}
 
 	def __init__(self):
 		Renderer.__init__(self)
-		self.genre_cache = {}  # title_hash -> genre_name
-		self.storage_path = get_valid_storage_path()  # Reuse from PosterX
+		self.genre_cache = {}
+		self.storage_path = get_valid_storage_path()
 
 	def changed(self, what):
 		"""Handle EPG changes"""
@@ -88,7 +181,7 @@ class AglareGenreX(Renderer):
 			return
 
 		try:
-			# Get normalized title (reusing PosterX functions)
+			# Get normalized title
 			title = event.getEventName()
 			clean_title = clean_for_tvdb(title) if title else None
 			title_hash = hash(title) if title else 0
@@ -99,10 +192,8 @@ class AglareGenreX(Renderer):
 				self._load_genre_icon(cached_genre)
 				return
 
-			# Check JSON metadata (compatible with PosterX storage)
 			genre = self._get_genre_from_metadata(clean_title) if clean_title else None
 
-			# Fallback to EPG data
 			if not genre:
 				genre = self._get_genre_from_epg(event)
 

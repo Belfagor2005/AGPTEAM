@@ -14,10 +14,20 @@ from __future__ import absolute_import, print_function
 #                                                       #
 #  Credits:                                             #
 #  - Original concept by Lululla                        #
+#  - Advanced download management system                #
+#  - Atomic file operations                             #
+#  - Thread-safe resource locking                       #
 #  - TMDB API integration                               #
 #  - TVDB API integration                               #
 #  - OMDB API integration                               #
+#  - FANART API integration                             #
+#  - IMDB API integration                               #
+#  - ELCINEMA API integration                           #
+#  - GOOGLE API integration                             #
+#  - PROGRAMMETV integration                            #
+#  - MOLOTOV API integration                            #
 #  - Advanced caching system                            #
+#  - Fully configurable via AGP Setup Plugin            #
 #                                                       #
 #  Usage of this code without proper attribution        #
 #  is strictly prohibited.                              #
@@ -204,7 +214,7 @@ class AgpInfoEvents(Renderer, VariableText):
 			'adult': 'Yes' if tmdb_data.get('adult') else 'No',
 			'genres': self._get_genres(tmdb_data.get('genre_ids', [])),
 			'backdrop_url': f"https://image.tmdb.org/t/p/original{tmdb_data.get('backdrop_path', '')}" if tmdb_data.get('backdrop_path') else 'N/A',
-			'poster_url': f"https://image.tmdb.org/t/p/w500{tmdb_data.get('poster_path', '')}" if tmdb_data.get('poster_path') else 'N/A'
+			'poster_url': f"https://image.tmdb.org/t/p/original{tmdb_data.get('poster_path', '')}" if tmdb_data.get('poster_path') else 'N/A'
 		}
 
 		# Add additional processed fields
@@ -223,12 +233,13 @@ class AgpInfoEvents(Renderer, VariableText):
 	def _get_genres(self, genre_ids):
 		"""Convert genre IDs to names"""
 		genre_map = {
-			18: "Drama", 36: "History", 10749: "Romance",
-			28: "Action", 12: "Adventure", 16: "Animation",
-			35: "Comedy", 80: "Crime", 99: "Documentary",
-			10751: "Family", 14: "Fantasy", 27: "Horror",
-			10402: "Music", 9648: "Mystery", 10752: "War",
-			37: "Western", 53: "Thriller", 10770: "TV Movie"
+			12: "Adventure", 14: "Fantasy", 16: "Animation", 18: "Drama", 27: "Horror",
+			28: "Action", 35: "Comedy", 36: "History", 37: "Western", 53: "Thriller",
+			80: "Crime", 99: "Documentary", 878: "Science Fiction", 9648: "Mystery",
+			10402: "Music", 10749: "Romance", 10751: "Family", 10752: "War",
+			10763: "News", 10764: "Reality", 10765: "Science", 10766: "Soap",
+			10767: "Talk", 10768: "War & Politics", 10769: "Game Show",
+			10770: "TV Movie", 10771: "Variety", 10772: "Family & Kids"
 		}
 		return ", ".join([genre_map.get(gid, "") for gid in genre_ids if gid in genre_map])
 

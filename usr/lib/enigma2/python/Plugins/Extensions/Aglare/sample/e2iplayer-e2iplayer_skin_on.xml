@@ -1,0 +1,40 @@
+
+<screen name="E2iPlayerWidget" position="fill" title="IPTV Player" backgroundColor="background" flags="wfNoBorder">
+    <panel name="menutemp3" />
+    <panel name="ScreenTemplateAllColorButtons_menu" />
+    <widget name="cover" position="130,190" size="300,450" cornerRadius="15" scale="1" alphatest="blend" zPosition="10" />
+    <widget name="console" position="570,784" size="1320,210" font="Regular; 35" halign="left" zPosition="1" valign="top" backgroundColor="background" />
+    <widget name="list" position="570,110" size="1320,630" itemCornerRadius="10" font="Regular; 30" itemHeight="45" zPosition="1" transparent="1" scrollbarMode="showAlways" scrollbarSliderForegroundColor="mcolor5" scrollbarSliderBorderColor="mcolor2" scrollbarWidth="10" scrollbarSliderBorderWidth="1" />
+    <eLabel backgroundColor="mcolor3" cornerRadius="3" position="570,760" size="600,3" zPosition="99" />
+    <eLabel backgroundColor="mcolor3" cornerRadius="3" position="1290,760" size="600,3" zPosition="99" />
+    <eLabel name="" position="1170,742" size="120,40" font="icomoon; 36" text="" transparent="1" valign="center" halign="center" zPosition="99" />
+    <ePixmap name="" position="130,834" size="300,120" pixmap="icons/iptvlogohd.png" alphatest="on" scale="1" />
+  </screen>
+  <screen name="ConfigMenu" title="IPTV Player" position="fill" backgroundColor="background" flags="wfNoBorder">
+    <eLabel backgroundGradient="wpuc,wpmc,wplc,vertical" cornerRadius="20" position="0,0" size="1920,1080" zPosition="-99" />
+    <eLabel name="" position="31,25" size="40,40" font="icomoon; 36" text="" transparent="1" valign="center" halign="center" zPosition="99" />
+    <widget source="Title" render="Label" position="77,21" size="1167,52" font="Regular; 32" noWrap="1" transparent="1" valign="center" zPosition="1" halign="left" />
+    <eLabel name="" position="20,80" size="1244,924" zPosition="-90" cornerRadius="30" backgroundColor="mcolor2" foregroundColor="mcolor2" />
+    <eLabel backgroundGradient="buttonsc,buttonsc,buttonsc,vertical" cornerRadius="30" position="20,1014" size="1880,60" zPosition="-80" />
+    <panel name="ScreenTemplateAllColorButtons_menu" />
+    <panel name="timedate" />
+    <widget source="session.VideoPicture" render="Pig" position="1280,120" zPosition="20" size="622,350" backgroundColor="transparent" transparent="0" cornerRadius="14" />
+    <widget name="config" position="32,94" size="1222,900" font="Regular;28" itemHeight="45" itemCornerRadius="10" enableWrapAround="1" transparent="1" zPosition="9" scrollbarMode="showAlways" scrollbarSliderForegroundColor="mcolor5" scrollbarSliderBorderColor="mcolor2" scrollbarWidth="10" scrollbarSliderBorderWidth="1" />
+    <eLabel name="" position="1838,1018" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Regular; 17" zPosition="1" text="EXIT" />
+    <ePixmap name="" position="1673,826" size="200,100" zPosition="1" pixmap="icons/iptvlogohd.png" alphatest="on" scale="1" />
+    <eLabel backgroundColor="sidec2" cornerRadius="90" position="1600,788" size="500,180" />
+  </screen>
+  <screen name="IPTVUpdateWindow" position="0,0" size="1920,1080" title="IPTVUpdateWindow" flags="wfNoBorder">
+    <panel name="titletemp" />
+    <panel name="menutemp" />
+    <panel name="ScreenTemplateAllColorButtons_menu" />
+    <panel name="pigscreen885" />
+    <widget name="sub_title" position="88,120" zPosition="2" size="823,50" valign="center" halign="left" font="Regular; 40" transparent="1" foregroundColor="white" />
+    <widget name="list" position="38,190" zPosition="1" size="890,810" enableWrapAround="1" transparent="1" itemHeight="90" itemCornerRadius="20" foregroundColorSelected="yellow" scrollbarMode="showAlways" scrollbarSliderForegroundColor="mcolor5" scrollbarSliderBorderColor="mcolor2" scrollbarWidth="10" scrollbarSliderBorderWidth="1" />
+    <widget name="console" position="1018,620" zPosition="2" size="840,80" valign="top" halign="left" font="Regular;34" backgroundColor="background" transparent="1" />
+    <eLabel name="" position="1838,1018" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Regular; 17" zPosition="1" text="EXIT" />
+    <ePixmap name="" position="1673,826" size="200,100" zPosition="1" pixmap="icons/iptvlogohd.png" alphatest="on" scale="1" />
+    <eLabel backgroundColor="sidec2" cornerRadius="90" position="1600,788" size="500,180" />
+  </screen>
+  
+

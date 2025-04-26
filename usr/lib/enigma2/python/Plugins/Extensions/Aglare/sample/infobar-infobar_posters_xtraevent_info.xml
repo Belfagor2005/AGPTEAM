@@ -1,0 +1,12 @@
+
+
+  <eLabel backgroundColor="backgroundtrans2" cornerRadius="30" position="20,427" size="1880,376" zPosition="-99" />
+<widget source="session.Event_Now" render="xtraPoster" position="40,440" size="240,360" cornerRadius="14" zPosition="66" borderWidth="1" borderColor="igsd" />
+<widget source="session.Event_Now" render="Label" position="310,446" size="1100,45" font="Regular; 33" halign="left" transparent="1" zPosition="2" backgroundColor="background" valign="center">
+	<convert type="xtraInfo">Compact</convert>
+</widget>
+<widget source="session.Event_Now" render="AglareRunningText" options="movetype=running,startdelay=5000,steptime=60,direction=top,startpoint=0,wrap=1,always=0,repeat=2,oneshot=1" size="1100,300" position="310,498" font="Regular; 30" halign="left" transparent="1" zPosition="2" backgroundColor="background" valign="top" cornerRadius="14">
+	<convert type="xtraInfo">Director,Writer,Actors,Description</convert>
+</widget>
+<widget source="session.Event_Now" render="xtraBackdrop" position="1436,460" size="450,255" zPosition="2" cornerRadius="20" />
+<widget source="session.Event_Now" render="xtraParental" position="1638,726" size="60,60" alphatest="blend" zPosition="9" transparent="1" />

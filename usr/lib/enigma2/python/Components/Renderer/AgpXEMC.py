@@ -14,10 +14,20 @@ from __future__ import absolute_import, print_function
 #                                                       #
 #  Credits:                                             #
 #  - Original concept by Lululla                        #
+#  - Advanced download management system                #
+#  - Atomic file operations                             #
+#  - Thread-safe resource locking                       #
 #  - TMDB API integration                               #
 #  - TVDB API integration                               #
 #  - OMDB API integration                               #
+#  - FANART API integration                             #
+#  - IMDB API integration                               #
+#  - ELCINEMA API integration                           #
+#  - GOOGLE API integration                             #
+#  - PROGRAMMETV integration                            #
+#  - MOLOTOV API integration                            #
 #  - Advanced caching system                            #
+#  - Fully configurable via AGP Setup Plugin            #
 #                                                       #
 #  Usage of this code without proper attribution        #
 #  is strictly prohibited.                              #
@@ -29,43 +39,43 @@ __author__ = "Lululla"
 __copyright__ = "AGP Team"
 
 # Standard library imports
-from Components.config import config
-from os import utime, makedirs
+from os import remove, utime, makedirs
 from os.path import exists, join, getsize
 from re import findall, IGNORECASE
+from threading import Thread, Lock
 from time import sleep, time
+from traceback import format_exc
 from queue import LifoQueue
-from threading import Thread
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
 
 # Enigma2/Dreambox specific imports
 from enigma import ePixmap, loadJPG, eEPGCache, eTimer
+from Components.config import config
 from Components.Renderer.Renderer import Renderer
 from Components.Sources.CurrentService import CurrentService
 from Components.Sources.ServiceEvent import ServiceEvent
 
 # Local imports
 from Components.Renderer.AgpDownloadThread import AgpDownloadThread
-from .Agp_Utils import IMOVIE_FOLDER, clean_for_tvdb, logger  # , noposter
+from .Agp_Utils import IMOVIE_FOLDER, clean_for_tvdb, logger
+from Plugins.Extensions.Aglare.plugin import ApiKeyManager
 
 # Constants and global variables
 epgcache = eEPGCache.getInstance()
 pdbemc = LifoQueue()
-extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
+# extensions = ['.jpg', '.jpeg', '.png']
+extensions = ['.jpg']
+
 
 """
 # Use for emc plugin
-<widget source="Servicet" render="AgpPosterXEMC"
+<widget source="Servicet" render="AglarePosterXEMC"
 	position="100,100"
 	size="185,278"
 	cornerRadius="20"
 	zPosition="95"
 	path="/path/to/custom_folder"   <!-- Optional -->
-	service.tmdb="true"             <!-- Enable TMDB -->
-	service.tvdb="false"            <!-- Disable TVDB -->
-	service.imdb="false"            <!-- Disable IMDB -->
-	service.fanart="false"          <!-- Disable Fanart -->
-	service.google="false"          <!-- Disable Google -->
 />
 """
 
@@ -78,7 +88,7 @@ except:
 	pass
 
 
-class AgpPosterXEMC(Renderer):
+class AgpXEMC(Renderer):
 
 	GUI_WIDGET = ePixmap
 
@@ -96,26 +106,11 @@ class AgpPosterXEMC(Renderer):
 
 	def applySkin(self, desktop, parent):
 		attribs = []
-
-		self.providers = {
-			"tmdb": True,       # The Movie Database
-			"tvdb": False,      # The TV Database
-			"imdb": False,      # Internet Movie Database
-			"fanart": False,    # Fanart.tv
-			"google": False     # Google Images
-		}
-
 		for (attrib, value) in self.skinAttributes:
 			if attrib == "path":
 				self.path = str(value)
 
-			if attrib.startswith("service."):
-				provider = attrib.split(".")[1]
-				if provider in self.providers:
-					self.providers[provider] = value.lower() == "true"
-
 			attribs.append((attrib, value))
-
 		self.skinAttributes = attribs
 		return Renderer.applySkin(self, desktop, parent)
 
@@ -128,12 +123,6 @@ class AgpPosterXEMC(Renderer):
 			if self.instance:
 				self.instance.hide()
 			return
-		"""
-		if what[0] == self.CHANGED_CLEAR:
-			if self.instance:
-				self.instance.hide()
-			return
-		"""
 
 		# source = self.source
 		# source_type = type(source)
@@ -261,7 +250,7 @@ class AgpPosterXEMC(Renderer):
 			self._log_debug("[ERROR: waitPoster] Poster path is None")
 			return
 
-		loop = 180  # Maximum number of attempts
+		loop = 30
 		found = False
 		logger.info(f"[WAIT] Checking for poster: {self.pstrNm}")
 		while loop > 0:
@@ -296,9 +285,11 @@ class AgpPosterXEMC(Renderer):
 
 
 class PosterDBEMC(AgpDownloadThread):
-	"""Handles poster downloading and database management"""
+	"""Handles PosterDBEMC downloading and database management"""
 	def __init__(self, providers=None):
 		super().__init__()
+		self.queued_posters = set()
+		self.executor = ThreadPoolExecutor(max_workers=4)
 		self.extensions = extensions
 		self.logdbg = None
 		self.pstcanal = None
@@ -307,26 +298,26 @@ class PosterDBEMC(AgpDownloadThread):
 		if not exists("/tmp/agplog"):
 			makedirs("/tmp/agplog")
 
-		default_providers = {
-			"tmdb": True,       # The Movie Database
-			"tvdb": False,      # The TV Database
-			"imdb": False,      # Internet Movie Database
-			"fanart": False,    # Fanart.tv
-			"google": False     # Google Images
-		}
-		self.providers = {**default_providers, **(providers or {})}
+		self.providers = api_key_manager.get_active_providers()
 		self.provider_engines = self.build_providers()
 
 	def build_providers(self):
 		"""Initialize enabled provider search engines"""
-		mapping = {
-			"tmdb": ("TMDB", self.search_tmdb),
-			"tvdb": ("TVDB", self.search_tvdb),
-			"fanart": ("Fanart", self.search_fanart),
-			"imdb": ("IMDB", self.search_imdb),
-			"google": ("Google", self.search_google)
+		provider_mapping = {
+			'tmdb': self.search_tmdb,
+			'fanart': self.search_fanart,
+			'thetvdb': self.search_tvdb,
+			'elcinema': self.search_elcinema,   # no apikey
+			'google': self.search_google,   # no apikey
+			# 'omdb': self.search_omdb,
+			'imdb': self.search_imdb,   # no apikey
+			'programmetv': self.search_programmetv_google,  # no apikey
+			'molotov': self.search_molotov_google  # no apikey
 		}
-		return [engine for key, engine in mapping.items() if self.providers.get(key)]
+		return [
+			(name, func) for name, func in provider_mapping.items()
+			if self.providers.get(name, False)
+		]
 
 	def run(self):
 		"""Main processing loop - handles incoming channel requests"""
@@ -336,46 +327,97 @@ class PosterDBEMC(AgpDownloadThread):
 			pdbemc.task_done()
 
 	def process_canal(self, canal):
-		"""Process channel data and download posters"""
+		"""Schedule channel processing in thread pool"""
+		self.executor.submit(self._process_canal_task, canal)
+
+	def _process_canal_task(self, canal):
+		"""Download and process PosterDBEMC for a single channel"""
 		try:
 			self.pstcanal = clean_for_tvdb(canal[5])
 			if not self.pstcanal:
-				print(f"Invalid channel name: {canal[0]}")
+				logger.error(f"Invalid channel: {canal[0]}")
 				return
 
-			if not any(self.providers.values()):
-				self._log_debug("No provider is enabled for poster download")
-				return
+			posterdbemc_path = join(IMOVIE_FOLDER, f"{self.pstcanal}.jpg")
 
-			poster_path = join(IMOVIE_FOLDER, f"{self.pstcanal}.jpg")
-			if checkPosterExistence(self.pstcanal):
-				utime(poster_path, (time(), time()))
-				return
+			# Check if already in the queue
+			"""
+			# if self.pstcanal in self.queued_posters:
+				# logger.debug(f"PosterDBEMC already queued: {self.pstcanal}")
+				# return
+			"""
+			# Add to queue and process
+			with Lock():
+				self.queued_posters.add(self.pstcanal)
 
-			for ext in self.extensions:
-				poster_path = join(IMOVIE_FOLDER, self.pstcanal + ext)
-				if checkPosterExistence(poster_path):
-					utime(poster_path, (time(), time()))  # Avoid re-download
-					self._log_debug(f"Poster already exists: {poster_path}")
+			try:
+				# Check if a valid file already exists
+				if self.check_valid_posterdbemc(posterdbemc_path):
+					# logger.debug(f"Valid existing PosterDBEMC: {posterdbemc_path}")
 					return
 
-			for provider_name, provider_func in self.provider_engines:
-				try:
-					result = provider_func(poster_path, self.pstcanal, canal[4], canal[3], canal[0])
-					if not result or len(result) != 2:
-						self._log_debug(f"{provider_name} failed to return a valid result for {self.pstcanal}")
+				logger.info(f"Starting download: {self.pstcanal}")
+
+				# Sort providers by configured priority
+				sorted_providers = sorted(
+					self.provider_engines,
+					key=lambda x: self.providers.get(x[0], 0),
+					reverse=True
+				)
+
+				for provider_name, provider_func in sorted_providers:
+					try:
+						# Retrieve the API key for the current provider
+						api_key = api_key_manager.get_api_key(provider_name)
+						if not api_key:
+							logger.warning(f"Missing API key for {provider_name}")
+							continue
+
+						# Call the provider function to download the PosterDBEMC
+						result = provider_func(
+							dwn_poster=posterdbemc_path,
+							title=self.pstcanal,
+							shortdesc=canal[4],
+							fulldesc=canal[3],
+							channel=canal[0],
+							api_key=api_key
+						)
+						if result and self.check_valid_posterdbemc(posterdbemc_path):
+							logger.info(f"Download successful with {provider_name}")
+							break
+
+					except Exception as e:
+						logger.error(f"Error from {provider_name}: {str(e)}")
 						continue
 
-					success, log = result
-					self._log_debug(f"{provider_name}: {log}")
-
-					if success:
-						break  # Exit after first successful poster
-				except Exception as e:
-					self._log_error(f"Error with engine {provider_name} ({self.pstcanal}): {str(e)}")
+			finally:
+				# Remove the channel from the queue after processing
+				with Lock():
+					self.queued_posters.discard(self.pstcanal)
 
 		except Exception as e:
-			self._log_error(f"Processing error ({self.pstcanal}): {e}")
+			logger.error(f"Critical error in _process_canal_task: {str(e)}")
+			logger.error(format_exc())
+
+	def check_valid_posterdbemc(self, path):
+		"""Verify PosterDBEMC is valid JPEG and >1KB"""
+		try:
+			if not exists(path):
+				return False
+
+			if getsize(path) < 1024:
+				remove(path)
+				return False
+
+			with open(path, 'rb') as f:
+				header = f.read(2)
+				if header != b'\xFF\xD8':  # JPEG magic number
+					remove(path)
+					return False
+			return True
+		except Exception as e:
+			logger.error(f"PosterDBEMC validation error: {str(e)}")
+			return False
 
 	def _log_debug(self, message):
 		self._write_log("DEBUG", message)
@@ -404,7 +446,13 @@ def is_valid_poster(poster_path):
 	return exists(poster_path) and getsize(poster_path) > 100
 
 
+api_key_manager = ApiKeyManager()
+# download on requests
 # Start the thread
-threadDBemc = PosterDBEMC()
-threadDBemc.daemon = True
-threadDBemc.start()
+if any(api_key_manager.get_active_providers().values()):
+	logger.debug("Starting PosterDB with active providers")
+	AgpDBemc = PosterDBEMC()
+	AgpDBemc.daemon = True
+	AgpDBemc.start()
+else:
+	logger.debug("PosterDBEMC not started - no active providers")

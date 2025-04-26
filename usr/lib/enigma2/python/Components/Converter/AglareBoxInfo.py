@@ -20,7 +20,8 @@ from Components.Converter.Converter import Converter
 from Components.config import config
 from Components.Element import cached
 from Tools.Directories import fileExists
-from os.path import popen, isfile, exists
+from os.path import isfile, exists
+from os import popen
 from re import search
 import gettext
 _ = gettext.gettext

@@ -14,10 +14,20 @@ from __future__ import absolute_import, print_function
 #                                                       #
 #  Credits:                                             #
 #  - Original concept by Lululla                        #
+#  - Advanced download management system                #
+#  - Atomic file operations                             #
+#  - Thread-safe resource locking                       #
 #  - TMDB API integration                               #
 #  - TVDB API integration                               #
 #  - OMDB API integration                               #
+#  - FANART API integration                             #
+#  - IMDB API integration                               #
+#  - ELCINEMA API integration                           #
+#  - GOOGLE API integration                             #
+#  - PROGRAMMETV integration                            #
+#  - MOLOTOV API integration                            #
 #  - Advanced caching system                            #
+#  - Fully configurable via AGP Setup Plugin            #
 #                                                       #
 #  Usage of this code without proper attribution        #
 #  is strictly prohibited.                              #
@@ -41,7 +51,7 @@ api_lock = Lock()
 # Default API keys (fallback values)
 API_KEYS = {
 	"tmdb_api": "3c3efcf47c3577558812bb9d64019d65",
-	"omdb_api": "cb1d9f55",
+	"omdb_api": "4ca6ea60",
 	"thetvdb_api": "a99d487bb3426e5f3a60dea6d3d3c7ef",
 	"fanart_api": "6d231536dea4318a88cb2520ce89473b",
 }
@@ -49,45 +59,25 @@ API_KEYS = {
 
 def setup_api_keys():
 	"""
-	Configures API keys for the AGP system with flexible loading options.
+	Configures API keys using the following priority:
+	1. Plugin Configuration (if enabled and key provided)
+	2. Skin Directory Key Files
+	3. Hardcoded Defaults
 
-	There are two methods to provide API keys:
+	To configure via plugin:
+	- Enable the API in plugin settings
+	- Enter the key in the corresponding field
 
-	1. Direct Configuration (Recommended for development):
-	   Simply replace the default values in the API_KEYS dictionary above.
-
-	   Example:
-	   API_KEYS = {
-		   "tmdb_api": "your_tmdb_key_here",
-		   "omdb_api": "your_omdb_key_here",
-		   ...
-	   }
-
-	2. File-Based Configuration (Recommended for production):
-	   Create individual files for each API key in the skin directory:
-	   - /usr/share/enigma2/<skin_name>/tmdb_api
-	   - /usr/share/enigma2/<skin_name>/omdb_api
-	   - etc.
-
-	   Each file should contain only the API key as plain text.
-
-	Note: File-based configuration takes precedence over direct configuration.
+	To configure via skin files:
+	- Create files named tmdbkey, omdbkey, etc. in the skin directory
+	- Each file should contain only the API key
 	"""
 	pass
 
 
 def _load_api_keys():
 	"""
-	Internal function that loads API keys from configuration files.
-
-	This function:
-	1. Locates the current skin directory
-	2. Checks for API key files
-	3. Updates the API_KEYS dictionary with found keys
-	4. Falls back to defaults if files aren't found
-
-	Returns:
-		bool: True if any keys were loaded successfully, False otherwise
+	Internal function that loads API keys from plugin config, skin files, or defaults.
 	"""
 	try:
 		cur_skin = config.skin.primary_skin.value.replace("/skin.xml", "")
@@ -97,18 +87,40 @@ def _load_api_keys():
 			print(f"[API Config] Skin path not found: {skin_path}")
 			return False
 
-		# Map API key names to their corresponding file paths
+		# Map API key names to skin file paths
 		key_files = {
-			"tmdb_api": skin_path / "tmdb_api",
-			"thetvdb_api": skin_path / "thetvdb_api",
-			"omdb_api": skin_path / "omdb_api",
-			"fanart_api": skin_path / "fanart_api",
+			"tmdb_api": skin_path / "tmdbkey",
+			"omdb_api": skin_path / "omdbkey",
+			"thetvdb_api": skin_path / "thetvdbkey",
+			"fanart_api": skin_path / "fanartkey"
+		}
+
+		# Plugin configuration reference
+		plugin_cfg = config.plugins.Aglare
+
+		# API enablement and keys from plugin config
+		plugin_keys = {
+			"tmdb_api": (plugin_cfg.tmdb.value, plugin_cfg.tmdb_api.value),
+			"omdb_api": (plugin_cfg.omdb.value, plugin_cfg.omdb_api.value),
+			"thetvdb_api": (plugin_cfg.thetvdb.value, plugin_cfg.thetvdb_api.value),
+			"fanart_api": (plugin_cfg.fanart.value, plugin_cfg.fanart_api.value),
 		}
 
 		keys_loaded = False
-		with api_lock:  # Lock to ensure thread-safety when accessing API key files
+		with api_lock:
+			for key_name in key_files:
+				# Check if enabled in plugin and key is set
+				enabled, key_value = plugin_keys.get(key_name, (False, ""))
+				if enabled and key_value.strip():
+					API_KEYS[key_name] = key_value.strip()
+					print(f"[API Config] Using plugin key for {key_name}")
+					keys_loaded = True
+					continue
+				else:
+					print(f"[API Config] Plugin key for {key_name} not available or disabled, checking fallback...")
 
-			for key_name, file_path in key_files.items():
+				# Fallback to skin file
+				file_path = key_files[key_name]
 				if file_path.exists():
 					try:
 						with open(file_path, "r") as f:
@@ -118,7 +130,7 @@ def _load_api_keys():
 					except Exception as e:
 						print(f"[API Config] Error reading {file_path}: {str(e)}")
 				else:
-					print(f"[API Config] Using default key for {key_name}")
+					print(f"[API Config] Using default key for {key_name} (file not found)")
 
 		# Update global namespace with current API keys
 		globals().update(API_KEYS)

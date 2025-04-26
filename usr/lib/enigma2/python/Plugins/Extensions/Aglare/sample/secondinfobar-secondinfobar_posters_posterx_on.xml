@@ -1,0 +1,5 @@
+
+
+  <widget source="session.Event_Now" render="AglarePosterX" position="1690,117" size="190,285" cornerRadius="20" zPosition="1" borderWidth="1" borderColor="igsd" />
+  <widget source="session.Event_Now" render="AglarePosterX" nexts="1" position="1690,431" size="190,285" cornerRadius="20" zPosition="1" borderWidth="1" borderColor="igsd" />
+ 

@@ -1,0 +1,145 @@
+<screen name="SecondInfoBar" position="0,0" size="1920,1080" backgroundColor="transparent" flags="wfNoBorder">
+  <panel name="infobartemp2" />
+  <eLabel backgroundColor="igsdt" cornerRadius="30" position="10,31" size="1900,759" zPosition="-99" />
+  <eLabel backgroundColor="wdcolor" cornerRadius="30" position="20,734" size="1880,50" zPosition="-80" />
+  <eLabel name="" position="20,110" size="1880,300" zPosition="-70" cornerRadius="30" backgroundColor="#10171a1c" foregroundColor="#10171a1c" />
+  <eLabel name="" position="20,426" size="1880,300" zPosition="-71" cornerRadius="30" backgroundColor="#10171a1c" foregroundColor="#10171a1c" />
+  <eLabel backgroundColor="mcolor3" cornerRadius="3" position="40,167" size="1511,3" zPosition="99" />
+  <eLabel backgroundColor="mcolor3" cornerRadius="3" position="40,483" size="1511,3" zPosition="99" />
+  <!-- /* sep #####################################################-->
+  <widget source="session.Event_Now" render="Label" position="180,120" size="800,40" font="Regular; 32" halign="left" valign="center" transparent="1" backgroundColor="background" noWrap="1" zPosition="2">
+    <convert type="EventName">Name</convert>
+  </widget>
+  <widget source="session.Event_Next" render="Label" position="180,436" size="800,40" font="Regular; 32" halign="left" valign="center" transparent="1" backgroundColor="background" noWrap="1" zPosition="2">
+    <convert type="EventName">Name</convert>
+  </widget>
+  <widget source="session.Event_Now" render="AglareRunningText" options="movetype=running,startpoint=0,direction=top,steptime=100,startdelay=4000,wrap,always=0" position="40,178" size="1635,224" halign="left" font="Regular; 34" transparent="1" backgroundColor="background" valign="top" zPosition="1" foregroundColor="white">
+    <convert type="EventName">ExtendedDescription</convert>
+  </widget>
+  <widget source="session.Event_Next" render="AglareRunningText" options="movetype=running,startpoint=0,direction=top,steptime=100,startdelay=4000,wrap,always=0" position="40,494" size="1635,224" halign="left" font="Regular; 34" transparent="1" backgroundColor="background" valign="top" zPosition="1" foregroundColor="white">
+    <convert type="EventName">ExtendedDescription</convert>
+  </widget>
+  <widget source="session.Event_Now" render="Label" position="964,120" size="300,40" halign="center" font="Regular; 26" transparent="1" backgroundColor="background" valign="center" zPosition="1" noWrap="1">
+    <convert type="EventName">Genre</convert>
+  </widget>
+  <widget source="session.Event_Now" render="Label" position="1270,120" size="400,40" halign="center" font="Regular; 26" transparent="1" backgroundColor="background" valign="center" zPosition="1" noWrap="1">
+    <convert type="EventName">Rating</convert>
+  </widget>
+  <widget source="session.Event_Next" render="Label" position="964,436" size="300,40" halign="center" font="Regular; 26" transparent="1" backgroundColor="background" valign="center" zPosition="1" noWrap="1">
+    <convert type="EventName">Genre</convert>
+  </widget>
+  <widget source="session.Event_Next" render="Label" position="1270,436" size="400,40" halign="center" font="Regular; 26" transparent="1" backgroundColor="background" valign="center" zPosition="1" noWrap="1">
+    <convert type="EventName">Rating</convert>
+  </widget>
+  <widget source="session.Event_Now" render="Label" position="65,123" size="112,34" backgroundColor="background" transparent="1" zPosition="10" font="Regular; 26" halign="center" valign="center">
+    <convert type="EventTime">StartTime</convert>
+    <convert type="ClockToText">Default</convert>
+  </widget>
+  <widget source="session.Event_Next" render="Label" position="65,439" size="112,34" backgroundColor="background" transparent="1" zPosition="10" font="Regular; 26" halign="center" valign="center">
+    <convert type="EventTime">StartTime</convert>
+    <convert type="ClockToText">Default</convert>
+  </widget>
+  <widget source="session.CurrentService" render="Label" position="760,739" size="400,40" font="Regular; 24" backgroundColor="background" transparent="1" halign="center" zPosition="99" valign="center" noWrap="1">
+    <convert type="AglareStreamInfo">StreamType</convert>
+    <convert type="AglareStreamInfo">StreamUrl</convert>
+    <convert type="ConverterRotator">3</convert>
+  </widget>
+  <widget source="session.CurrentService" render="Label" position="1208,739" size="692,40" font="Regular; 24" backgroundColor="background" transparent="1" halign="center" zPosition="99" valign="center" noWrap="1">
+    <convert type="AglareServName2">Reference</convert>
+  </widget>
+  <widget source="session.CurrentService" render="Label" position="30,739" size="558,40" font="Regular; 26" transparent="1" zPosition="5" foregroundColor="white" backgroundColor="background" halign="left" valign="center" noWrap="1" text="PidInfo">
+    <convert type="AglareBase">PidHexInfo</convert>
+  </widget>
+  <eLabel name="" position="25,123" size="38,34" font="icomoon; 36" text="" transparent="1" valign="center" halign="center" zPosition="99" foregroundColor="green" backgroundColor="black" />
+  <eLabel name="" position="25,439" size="38,34" font="icomoon; 36" text="" transparent="1" valign="center" halign="center" zPosition="99" foregroundColor="red" backgroundColor="black" />
+  <widget font="Bold; 30" halign="right" position="1615,52" render="Label" size="278,40" source="global.CurrentTime" transparent="1" zPosition="1">
+    <convert type="ClockToText">Format:%a %d.%m.  %H:%M</convert>
+  </widget>
+  <!-- /* oaweather #####################################################-->
+  <widget render="OAWeatherPixmap" position="282,40" size="60,60" source="session.OAWeather" alphatest="blend" transparent="1" zPosition="8" scale="1">
+    <convert type="OAWeather">weathericon,day1</convert>
+  </widget>
+  <widget backgroundColor="background" font="Regular; 26" render="Label" noWrap="1" position="22,40" size="195,60" source="session.OAWeather" zPosition="2" halign="center" valign="center" transparent="1" foregroundColor="white">
+    <convert type="OAWeather">city</convert>
+  </widget>
+  <widget backgroundColor="background" font="Regular; 24" foregroundColor="white" halign="center" position="340,40" render="Label" size="180,28" source="session.OAWeather" transparent="1" valign="center" zPosition="3">
+    <convert type="OAWeather">temperature_text,day1</convert>
+  </widget>
+  <widget render="OAWeatherPixmap" position="742,40" size="60,60" source="session.OAWeather" alphatest="blend" transparent="1" zPosition="8" scale="1">
+    <convert type="OAWeather">weathericon,day2</convert>
+  </widget>
+  <widget backgroundColor="background" font="Regular; 24" foregroundColor="white" halign="center" position="800,40" render="Label" size="180,28" source="session.OAWeather" transparent="1" valign="center" zPosition="3">
+    <convert type="OAWeather">temperature_text,day2</convert>
+  </widget>
+  <widget noWrap="1" backgroundColor="background" font="Regular; 26" render="Label" position="793,72" size="90,28" source="session.OAWeather" transparent="1" zPosition="8" halign="center">
+    <convert type="OAWeather">temperature_high,day2</convert>
+  </widget>
+  <widget render="OAWeatherPixmap" position="1042,40" size="60,60" source="session.OAWeather" alphatest="blend" transparent="1" zPosition="8" scale="1">
+    <convert type="OAWeather">weathericon,day3</convert>
+  </widget>
+  <widget backgroundColor="background" font="Regular; 24" foregroundColor="white" halign="center" position="1100,40" render="Label" size="180,28" source="session.OAWeather" transparent="1" valign="center" zPosition="3">
+    <convert type="OAWeather">temperature_text,day3</convert>
+  </widget>
+  <widget noWrap="1" backgroundColor="background" font="Regular; 26" render="Label" position="1093,72" size="90,28" source="session.OAWeather" transparent="1" zPosition="8" halign="center">
+    <convert type="OAWeather">temperature_high,day3</convert>
+  </widget>
+  <widget render="OAWeatherPixmap" position="1342,40" size="60,60" source="session.OAWeather" alphatest="blend" transparent="1" zPosition="8" scale="1">
+    <convert type="OAWeather">weathericon,day4</convert>
+  </widget>
+  <widget backgroundColor="background" font="Regular; 24" foregroundColor="white" halign="center" position="1400,40" render="Label" size="180,28" source="session.OAWeather" transparent="1" valign="center" zPosition="3">
+    <convert type="OAWeather">temperature_text,day4</convert>
+  </widget>
+  <widget noWrap="1" backgroundColor="background" font="Regular; 26" render="Label" position="1393,72" size="90,28" source="session.OAWeather" transparent="1" zPosition="8" halign="center">
+    <convert type="OAWeather">temperature_high,day4</convert>
+  </widget>
+  <widget noWrap="1" backgroundColor="black" font="Regular; 22" render="Label" position="220,59" size="60,24" source="session.OAWeather" zPosition="9" halign="center" transparent="1">
+    <convert type="OAWeather">weekshortday,day1</convert>
+  </widget>
+  <eLabel name="" position="220,40" size="60,60" backgroundColor="wdcolor" transparent="0" cornerRadius="26" zPosition="1" />
+  <eLabel name="" position="680,40" size="60,60" backgroundColor="wdcolor" transparent="0" cornerRadius="26" zPosition="1" />
+  <widget noWrap="1" backgroundColor="black" font="Regular; 22" render="Label" position="680,59" size="60,24" source="session.OAWeather" zPosition="9" halign="center" transparent="1">
+    <convert type="OAWeather">weekshortday,day2</convert>
+  </widget>
+  <widget noWrap="1" backgroundColor="black" font="Regular; 22" render="Label" position="980,59" size="60,24" source="session.OAWeather" zPosition="9" halign="center" transparent="1">
+    <convert type="OAWeather">weekshortday,day3</convert>
+  </widget>
+  <widget noWrap="1" backgroundColor="black" font="Regular; 22" render="Label" position="1280,59" size="60,24" source="session.OAWeather" zPosition="9" halign="center" transparent="1">
+    <convert type="OAWeather">weekshortday,day4</convert>
+  </widget>
+  <eLabel name="" position="980,40" size="60,60" backgroundColor="wdcolor" transparent="0" cornerRadius="26" zPosition="1" />
+  <eLabel name="" position="1280,40" size="60,60" backgroundColor="wdcolor" transparent="0" cornerRadius="26" zPosition="1" />
+  <widget noWrap="1" backgroundColor="background" font="Regular; 26" render="Label" position="883,72" size="90,28" source="session.OAWeather" transparent="1" zPosition="8" halign="center">
+    <convert type="OAWeather">temperature_low,day2</convert>
+  </widget>
+  <widget noWrap="1" backgroundColor="background" font="Regular; 26" render="Label" position="1183,72" size="90,28" source="session.OAWeather" transparent="1" zPosition="8" halign="center">
+    <convert type="OAWeather">temperature_low,day3</convert>
+  </widget>
+  <widget noWrap="1" backgroundColor="background" font="Regular; 26" render="Label" position="1483,72" size="90,28" source="session.OAWeather" transparent="1" zPosition="8" halign="center">
+    <convert type="OAWeather">temperature_low,day4</convert>
+  </widget>
+  <eLabel name="" position="871,70" size="24,30" backgroundColor="background" halign="center" valign="center" transparent="1" font="icomoon; 22" text="" zPosition="88" />
+  <eLabel name="" position="1171,70" size="24,30" backgroundColor="background" halign="center" valign="center" transparent="1" font="icomoon; 22" text="" zPosition="88" />
+  <eLabel name="" position="1471,70" size="24,30" backgroundColor="background" halign="center" valign="center" transparent="1" font="icomoon; 22" text="" zPosition="88" />
+  <eLabel name="" position="522,42" size="24,24" backgroundColor="background" halign="center" valign="center" transparent="1" font="icomoon; 22" text="" zPosition="88" />
+  <widget backgroundColor="background" font="Regular; 24" foregroundColor="white" halign="left" position="546,42" render="Label" size="50,24" source="session.OAWeather" transparent="1" valign="center" zPosition="3">
+    <convert type="OAWeather">humidity</convert>
+  </widget>
+  <eLabel name="" position="600,42" size="24,24" backgroundColor="background" halign="center" valign="center" transparent="1" font="icomoon; 22" text="" zPosition="88" />
+  <widget backgroundColor="background" font="Regular; 24" foregroundColor="white" halign="left" position="626,42" render="Label" size="50,24" source="session.OAWeather" transparent="1" valign="center" zPosition="3">
+    <convert type="OAWeather">precipitation,day1</convert>
+  </widget>
+  <eLabel name="" position="522,74" size="24,24" backgroundColor="background" halign="center" valign="center" transparent="1" font="icomoon; 22" text="" zPosition="88" />
+  <widget backgroundColor="background" font="Regular; 24" foregroundColor="white" halign="left" position="548,74" render="Label" size="82,24" source="session.OAWeather" transparent="1" valign="center" zPosition="3">
+    <convert type="OAWeather">windspeed,winddirsign</convert>
+  </widget>
+  <widget noWrap="1" backgroundColor="background" font="Regular; 26" render="Label" position="333,72" size="90,28" source="session.OAWeather" transparent="1" zPosition="8" halign="center">
+    <convert type="OAWeather">temperature_high,day1</convert>
+  </widget>
+  <widget noWrap="1" backgroundColor="background" font="Regular; 26" render="Label" position="423,72" size="90,28" source="session.OAWeather" transparent="1" zPosition="8" halign="center">
+    <convert type="OAWeather">temperature_low,day1</convert>
+  </widget>
+  <eLabel name="" position="411,70" size="24,30" backgroundColor="background" halign="center" valign="center" transparent="1" font="icomoon; 22" text="" zPosition="88" />
+  <widget backgroundColor="background" font="Regular; 24" foregroundColor="white" halign="center" position="626,74" render="Label" size="51,24" source="session.OAWeather" transparent="1" valign="center" zPosition="3" text="SW">
+    <convert type="OAWeather">winddirshort</convert>
+  </widget>
+  

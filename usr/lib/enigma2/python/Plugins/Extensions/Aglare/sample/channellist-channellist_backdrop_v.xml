@@ -1,0 +1,43 @@
+
+<screen name="ChannelSelection" position="0,0" size="1920,1080" title="Channel Selection" backgroundColor="black" flags="wfNoBorder">
+  <panel name="ScreenTemplateAllColorButtons_menu" />
+  <panel name="timedate" />
+  <eLabel backgroundColor="buttonsc" cornerRadius="30" position="20,1014" size="1880,60" zPosition="-80" />
+  <eLabel backgroundColor="wpmc" cornerRadius="20" position="0,0" size="1920,1080" zPosition="-99" />
+  <widget source="Title" render="Label" position="36,32" size="890,52" font="Regular; 32" noWrap="1" transparent="1" valign="center" zPosition="1" halign="left" />
+  <widget name="list" position="40,94" size="890,900" fieldMargins="15" nonplayableMargins="15" serviceItemHeight="50" serviceNumberFont="Regular;30" serviceNameFont="Regular;30" serviceInfoFont="Regular;28" foregroundColor="white" foregroundColorSelected="yellow" colorServiceDescription="mint" colorServiceDescriptionSelected="#00ffffff" foregroundColorServiceNotAvail="#444444" colorEventProgressbarBorderSelected="white" colorEventProgressbarBorder="white" zPosition="4" itemHeight="50" picServiceEventProgressbar="main/chprogressbar.png" progressbarHeight="6" progressBarWidth="100" progressbarBorderWidth="1" progressPercentWidth="60" backgroundColorMarked="#00131a1d" textSeparator="  •  " markerLine="1" markerTextAlignment="center" markerLineColor="fgcolor" scrollbarMode="showOnDemand" scrollbarSliderForegroundColor="mcolor5" scrollbarSliderBorderColor="mcolor2" scrollbarWidth="10" scrollbarSliderBorderWidth="1" itemCornerRadius="10" />
+  <widget source="session.CurrentService" render="Label" position="1246,65" size="648,30" font="Regular; 27" borderWidth="1" backgroundColor="background" transparent="1" halign="center" foregroundColor="white" zPosition="30" valign="center" noWrap="1">
+  <convert type="ServiceName">Name</convert>
+</widget>
+  <widget source="ServiceEvent" render="Progress" position="1246,469" size="648,10" backgroundColor="progbg" pixmap="main/progfg64810.png" cornerRadius="5" zPosition="33">
+  <convert type="EventTime">Progress</convert>
+</widget>
+  <widget source="session.VideoPicture" render="Pig" position="1246,94" zPosition="1" size="648,364" backgroundColor="transparent" transparent="0" cornerRadius="14" />
+  <eLabel name="" position="31,30" size="901,977" zPosition="-90" cornerRadius="18" backgroundColor="mcolor2" foregroundColor="mcolor2" />
+  <eLabel name="" position="1598,1018" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Regular; 17" zPosition="1" text="OK" />
+  <eLabel name="" position="1658,1018" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Regular; 17" zPosition="1" text="MENU" />
+  <eLabel name="" position="1718,1018" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Regular; 17" zPosition="1" text="EPG" />
+  <eLabel name="" position="1778,1018" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Regular; 17" zPosition="1" text="INFO" />
+  <eLabel name="" position="1838,1018" size="52,52" backgroundColor="mcolor4" halign="center" valign="center" transparent="0" cornerRadius="26" font="Regular; 17" zPosition="1" text="EXIT" />
+<widget source="ServiceEvent" render="AglareRunningText" options="movetype=running,startpoint=0,direction=top,steptime=100,startdelay=4000,wrap,always=0" position="1246,508" size="648,428" halign="left" font="Regular; 32" transparent="1" valign="top" zPosition="99">
+  <convert type="EventName">FullDescription</convert>
+</widget>
+<eLabel name="" position="1229,488" size="681,470" zPosition="-90" cornerRadius="18" backgroundColor="mcolor2" foregroundColor="mcolor2" />
+<eLabel name="" position="960,970" size="40,40" font="icomoon; 30" text="" halign="center" zPosition="89" transparent="1" />
+ <widget source="ServiceEvent" render="xtraNxtEvnt" nxtEvents="" snglEvent="0" font="Regular; 22" halign="left" valign="center" position="960,94" size="240,30" zPosition="5" transparent="1" noWrap="1" />
+<widget source="ServiceEvent" render="xtraNxtEvnt" nxtEvents="" snglEvent="1" font="Regular; 22" halign="left" valign="center" position="960,264" size="240,30" zPosition="5" transparent="1" noWrap="1" />
+<widget source="ServiceEvent" render="xtraNxtEvnt" nxtEvents="" snglEvent="2" font="Regular; 22" halign="left" valign="center" position="960,434" size="240,30" zPosition="5" transparent="1" noWrap="1" />
+<widget source="ServiceEvent" render="xtraNxtEvnt" nxtEvents="" snglEvent="3" font="Regular; 22" halign="left" valign="center" position="960,604" size="240,30" zPosition="5" transparent="1" noWrap="1" />
+<widget source="ServiceEvent" render="xtraNxtEvnt" nxtEvents="" snglEvent="4" font="Regular; 22" halign="left" valign="center" position="960,774" size="240,30" zPosition="5" transparent="1" noWrap="1" />
+
+	
+<widget source="ServiceEvent" render="xtraNextEvents" nextEvent="0" usedImage="backdrop" delayPic="200" position="960,124" size="240,130" zPosition="5" cornerRadius="14" />
+<widget source="ServiceEvent" render="xtraNextEvents" nextEvent="1" usedImage="backdrop" delayPic="200" position="960,294" size="240,130" zPosition="6" cornerRadius="14" />
+<widget source="ServiceEvent" render="xtraNextEvents" nextEvent="2" usedImage="backdrop" delayPic="200" position="960,464" size="240,130" zPosition="7" cornerRadius="14" />
+<widget source="ServiceEvent" render="xtraNextEvents" nextEvent="3" usedImage="backdrop" delayPic="200" position="960,634" size="240,130" zPosition="8" cornerRadius="14" />
+<widget source="ServiceEvent" render="xtraNextEvents" nextEvent="4" usedImage="backdrop" delayPic="200" position="960,804" size="240,130" zPosition="9" cornerRadius="14" />
+
+<widget source="ServiceEvent" render="Label" position="1010,970" zPosition="1" size="887,40" font="Regular; 28" halign="left" backgroundColor="background" transparent="1" valign="center">
+    <convert type="AglareServName2">TransponderInfo</convert>
+  </widget>
+</screen>

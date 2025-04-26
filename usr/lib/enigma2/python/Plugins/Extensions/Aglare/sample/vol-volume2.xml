@@ -1,0 +1,6 @@
+<screen name="Volume" position="20,140" size="70,604" backgroundColor="transparent" flags="wfNoBorder" zPosition="100" transparent="0">
+    <widget name="VolumeText" position="2,2" size="66,65" font="Regular; 34" backgroundColor="background" foregroundColor="white" halign="center" valign="center" zPosition="99" transparent="1" />
+  <widget name="Volume" position="24,70" size="20,464" backgroundColor="progbg" zPosition="88" render="Progress" pixmap="main/progfg20464.png" cornerRadius="10" orientation="orBottomToTop" />
+  <eLabel name="" position="2,537" size="66,65" font="icomoon; 44" text="" transparent="1" valign="center" halign="center" />
+  <eLabel backgroundColor="wpmc" cornerRadius="30" position="0,0" size="70,604" zPosition="-99" />
+</screen>

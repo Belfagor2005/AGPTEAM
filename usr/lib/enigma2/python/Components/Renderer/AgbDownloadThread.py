@@ -14,10 +14,20 @@ from __future__ import absolute_import, print_function
 #                                                       #
 #  Credits:                                             #
 #  - Original concept by Lululla                        #
+#  - Advanced download management system                #
+#  - Atomic file operations                             #
+#  - Thread-safe resource locking                       #
 #  - TMDB API integration                               #
 #  - TVDB API integration                               #
 #  - OMDB API integration                               #
+#  - FANART API integration                             #
+#  - IMDB API integration                               #
+#  - ELCINEMA API integration                           #
+#  - GOOGLE API integration                             #
+#  - PROGRAMMETV integration                            #
+#  - MOLOTOV API integration                            #
 #  - Advanced caching system                            #
+#  - Fully configurable via AGP Setup Plugin            #
 #                                                       #
 #  Usage of this code without proper attribution        #
 #  is strictly prohibited.                              #
@@ -31,7 +41,7 @@ __copyright__ = "AGP Team"
 # Standard library
 from os import remove, rename
 from os.path import exists, getsize
-from re import compile, findall, DOTALL, search, sub
+from re import compile, findall, DOTALL, sub  # , search, I
 from threading import Thread
 from json import loads
 from random import choice
@@ -54,30 +64,15 @@ from .Agp_lib import quoteEventName
 from .Agp_apikeys import tmdb_api, thetvdb_api, fanart_api  # , omdb_api
 from .Agp_Utils import logger
 
+
 # ========================
 # DISABLE URLLIB3 DEBUG LOGS
 # ========================
-import urllib3
-"""
 import logging
-for lib in ['urllib3', 'requests', 'requests.packages.urllib3']:
-	logging.getLogger(lib).setLevel(logging.CRITICAL)
-	logging.getLogger(lib).propagate = False
-logging.captureWarnings(True)
-logger.debug("Configured complete silence for urllib3/requests")
-"""
+import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-
-def _silence_http_logs():
-	import requests
-	requests.adapters.HTTPAdapter.debuglevel = 0  # Disabilita debug HTTP
-	requests.packages.urllib3.connectionpool.log.debug = lambda *args, **kwargs: None
-	requests.packages.urllib3.connectionpool.log.info = lambda *args, **kwargs: None
-
-
-_silence_http_logs()
-logger.debug("Configured complete silence for urllib3/requests")
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("requests").setLevel(logging.WARNING)
 
 
 global my_cur_skin, srch
@@ -129,30 +124,32 @@ else:
 
 
 '''
-🖼️ Poster:
-"w92", "w154", "w185", "w342", "w500", "w780", "original"
+🖼️ Poster Sizes:
+Available: "w92", "w154", "w185", "w342", "w500", "w780", "original"
 
-🖼️ Backdrop:
-"w300", "w780", "w1280", "original"
+🖼️ Backdrop Sizes:
+Available: "w300", "w780", "w1280", "original"
 
-🧑‍🎤 Profile:
-"w45", "w185", "h632", "original"
+🧑‍🎤 Profile Sizes:
+Available: "w45", "w185", "h632", "original"
 
-📺 Still (frame episodio):
-"w92", "w185", "w300", "original"
+📺 Still Frame (Episode Image) Sizes:
+Available: "w92", "w185", "w300", "original"
 
-🏷️ Logo:
-"w45", "w92", "w154", "w185", "w300", "w500", "original"
+🏷️ Logo Sizes:
+Available: "w45", "w92", "w154", "w185", "w300", "w500", "original"
 
-📐 Consigli sulle dimensioni (in pixel)
-Tipo              Dimensioni consigliate    Aspetto
-Poster              500x750 → 2000x3000     1.5 (2:3)
-Poster TV Season    400x578 → 2000x3000     1.5 (2:3)
-Backdrop            1280x720 → 3840x2160    1.777 (16:9)
-Still (episodio)    400x225 → 3840x2160     1.777 (16:9)
-Profile             300x450 → 2000x3000     1.5 (2:3)
-Logo PNG            500x1 → 2000x2000       Variabile
-Logo SVG            500x1 → vettoriale      Variabile
+📐 Recommended Image Dimensions (in pixels):
+
+
+Type    Recommended Size Range  Aspect Ratio
+Poster  500×750 → 2000×3000 1.5 (2:3)
+TV Season Poster    400×578 → 2000×3000 1.5 (2:3)
+Backdrop    1280×720 → 3840×2160    1.777 (16:9)
+Still (Episode) 400×225 → 3840×2160 1.777 (16:9)
+Profile 300×450 → 2000×3000 1.5 (2:3)
+Logo (PNG)  500×1 → 2000×2000   Variable
+Logo (SVG)  500×1 → Vector graphic  Variable
 '''
 
 
@@ -178,20 +175,28 @@ class AgbDownloadThread(Thread):
 			"clips", "concert", "santé", "éducation", "variété"
 		]
 
-	def search_tmdb(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None):
+	def search_tmdb(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
 		"""Download backdrop from TMDB with full verification pipeline"""
 		self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		tmdb_api_key = api_key or tmdb_api
+
+		if not tmdb_api_key:
+			return False, "No API key"
+
 		try:
-			if not dwn_backdrop or not self.title_safe:
+			if not dwn_backdrop:
 				return (False, "Invalid input parameters")
 
 			if not self.title_safe:
 				return (False, "Invalid title after cleaning")
 
 			srch, fd = self.checkType(shortdesc, fulldesc)
-
-			url = f"https://api.themoviedb.org/3/search/{srch}?api_key={tmdb_api}&language={lng}&query={self.title_safe}"
-
+			# year = self._extract_year(fd)
+			url = f"https://api.themoviedb.org/3/search/{srch}?api_key={tmdb_api_key}&language={lng}&query={self.title_safe}"  # &page=1&include_adult=false"
+			"""
+			# if year and srch == "movie":
+				# url += f"&year={year}"
+			"""
 			# Make API request with retries
 			retries = Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
 			adapter = HTTPAdapter(max_retries=retries)
@@ -228,7 +233,7 @@ class AgbDownloadThread(Thread):
 
 	def downloadData2(self, data, dwn_backdrop, shortdesc="", fulldesc=""):
 		if isinstance(data, bytes):
-			data = data.decode('utf-8')
+			data = data.decode("utf-8", errors="ignore")
 		data_json = data if isinstance(data, dict) else loads(data)
 
 		if 'results' in data_json:
@@ -249,20 +254,24 @@ class AgbDownloadThread(Thread):
 				if backdrop.strip() and not backdrop.endswith("/original"):
 					callInThread(self.saveBackdrop, backdrop, dwn_backdrop)
 					if exists(dwn_backdrop):
-						return True, f"[SUCCESS] Backdrop found: {title}"
+						return True, f"[SUCCESS] backdrop math: {title}"
 		return False, "[SKIP] No valid Result"
 
-	def search_tvdb(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None):
-		self.title_safe = title.replace("+", " ")
+	def search_tvdb(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
+		"""Download backdrop from TVDB with full verification pipeline"""
+		self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		thetvdb_api_key = api_key or thetvdb_api
+
+		if not thetvdb_api_key:
+			return False, "No API key"
+
 		try:
 			if not exists(dwn_backdrop):
-				return (False, "File not created")
+				return (False, "[ERROR] File not created")
 
 			series_nb = -1
 			chkType, fd = self.checkType(shortdesc, fulldesc)
-			year_match = findall(r"19\d{2}|20\d{2}", fd)
-			year = year_match[0] if year_match else ""
-
+			year = self._extract_year(fd)
 			url_tvdbg = "https://thetvdb.com/api/GetSeries.php?seriesname={}".format(self.title_safe)
 			url_read = get(url_tvdbg).text
 			series_id = findall(r"<seriesid>(.*?)</seriesid>", url_read)
@@ -290,7 +299,7 @@ class AgbDownloadThread(Thread):
 					if "thetvdb_api" not in globals():
 						return False, "[ERROR : tvdb] API key not defined"
 
-					url_tvdb = "https://thetvdb.com/api/{}/series/{}".format(thetvdb_api, series_id[series_nb])
+					url_tvdb = "https://thetvdb.com/api/{}/series/{}".format(thetvdb_api_key, series_id[series_nb])
 					url_tvdb += "/{}".format(lng if "lng" in globals() and lng else "en")
 
 					url_read = get(url_tvdb).text
@@ -322,23 +331,21 @@ class AgbDownloadThread(Thread):
 			logger.error("tvdb search error: " + str(e))
 			return False, "[ERROR : tvdb] {} => {} ({})".format(self.title_safe, url_tvdbg, str(e))
 
-	def search_fanart(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None):
-		self.title_safe = title.replace("+", " ")
-		if not exists(dwn_backdrop):
-			return (False, "File not created")
+	def search_fanart(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
+		"""Download backdrop from FANART with full verification pipeline"""
+		self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		fanart_api_key = api_key or fanart_api
+		if not fanart_api_key:
+			return False, "No API key"
 
-		year = ""
+		if not exists(dwn_backdrop):
+			return (False, "[ERROR] File not created")
+
 		url_maze = ""
 		url_fanart = ""
 		tvmaze_id = "-"
 		chkType, fd = self.checkType(shortdesc, fulldesc)
-
-		try:
-			matches = findall(r"19\d{2}|20\d{2}", fd)
-			if matches:
-				year = matches[1] if len(matches) > 1 else matches[0]
-		except Exception:
-			year = ""
+		year = self._extract_year(fd)
 
 		try:
 			url_maze = "http://api.tvmaze.com/singlesearch/shows?q={}".format(self.title_safe)
@@ -351,7 +358,7 @@ class AgbDownloadThread(Thread):
 
 		try:
 			m_type = "tv"
-			url_fanart = "https://webservice.fanart.tv/v3/{}/{}?api_key={}".format(m_type, tvmaze_id, fanart_api)
+			url_fanart = "https://webservice.fanart.tv/v3/{}/{}?api_key={}".format(m_type, tvmaze_id, fanart_api_key)
 			resp = get(url_fanart, verify=False, timeout=5)
 			resp.raise_for_status()
 			fjs = resp.json()
@@ -383,108 +390,104 @@ class AgbDownloadThread(Thread):
 			logger.error("fanart search error: " + str(e))
 			return False, "[ERROR : fanart] {} [{}-{}] => {} ({})".format(self.title_safe, chkType, year, url_maze, str(e))
 
-	def search_imdb(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None):
-		self.title_safe = title.replace("+", " ")
+	def search_omdb(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
+		"""OMDb NOT HAVE A backdrop Downloader using API: RETURN FALSE!!!"""
+		return False, "[SKIP : omdb] {} [OMDb NOT HAVE A backdrop Downloader using API: RETURN FALSE!!!] => OMDb does not support backdrops.".format(
+			title
+		)
+
+	def search_imdb(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
+		"""Download backdrop from IMDb media gallery using centralized request system"""
+		self.title_safe = self.UNAC(title.replace("+", " ").strip())
 		if not exists(dwn_backdrop):
-			return (False, "File not created")
+			return (False, "[ERROR] File not created")
 
 		chkType, fd = self.checkType(shortdesc, fulldesc)
-		aka_list = findall(r"\((.*?)\)", fd)
-		aka = next((a for a in aka_list if not a.isdigit()), None)
-		paka = self.UNAC(aka) if aka else ""
-		year_matches = findall(r"19\d{2}|20\d{2}", fd)
-		year = year_matches[0] if year_matches else ""
-		imsg = ""
+		year = self._extract_year(fd)
+		aka_info = self._extract_aka(fd)
 		url_backdrop = ""
-		url_mimdb = ""
-		url_imdb = []
-
 		try:
-			if aka and aka != self.title_safe:
-				url_mimdb = "https://m.imdb.com/find?q={}%20({})".format(self.title_safe, quoteEventName(aka))
-			else:
-				url_mimdb = "https://m.imdb.com/find?q={}".format(self.title_safe)
+			# Extract metadata
 
-			# Get IMDb search results
+			# Build search URL
+			search_url = self._build_imdb_search_url(self.title_safe, aka_info)
+
+			# Fetch search results
 			try:
-				url_read = get(url_mimdb).text
-				rc = compile(r'<img src="(.*?)".*?<span class="h3">\n(.*?)\n</span>.*?\((\d+)\)(\s\(.*?\))?(.*?)</a>', DOTALL)
-				url_imdb = rc.findall(url_read)
+				# Make API request with retries
+				retries = Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
+				adapter = HTTPAdapter(max_retries=retries)
+				http = Session()
+				http.mount("http://", adapter)
+				http.mount("https://", adapter)
+				response = http.get(search_url, headers=headers, timeout=(10, 20), verify=False)
+				response.raise_for_status()
+				results = self._parse_imdb_results(response.text)
 
-				# If no results, retry without AKA
-				if not url_imdb and aka:
-					url_mimdb = "https://m.imdb.com/find?q={}".format(self.title_safe)
-					url_read = get(url_mimdb).text
-					url_imdb = rc.findall(url_read)
+				if not results and aka_info:
+					fallback_url = "https://m.imdb.com/find?q={}".format(quoteEventName(self.title_safe))
+					response = http.get(fallback_url, headers=headers, timeout=(10, 20), verify=False)
+					response.raise_for_status()
+					results = self._parse_imdb_results(response.text)
 
-			except Exception as err:
-				logger.error(f"IMDb search error: {err}")
-				return False, f"[ERROR : imdb] IMDb search failed: {err}"
+			except Exception as e:
+				logger.error(f"IMDb search error: {str(e)}")
+				return (False, f"[ERROR] IMDb connection: {str(e)}")
 
-			len_imdb = len(url_imdb)
-			idx_imdb = 0
-			pfound = False
+			# Find best match
+			match = self._find_best_match(results, year, self.title_safe, aka_info)
+			if not match or "imdb_id" not in match:
+				return (False, f"[SKIP] No IMDb match for {self.title_safe}")
 
-			for imdb in url_imdb:
-				imdb = list(imdb)
-				imdb[1] = self.UNAC(imdb[1])
-				tmp = findall(r'aka <i>"(.*?)"</i>', imdb[4])
-				imdb[4] = self.UNAC(tmp[0]) if tmp else self.UNAC(imdb[4])
-				backdrop_match = search(r"(.*?)._V1_.*?.jpg", imdb[0])
-				if not backdrop_match:
-					continue
+			# Open gallery page
+			gallery_url = "https://www.imdb.com/title/{}/mediaindex/".format(match["imdb_id"])
+			response = get(gallery_url, headers=headers, timeout=(10, 20), verify=False)
+			response.raise_for_status()
+			html = response.text.replace("&#39;", "'").replace("&quot;", '"')
 
-				imdb_year = imdb[2]
-				imdb_title = imdb[1]
-				imdb_aka = imdb[4]
-				base_url = backdrop_match.group(1)
-				url_backdrop = "{}._V1_UY278,1,185,278_AL_.jpg".format(base_url)
-
-				# Compare by year and title similarity
-				if imdb[3] == "":
-					if year and year == imdb_year:
-						imsg = f"Found title: '{imdb_title}', aka: '{imdb_aka}', year: '{imdb_year}'"
-						if self.PMATCH(self.title_safe, imdb_title) or self.PMATCH(self.title_safe, imdb_aka) or self.PMATCH(paka, imdb_title) or self.PMATCH(paka, imdb_aka):
-							pfound = True
-							break
-					elif year and (int(year) - 1 == int(imdb_year) or int(year) + 1 == int(imdb_year)):
-						imsg = f"Found title: '{imdb_title}', aka: '{imdb_aka}', year: '+/-{imdb_year}'"
-						if self.title_safe == imdb_title or self.title_safe == imdb_aka or paka == imdb_title or paka == imdb_aka:
-							pfound = True
-							break
-					elif not year:
-						imsg = f"Found title: '{imdb_title}', aka: '{imdb_aka}', year: ''"
-						if self.title_safe == imdb_title or self.title_safe == imdb_aka or paka == imdb_title or paka == imdb_aka:
-							pfound = True
-							break
-
-				idx_imdb += 1
-
-			if url_backdrop and pfound:
+			# Find backdrop image
+			matches = findall(r'<img src="(https://m\.media-amazon\.com/images/.*?)"', html)
+			if matches:
+				url_backdrop = matches[0].split("._")[0] + ".jpg"
 				callInThread(self.saveBackdrop, url_backdrop, dwn_backdrop)
+
 				if exists(dwn_backdrop):
-					msg = "[SUCCESS url_backdrop: imdb] {} [{}-{}] => {} [{}/{}] => {} => {}".format(
-						self.title_safe, chkType, year, imsg, idx_imdb, len_imdb, url_mimdb, url_backdrop
-					)
-					return True, msg
+					return (True, "[SUCCESS] IMDb backdrop downloaded")
 
-			return False, "[SKIP : imdb] {} [{}-{}] => {} (No Entry found [{}])".format(self.title_safe, chkType, year, url_mimdb, len_imdb)
-
-		except HTTPError as e:
-			if e.response is not None and e.response.status_code == 404:
-				return False, "No results found on imdb"
-			else:
-				logger.error("imdb HTTP error: " + str(e))
-				return False, "HTTP error during imdb search"
+			return (False, f"[SKIP] Download failed for {self.title_safe}")
 
 		except Exception as e:
-			logger.error("IMDb search error: " + str(e))
-			return False, "[ERROR : imdb] {} [{}-{}] => {} ({})".format(self.title_safe, chkType, year, url_mimdb, str(e))
+			logger.error(f"IMDb backdrop processing error: {str(e)}")
+			return (False, f"[ERROR] IMDb search: {str(e)}")
 
-	def search_programmetv_google(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None):
-		self.title_safe = title.replace('+', ' ')
+	def _build_imdb_search_url(self, title, aka):
+		"""Construct IMDb search URL with AKA if available"""
+		if aka and aka != title:
+			return f"https://m.imdb.com/find?q={quoteEventName(title)}%20({quoteEventName(aka)})"
+		return f"https://m.imdb.com/find?q={quoteEventName(title)}"
+
+	def _parse_imdb_results(self, html_content):
+		"""Parse IMDb search results page with IMDb ID"""
+		pattern = compile(
+			r'<a href="/title/(tt\d+)/".*?<img src="(.*?)".*?<span class="h3">\n(.*?)\n</span>.*?\((\d+)\)(\s\(.*?\))?(.*?)</a>',
+			DOTALL
+		)
+
+		return [{
+			"imdb_id": match[0],
+			"url_backdrop": match[1],
+			"title": self.UNAC(match[2]),
+			"year": match[3],
+			"aka": self._parse_aka_title(match[5])
+		} for match in pattern.findall(html_content)]
+
+	def search_programmetv_google(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
+		"""PROGRAMMETV backdrop Downloader not using API"""
+		self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		# self.title_safe = title.replace("+", " ").strip()
+
 		if not exists(dwn_backdrop):
-			return (False, "File not created")
+			return (False, "[ERROR] File not created")
 		try:
 			url_ptv = ""
 			chkType, fd = self.checkType(shortdesc, fulldesc)
@@ -501,6 +504,7 @@ class AgbDownloadThread(Thread):
 				ff = get(url_ptv, stream=True, headers=headers, cookies={'CONSENT': 'YES+'}).text
 			except NameError:
 				ff = get(url_ptv, stream=True, headers=default_headers, cookies={'CONSENT': 'YES+'}).text
+
 			ptv_id = 0
 			plst = findall(r'\],\["https://www.programme-tv.net(.*?)",\d+,\d+]', ff)
 			for backdroplst in plst:
@@ -540,10 +544,11 @@ class AgbDownloadThread(Thread):
 				logger.error(f"programmetv-google HTTP error: {str(e)}")
 				return False, "HTTP error during programmetv-google search"
 
-	def search_molotov_google(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None):
-		self.title_safe = title.replace('+', ' ')
+	def search_molotov_google(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
+		"""MOLOTOV Backdrop Downloader not using API"""
+		self.title_safe = self.UNAC(title.replace("+", " ").strip())
 		if not exists(dwn_backdrop):
-			return (False, "File not created")
+			return (False, "[ERROR] File not created")
 		try:
 			url_mgoo = ""
 			chkType, fd = self.checkType(shortdesc, fulldesc)
@@ -581,9 +586,9 @@ class AgbDownloadThread(Thread):
 					break
 
 			if molotov_table[0]:
-				return self.handle_backdrop_result(molotov_table, headers, dwn_backdrop, 'molotov')
+				return self.handle_backdrop_result(molotov_table, headers if "headers" in locals() else default_headers, dwn_backdrop, "molotov")
 			else:
-				return self.handle_fallback(ff, pchannel, self.title_safe, headers, dwn_backdrop)
+				return self.handle_fallback(ff, pchannel, self.title_safe, headers if "headers" in locals() else default_headers, dwn_backdrop)
 
 		except Exception as e:
 			return False, f"[ERROR : molotov-google] {self.title_safe} => {str(e)}"
@@ -605,10 +610,10 @@ class AgbDownloadThread(Thread):
 
 		pltt = findall(r'"https://fusion.molotov.tv/(.*?)/jpg" alt="(.*?)"', ffm)
 		if len(pltt) > 0:
-			backdrop_url = f"https://fusion.molotov.tv/{pltt[0][0]}/jpg"
-			callInThread(self.saveBackdrop, backdrop_url, dwn_backdrop)
+			url_backdrop = f"https://fusion.molotov.tv/{pltt[0][0]}/jpg"
+			callInThread(self.saveBackdrop, url_backdrop, dwn_backdrop)
 			if exists(dwn_backdrop):
-				return True, f"[SUCCESS {platform}-google] Found backdrop for {self.title_safe} => {backdrop_url}"
+				return True, f"[SUCCESS {platform}-google] Found backdrop for {self.title_safe} => {url_backdrop}"
 		else:
 			return False, f"[SKIP : {platform}-google] No suitable backdrop found."
 
@@ -617,21 +622,22 @@ class AgbDownloadThread(Thread):
 		if plst:
 			for pl in plst:
 				if pl[1].startswith("Regarder"):
-					backdrop_url = f"https://{pl[0]}"
-					callInThread(self.saveBackdrop, backdrop_url, dwn_backdrop)
+					url_backdrop = f"https://{pl[0]}"
+					callInThread(self.saveBackdrop, url_backdrop, dwn_backdrop)
 					if exists(dwn_backdrop):
-						return True, f"[SUCCESS fallback] Found fallback backdrop for {title_safe} => {backdrop_url}"
+						return True, f"[SUCCESS fallback] Found fallback backdrop for {title_safe} => {url_backdrop}"
 		return False, "[SKIP : fallback] No suitable fallback found."
 
-	def search_google(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None):
-		self.title_safe = title.replace('+', ' ')
-		try:
-			if not exists(dwn_backdrop):
-				return (False, "File not created")
+	def search_google(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
+		"""GOOGLE Backdrop Downloader not using API"""
+		self.title_safe = self.UNAC(title.replace("+", " ").strip())
 
+		if not exists(dwn_backdrop):
+			return (False, "[ERROR] File not created")
+
+		try:
 			chkType, fd = self.checkType(shortdesc, fulldesc)
-			year = findall(r'19\d{2}|20\d{2}', fd)
-			year = year[0] if year else None
+			year = self._extract_year(fd)
 			url_google = f'"{self.title_safe}"'
 			if channel and self.title_safe.find(channel) < 0:
 				url_google += f"+{quoteEventName(channel)}"
@@ -673,31 +679,40 @@ class AgbDownloadThread(Thread):
 				logger.error("programmetv-google HTTP error: " + str(e))
 				return False, "HTTP error during google search"
 
+	def search_elcinema(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
+		"""ElCinema does not support backdrops, fallback function"""
+		return False, "[SKIP] No valid result"
+
 	def saveBackdrop(self, url, filepath):
 		"""Robust backdrop download with atomic writes and validation"""
 		if not url:
 			logger.debug("Empty URL provided")
 			return False
 
-		# Verify existing file
 		if exists(filepath):
 			try:
-				with open(filepath, 'rb') as f:
-					if f.read(2) == b'\xFF\xD8' and getsize(filepath) > 1024:
-						logger.debug(f"Valid backdrop exists: {filepath}")
+				with open(filepath, "rb") as f:
+					if f.read(2) == b"\xFF\xD8" and getsize(filepath) > 1024:
 						return True
 				logger.warning("Removing corrupted existing file")
 				remove(filepath)
 			except Exception as e:
-				logger.error(f"File check failed: {str(e)}")
+				logger.error("File check failed: " + str(e))
 				if exists(filepath):
 					remove(filepath)
 
-		temp_path = f"{filepath}.tmp"
+		temp_path = filepath + ".tmp"
 		max_retries = 3
 		retry_delay = 2
 
 		for attempt in range(max_retries):
+			# Always clean temp file before trying a new download
+			if exists(temp_path):
+				try:
+					remove(temp_path)
+				except Exception as e:
+					logger.warning("Failed to remove temp file: " + str(e))
+
 			try:
 				headers = {
 					"User-Agent": choice(AGENTS),
@@ -705,39 +720,31 @@ class AgbDownloadThread(Thread):
 					"Accept-Encoding": "gzip"
 				}
 
-				# Download with stream and timeout
 				response = get(url, headers=headers, stream=True, timeout=(5, 15))
 				response.raise_for_status()
 
-				# Verify content type
-				if 'image/jpeg' not in response.headers.get('Content-Type', '').lower():
-					raise ValueError(f"Invalid content type: {response.headers.get('Content-Type')}")
+				if "image/jpeg" not in response.headers.get("Content-Type", "").lower():
+					raise ValueError("Invalid content type: " + response.headers.get("Content-Type", ""))
 
-				# Atomic write to temp file
-				with open(temp_path, 'wb') as f:
+				with open(temp_path, "wb") as f:
 					for chunk in response.iter_content(chunk_size=8192):
-						if chunk:  # Filter out keep-alive chunks
+						if chunk:
 							f.write(chunk)
 
-				# Validate downloaded file
-				with open(temp_path, 'rb') as f:
-					if f.read(2) != b'\xFF\xD8' or getsize(temp_path) < 1024:
+				with open(temp_path, "rb") as f:
+					if f.read(2) != b"\xFF\xD8" or getsize(temp_path) < 1024:
 						raise ValueError("Invalid JPEG file")
 
-				# Final atomic move
 				rename(temp_path, filepath)
-				logger.debug(f"Successfully saved: {url}")
+				logger.debug("Successfully saved: " + url)
 				return True
 
 			except Exception as e:
-				logger.warning(f"Attempt {attempt + 1} failed: {str(e)}")
-				if exists(temp_path):
-					remove(temp_path)
-				if attempt < max_retries - 1:
-					sleep(retry_delay * (attempt + 1))
+				# logger.warning("Attempt " + str(attempt + 1) + " failed: " + str(e))
+				sleep(retry_delay * (attempt + 1))
 				continue
 
-		logger.error(f"Failed after {max_retries} attempts: {url}")
+		# logger.error("Failed after " + str(max_retries) + " attempts: " + url)
 		return False
 
 	def resizeBackdrop(self, dwn_backdrop):
@@ -778,6 +785,57 @@ class AgbDownloadThread(Thread):
 			return False
 		return True
 
+	def _extract_year(self, description):
+		"""Helper to extract year from description"""
+		try:
+			year_matches = findall(r"19\d{2}|20\d{2}", description)
+			return year_matches[0] if year_matches else ""
+		except Exception:
+			return ""
+
+	def _extract_aka(self, description):
+		"""Extract AKA titles from description"""
+		try:
+			aka_list = findall(r"\((.*?)\)", description)
+			return next((a for a in aka_list if not a.isdigit()), None)
+		except Exception:
+			return None
+
+	def _parse_aka_title(self, raw_text):
+		"""Extract AKA title from result text"""
+		aka_match = findall(r'aka <i>"(.*?)"</i>', raw_text)
+		return self.UNAC(aka_match[0]) if aka_match else ""
+
+	def _find_best_match(self, results, target_year, original_title, aka):
+		"""Find best matching result using scoring system"""
+		best_match = None
+		highest_score = 0
+
+		for idx, result in enumerate(results):
+			score = self._calculate_match_score(result, target_year, original_title, aka)
+			if score > highest_score:
+				highest_score = score
+				best_match = {
+					'url_backdrop': self._format_url_backdrop(result['backdrop']),
+					'title': result['title'],
+					'year': result['year'],
+					'index': idx
+				}
+
+		return best_match if highest_score > 50 else None
+
+	def _format_url_backdrop(self, url):
+		"""Ensure poster URL is correctly formatted"""
+		if not url:
+			return ""
+
+		url = url.replace("\\/", "/")
+
+		if url.startswith("//"):
+			return "https:" + url
+
+		return url
+
 	def checkType(self, shortdesc, fulldesc):
 		if shortdesc and shortdesc != '':
 			fd = shortdesc.splitlines()[0]
@@ -788,6 +846,73 @@ class AgbDownloadThread(Thread):
 		global srch
 		srch = "multi"
 		return srch, fd
+
+	r"""
+	# def checkType(self, shortdesc, fulldesc):
+		# # Estrazione della prima riga della descrizione
+		# fd = ""
+		# if shortdesc and shortdesc.strip():
+			# fd = shortdesc.splitlines()[0].strip()
+		# elif fulldesc and fulldesc.strip():
+			# fd = fulldesc.splitlines()[0].strip()
+
+		# # Normalizzazione del testo per la comparazione
+		# clean_text = self.UNAC(fd).lower()
+
+		# # Liste di keywords aggiornate (2024)
+		# movie_keywords = {
+			# "film", "movie", "cine", "cinema", "película", "ταινία",
+			# "фильм", "кино", "filma", "pelicula", "flim", "κινηματογράφος"
+		# }
+
+		# tv_keywords = {
+			# "serie", "series", "episodio", "episode", "season", "staffel",
+			# "doku", "show", "soap", "sitcom", "reality", "т/с", "м/с",
+			# "сезон", "сериал", "serien", "épisode", "série", "folge"
+		# }
+
+		# # Sistemi di punteggio avanzato
+		# movie_score = sum(20 if word in clean_text else 0 for word in movie_keywords)
+		# tv_score = sum(15 if word in clean_text else 0 for word in tv_keywords)
+
+		# # Rilevamento di pattern specifici
+		# patterns = {
+			# "movie": [
+				# r"\b(?:19|20)\d{2}\b",  # Anno nel titolo
+				# r"\bdirector's cut\b",
+				# r"\bruntime:\s*\d+h?\s*\d+m\b"
+			# ],
+			# "tv": [
+				# r"\bseason\s*\d+\b",
+				# r"\bs\d+\s*e\d+\b",
+				# r"\bepisodio\s*\d+\b",
+				# r"\bstagione\s*\d+\b"
+			# ]
+		# }
+
+		# # Aggiunta punti per pattern regex
+		# for pattern in patterns["movie"]:
+			# if search(pattern, fd, flags=I):
+				# movie_score += 30
+
+		# for pattern in patterns["tv"]:
+			# if search(pattern, fd, flags=I):
+				# tv_score += 25
+
+		# # Soglie dinamiche basate sulla lunghezza del testo
+		# threshold = max(40, len(clean_text) // 3)
+
+		# # Determinazione finale
+		# if movie_score > tv_score and movie_score > threshold:
+			# srch = "movie"
+		# elif tv_score > movie_score and tv_score > threshold:
+			# srch = "tv"
+		# else:
+
+			# srch = "multi"
+
+		# return srch, fd
+	"""
 
 	def UNAC(self, string):
 		string = normalize('NFD', string)
@@ -817,8 +942,7 @@ class AgbDownloadThread(Thread):
 		cId = 100 * cId // lId
 		return cId
 
-
-"""
+	"""
 	def PMATCH(self, textA, textB):
 		if not textA or not textB:
 			return 0
@@ -830,4 +954,4 @@ class AgbDownloadThread(Thread):
 		max_length = max(len(textA.replace(" ", "")), len(textB.replace(" ", "")))
 		match_percentage = (100 * common_chars) // max_length
 		return match_percentage
-"""
+	"""

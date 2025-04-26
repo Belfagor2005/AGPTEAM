@@ -1,0 +1,251 @@
+<skin>
+    <!-- *************************************************** -->
+    <!-- Aglare-FHD-PLI skin                                 -->
+    <!-- by MNASR                                            -->
+    <!-- Currently Tested on PLI v9.X                        -->
+    <!-- You are free to edit or modify this                 -->
+    <!-- skin but please keep theses lines above             -->
+    <!-- and add your credits below                          -->
+    <!-- Don't Remove this Disclaimer                        -->
+    <!-- Special thanks to  :                                -->
+    <!-- Lululla , Madhouse , digiteng ,kitte888 and kiddac  -->
+    <!-- *************************************************** -->
+    <copyright>
+        <abouth name="Aglare-FHD">
+            author="MNASR"
+            license="Open"
+            Support="OpenPLI, TeamBlue, OBH and OpenVIX"
+            Version="4.9"
+            Release date="05/01/2025"
+            supporturl="www.linuxsat-support.com"
+        </abouth>
+    </copyright>
+  <output id="0">
+    <resolution xres="1920" yres="1080" bpp="32" />
+  </output>
+  <colors>
+    <color name="greeng1" value="#0038761d" />
+    <color name="greeng2" value="#00326a1a" />
+    <color name="greeng3" value="#002c5e17" />
+    <color name="redg1" value="#00771615" />
+    <color name="redg2" value="#006b1312" />
+    <color name="redg3" value="#005f1110" />
+    <color name="black1" value="#00181818" />
+    <color name="gold1" value="#20ffd700" />
+    <color name="white1" value="#20ffffff" />
+    <color name="backgroundtrans1" value="#95000000" />
+    <color name="backgroundtrans2" value="#95161414" />
+    <color name="#101010" value="#00101010" />
+    <color name="#10101010" value="#10101010" />
+    <color name="#101214" value="#00101214" />
+    <color name="#10171a1c" value="#10171a1c" />
+    <color name="#10202020" value="#10202020" />
+    <color name="#10303030" value="#10303030" />
+    <color name="#10404040" value="#10404040" />
+    <color name="#10808080" value="#10808080" />
+    <color name="#1a27408b" value="#1a27408b" />
+    <color name="#1edb76" value="#001edb76" />
+    <color name="#20101010" value="#20101010" />
+    <color name="#202020" value="#00202020" />
+    <color name="#254f7497" value="#254f7497" />
+    <color name="#264103" value="#00264103" />
+    <color name="#283752" value="#00283752" />
+    <color name="#2a70a4" value="#002a70a4" />
+    <color name="#30000000" value="#30000000" />
+    <color name="#303030" value="#00303030" />
+    <color name="#31000000" value="#31000000" />
+    <color name="#34415b" value="#0034415b" />
+    <color name="#353535" value="#00353535" />
+    <color name="#3e91f6" value="#003e91f6" />
+    <color name="#40404040" value="#40404040" />
+    <color name="#49bbff" value="#0049bbff" />
+    <color name="#505050" value="#00505050" />
+    <color name="#555556" value="#00555556" />
+    <color name="#606060" value="#00606060" />
+    <color name="#808080" value="#00808080" />
+    <color name="progfg" value="#008293b3" />
+    <color name="#90000000" value="#90000000" />
+    <color name="#90ff00ff" value="#90ff00ff" />
+    <color name="#92f1fc" value="#0092f1fc" />
+    <color name="#a0a0a0" value="#00a0a0a0" />
+    <color name="#a64d79" value="#00a64d79" />
+    <color name="#aa001842" value="#aa001842" />
+    <color name="#b0b0b0" value="#00b0b0b0" />
+    <color name="#b2049" value="#000b2049" />
+    <color name="#bab329" value="#00bab329" />
+    <color name="#c4c4c4" value="#00c4c4c4" />
+    <color name="#cccc40" value="#00cccc40" />
+    <color name="#e5b243" value="#00e5b243" />
+    <color name="#ecbb41" value="#00ecbb41" />
+    <color name="#f3fc92" value="#00f3fc92" />
+    <color name="#f4b700" value="#00f4b700" />
+    <color name="#ffb75b" value="#00ffb75b" />
+    <color name="#fffff4" value="#00fffff4" />
+    <color name="babyblue" value="#0089cff0" />
+    <color name="background" value="#050c101b" />
+    <color name="background2" value="#55000000" />
+    <color name="background3" value="#80000000" />
+    <color name="background4" value="#10000000" />
+    <color name="background90" value="#20000000" />
+    <color name="black" value="#00000000" />
+    <color name="blue" value="#000000ff" />
+    <color name="bpSide" value="#00ff6600" />
+    <color name="buttonsc" value="#001a2336" />
+    <color name="chselbg" value="#00632e48" />
+    <color name="chselfg" value="#00ededed" />
+    <color name="cyan" value="#000090e6" />
+    <color name="cyan1" value="#0000deff" />
+    <color name="cyan2" value="#0000d2ff" />
+    <color name="dark" value="#15102748" />
+    <color name="darkgreen" value="#00264103" />
+    <color name="darkgrey" value="#00888888" />
+    <color name="darkgrey2" value="#202d2d2d" />
+    <color name="description" value="#0077c411" />
+    <color name="fgcolor" value="#008293b2" />
+    <color name="foreground" value="#00f8f8f8" />
+    <color name="foreground2" value="#00e7c777" />
+    <color name="fresh" value="#009fd00b" />
+    <color name="g1" value="#00510f51" />
+    <color name="g2" value="#00481848" />
+    <color name="g3" value="#001c0e1c" />
+    <color name="gold" value="#00ffd700" />
+    <color name="grdd" value="#000f0910" />
+    <color name="grdd7" value="#00d7d7d7" />
+    <color name="grdl" value="#00c414c4" />
+    <color name="green" value="#0000ff00" />
+    <color name="greenfont" value="#0051bc0e" />
+    <color name="grey" value="#008f8f8f" />
+    <color name="grey_tux" value="#00333333" />
+    <color name="grey2" value="#006b6b6b" />
+    <color name="greyc4" value="#00c4c4c4" />
+    <color name="hellgreen" value="#0056c856" />
+    <color name="igsd" value="#001d283c" />
+    <color name="igsdt" value="#121d283c" />
+    <color name="igsl" value="#00293754" />
+    <color name="lime" value="#0000ff00" />
+    <color name="linebg" value="#00999999" />
+    <color name="listbgt" value="#200a1c20" />
+    <color name="maindark" value="#000b1d21" />
+    <color name="mainlight" value="#0004495c" />
+    <color name="mainskincolor" value="#00ff00ff" />
+    <color name="mcolor2" value="#00171a1c" />
+    <color name="mcolor3" value="#00fffffe" />
+    <color name="mcolor4" value="#003e4b53" />
+    <color name="mcolor5" value="#00283752" />
+    <color name="mcolor6" value="#004d5e7c" />
+    <color name="menu" value="#25062748" />
+    <color name="lmsb" value="#003e91f6" />
+    <color name="mint" value="#0000cc99" />
+    <color name="progbg" value="#005a5a5a" />
+    <color name="red" value="#00ff0000" />
+    <color name="redfont" value="#00bd1b0e" />
+    <color name="selectbg" value="#000f4c5c" />
+    <color name="sidec1" value="#0023314c" />
+    <color name="sidec2" value="#000c101b" />
+    <color name="silver" value="#00c0c0c0" />
+    <color name="transchsel1" value="#21020202" />
+    <color name="transchsel2" value="#21201120" />
+    <color name="transparent" value="#ff000000" />
+    <color name="transparent2" value="#ffffffff" />
+    <color name="transpBlack" value="#41000000" />
+    <color name="transpGrey" value="#41444444" />
+    <color name="transpWhite" value="#77ffffff" />
+    <color name="transpyellow" value="#33bab329" />
+    <color name="wdcolor" value="#00171a1c" />
+    <color name="white" value="#00ffffff" />
+    <color name="white2" value="#00dddddd" />
+    <color name="wplc" value="#00222e47" />
+    <color name="wpmc" value="#002d3d5b" />
+    <color name="wpuc" value="#00080b11" />
+    <color name="yellow" value="#00ffff00" />
+  </colors>
+  <parameters>
+    <parameter name="ChoicelistDash" value="0,3,790,62" />
+    <parameter name="ChoicelistName" value="80,14,790,62" />
+    <parameter name="ChoicelistIcon" value="8,14,54,62" />
+    <parameter name="ChoicelistButtonIcon" value="15,14,54,34" />
+    <parameter name="ChoicelistNameSingle" value="30,14,790,62" />
+    <parameter name="ConfigListSlider" value="20,2" />
+    <parameter name="ConfigListSeperator" value="600" />
+    <parameter name="VirtualKeyboard" value="100, 100" />
+    <parameter name="VirtualKeyBoardAlignment" value="80,80" />
+    <parameter name="VirtualKeyBoardPadding" value="1,1" />
+    <parameter name="VirtualKeyboardFont" value="Bold;40" />
+    <parameter name="VirtualKeyboard" value="80,80" />
+    <parameter name="HelpMenuListHlp" value="0,0,1300,50" />
+    <parameter name="HelpMenuListExtHlp0" value="0,0,900,39" />
+    <parameter name="HelpMenuListExtHlp1" value="0,42,900,30" />
+    <parameter name="FileListIcon" value="14,6,50,50" />
+    <parameter name="FileListName" value="66,6,900,45" />
+    <parameter name="PlayListIcon" value="7,12,32,48" />
+    <parameter name="PlayListName" value="45,0,1000,48" />
+    <parameter name="PluginBrowserIcon" value="20,5,120,60" />
+  <parameter name="PluginBrowserName" value="160,4,40" />
+  <parameter name="PluginBrowserDescr" value="170,36,40" />
+  <parameter name="PluginBrowserDownloadIcon" value="20,10,100,50" />
+  <parameter name="PluginBrowserDownloadName" value="130,4,40" />
+  <parameter name="PluginBrowserDownloadDescr" value="134,36,40" />
+    <parameter name="FileListMultiName" value="90,0,1000,36" />
+    <parameter name="FileListMultiIcon" value="45, 4, 30, 30" />
+    <parameter name="FileListMultiLock" value="2,0,36,36" />
+    <parameter name="ServiceInfo" value="0,0,400,50" />
+    <parameter name="ServiceInfoLeft" value="10,0,350,50" />
+    <parameter name="ServiceInfoRight" value="370,0,450,50" />
+    <parameter name="ServiceInfoFont" value="Regular;28" />
+    <parameter name="SelectionListDescr" value="45,0,1000,38" />
+    <parameter name="SelectionListLock" value="0,2,36,36" />
+    <parameter name="PicturePlayerThumb" value="30,285,45,300,30,25" />
+    <parameter name="AboutHddSplit" value="1" />
+    <parameter name="DreamexplorerName" value="62,2,1200,38" />
+    <parameter name="DreamexplorerIcon" value="15,6,30,30" />
+    <parameter name="FallbackReceiverListName" value="8,2,225,38" />
+    <parameter name="FallbackReceiverListIP" value="300,2,225,38" />
+    <parameter name="GMultiEPGTimelineItemHeight" value="60" />
+    <parameter name="EpgListMulti" value="300,210,110,15" />
+    <parameter name="EpgListMultiProgressBar" value="150,20,1" />
+    <parameter name="EpgListIcon" value="2,20,25,25,2" />
+    <parameter name="EpgListSingle" value="88,220" />
+    <!-- /**************** FileCommander Plugin  *****************-->
+    <parameter name="FcFileListIcon" value="10,2,30,30" />
+    <parameter name="FcFileListMultiIcon" value="45,2,30,30" />
+    <parameter name="FcFileListMultiLock" value="2,0,30,30" />
+    <parameter name="FcFileListMultiName" value="90,2,1000,32" />
+    <parameter name="FcFileListName" value="68,2,1000,34" />
+    <!-- /**************** MSN Weather Plugin  *******************-->
+      <parameter name="WeatherPluginCity" value="20,0,680,50" />
+  <parameter name="WeatherPluginDegreetype" value="670,0,100,50" />
+  <parameter name="WeatherPluginSearchlocation" value="10,0,550,40" />
+  <parameter name="WeatherPluginSearchresult" value="500,0,500,40" />
+  </parameters>
+  <switchpixmap>
+    <pixmap name="menu_on" filename="Aglare-FHD-PLI/icons/menu_on.png" />
+    <pixmap name="menu_off" filename="Aglare-FHD-PLI/icons/menu_off.png" />
+  </switchpixmap>
+  <windowstyle type="skinned" id="0">
+    <scrolllabel scrollbarMode="showOnDemand" scrollbarSliderForegroundColor="mcolor5" scrollbarSliderBorderColor="mcolor2" scrollbarWidth="10" scrollbarSliderBorderWidth="1" />
+    <configList entryFont="Regular;28" valueFont="Regular;28" />
+    <title offset="30,8" font="Regular;36" />
+    <color name="Background" color="background" />
+    <color name="LabelForeground" color="white" />
+    <color name="ListboxBackground" color="mcolor2" />
+    <color name="ListboxForeground" color="white" />
+    <color name="ListboxSelectedBackground" color="mcolor5" />
+    <color name="ListboxSelectedForeground" color="white" />
+    <color name="ListboxMarkedBackground" color="yellow" />
+    <color name="ListboxMarkedForeground" color="green" />
+    <color name="ListboxMarkedAndSelectedBackground" color="#3e91f6" />
+    <color name="ListboxMarkedAndSelectedForeground" color="green" />
+    <color name="WindowTitleForeground" color="chselfg" />
+    <color name="WindowTitleBackground" color="background" />
+    <borderset name="bsWindow">
+      <pixmap pos="bpTopLeft" filename="Aglare-FHD-PLI/window/b_tl_shadow.png" />
+      <pixmap pos="bpTop" filename="Aglare-FHD-PLI/window/b_t_shadow.png" />
+      <pixmap pos="bpTopRight" filename="Aglare-FHD-PLI/window/b_tr_shadow.png" />
+      <pixmap pos="bpLeft" filename="Aglare-FHD-PLI/window/b_l_shadow.png" />
+      <pixmap pos="bpRight" filename="Aglare-FHD-PLI/window/b_r_shadow.png" />
+      <pixmap pos="bpBottomLeft" filename="Aglare-FHD-PLI/window/b_bl_shadow.png" />
+      <pixmap pos="bpBottom" filename="Aglare-FHD-PLI/window/b_b_shadow.png" />
+      <pixmap pos="bpBottomRight" filename="Aglare-FHD-PLI/window/b_br_shadow.png" />
+    </borderset>
+  </windowstyle>
+

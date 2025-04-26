@@ -1,0 +1,13 @@
+
+<!--  weather  -->
+  <eLabel backgroundColor="igsd" cornerRadius="60" position="1591,175" size="540,120" />
+  <widget render="OAWeatherPixmap" position="1600,185" size="100,100" source="session.OAWeather" alphatest="blend" transparent="1" zPosition="8" scale="1" >
+    <convert type="OAWeather">weathericon,current</convert>
+  </widget>
+  <widget backgroundColor="background" font="Regular; 26" foregroundColor="white" halign="center" position="1707,180" render="Label" size="215,70" source="session.OAWeather" transparent="1" valign="center" zPosition="3">
+    <convert type="OAWeather">temperature_text,current</convert>
+  </widget>
+  <widget noWrap="1" backgroundColor="background" font="Regular; 40" foregroundColor="yellow" render="Label" position="1707,244" size="215,49" source="session.OAWeather" transparent="1" zPosition="8" halign="center" valign="top">
+    <convert type="OAWeather">temperature_current</convert>
+  </widget>
+</screen>
