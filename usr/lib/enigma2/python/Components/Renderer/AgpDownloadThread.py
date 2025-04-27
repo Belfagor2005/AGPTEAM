@@ -54,6 +54,7 @@ from requests import get, codes, Session
 from requests.adapters import HTTPAdapter, Retry
 from requests.exceptions import HTTPError, RequestException
 from twisted.internet.reactor import callInThread
+from functools import lru_cache
 
 # Enigma2 specific
 from enigma import getDesktop
@@ -63,6 +64,7 @@ from Components.config import config
 from .Agp_lib import quoteEventName
 from .Agp_apikeys import tmdb_api, thetvdb_api, fanart_api, omdb_api
 from .Agp_Utils import logger
+from Plugins.Extensions.Aglare.plugin import agp_use_cache
 
 # ========================
 # DISABLE URLLIB3 DEBUG LOGS
@@ -173,6 +175,17 @@ class AgpDownloadThread(Thread):
 			"culture", "infos", "feuilleton", "téléréalité", "société",
 			"clips", "concert", "santé", "éducation", "variété"
 		]
+
+		if agp_use_cache.value:
+			self.search_tmdb = lru_cache(maxsize=100)(self.search_tmdb)
+			self.search_tvdb = lru_cache(maxsize=100)(self.search_tvdb)
+			self.search_fanart = lru_cache(maxsize=100)(self.search_fanart)
+			self.search_omdb = lru_cache(maxsize=100)(self.search_omdb)
+			self.search_imdb = lru_cache(maxsize=100)(self.search_imdb)
+			self.search_programmetv_google = lru_cache(maxsize=100)(self.search_programmetv_google)
+			self.search_molotov_google = lru_cache(maxsize=100)(self.search_molotov_google)
+			self.search_elcinema = lru_cache(maxsize=100)(self.search_elcinema)
+			self.search_google = lru_cache(maxsize=100)(self.search_google)
 
 	def search_tmdb(self, dwn_poster, title, shortdesc, fulldesc, channel=None, api_key=None):
 		"""Download poster from TMDB with full verification pipeline"""
@@ -823,7 +836,7 @@ class AgpDownloadThread(Thread):
 				return True
 
 			except Exception as e:
-				# logger.warning("Attempt " + str(attempt + 1) + " failed: " + str(e))
+				logger.debug("Attempt " + str(attempt + 1) + " failed: " + str(e))
 				sleep(retry_delay * (attempt + 1))
 				continue
 

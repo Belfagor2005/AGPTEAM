@@ -36,7 +36,6 @@ from __future__ import absolute_import, print_function
 from glob import glob as glob_glob
 from os import remove, stat, system as os_system
 from os.path import exists, join
-from sys import version_info
 
 # Third-party libraries
 from PIL import Image
@@ -165,12 +164,15 @@ config.plugins.Aglare.imdb = ConfigOnOff(default=False)
 config.plugins.Aglare.programmetv = ConfigOnOff(default=False)
 config.plugins.Aglare.molotov = ConfigOnOff(default=False)
 
+config.plugins.Aglare.cache = ConfigOnOff(default=False)
 config.plugins.Aglare.pstdown = ConfigOnOff(default=False)
 config.plugins.Aglare.bkddown = ConfigOnOff(default=False)
 config.plugins.Aglare.pscan_time = ConfigClock(default=(0, 0))  # 00:00
 config.plugins.Aglare.bscan_time = ConfigClock(default=(2, 0))  # 02:00
 
 config.plugins.Aglare.png = NoSave(ConfigYesNo(default=False))
+agp_use_cache = config.plugins.Aglare.cache
+
 
 config.plugins.Aglare.colorSelector = ConfigSelection(default='color0', choices=[
 	('color0', _('Default')),
@@ -519,6 +521,7 @@ class AglareSetup(ConfigListScreen, Screen):
 				section = '------------------------------------------------------------------------'
 				list.append(getConfigListEntry(section))
 				if config.plugins.Aglare.actapi.value:
+					list.append(getConfigListEntry("Use Cache on download:", config.plugins.Aglare.cache, _("Activate/Deactivate Cache on Search")))
 					list.append(getConfigListEntry(_('Automatic download of poster'), config.plugins.Aglare.pstdown, _("Download favorite list posters with Epg automatically at startup")))
 					if config.plugins.Aglare.pstdown.value is True:
 						list.append(getConfigListEntry(_('Set Time our - minute for Poster download'), config.plugins.Aglare.pscan_time, _("Configure time for downloading posters")))

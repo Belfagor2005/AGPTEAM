@@ -447,7 +447,7 @@ class PosterDB(AgpDownloadThread):
             'thetvdb': self.search_tvdb,
             'elcinema': self.search_elcinema,   # no apikey
             'google': self.search_google,   # no apikey
-            # 'omdb': self.search_omdb,
+            'omdb': self.search_omdb,
             'imdb': self.search_imdb,   # no apikey
             'programmetv': self.search_programmetv_google,  # no apikey
             'molotov': self.search_molotov_google  # no apikey
@@ -670,7 +670,7 @@ class PosterAutoDB(AgpDownloadThread):
             'thetvdb': self.search_tvdb,
             'elcinema': self.search_elcinema,   # no apikey
             'google': self.search_google,   # no apikey
-            # 'omdb': self.search_omdb,
+            'omdb': self.search_omdb,
             'imdb': self.search_imdb,   # no apikey
             'programmetv': self.search_programmetv_google,  # no apikey
             'molotov': self.search_molotov_google,  # no apikey

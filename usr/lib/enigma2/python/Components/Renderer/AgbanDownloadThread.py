@@ -41,7 +41,7 @@ __copyright__ = "AGP Team"
 # Standard library
 from os import remove, rename
 from os.path import exists, getsize
-from re import compile, findall, DOTALL, sub  # , search, I
+from re import findall, sub
 from threading import Thread
 from json import loads
 from random import choice
@@ -61,7 +61,7 @@ from enigma import getDesktop
 from Components.config import config
 
 # Local imports
-from .Agp_lib import quoteEventName
+# from .Agp_lib import quoteEventName
 from .Agp_apikeys import tmdb_api, thetvdb_api, fanart_api  # , omdb_api
 from .Agp_Utils import logger
 from Plugins.Extensions.Aglare.plugin import agp_use_cache
@@ -114,14 +114,14 @@ AGENTS = [
 headers = {"User-Agent": choice(AGENTS)}
 
 
-isz = "1280,720"
+isz = "500,750"
 screenwidth = getDesktop(0).size()
 if screenwidth.width() <= 1280:
-	isz = isz.replace(isz, "1280,720")
+	isz = isz.replace(isz, "185,278")
 elif screenwidth.width() <= 1920:
-	isz = isz.replace(isz, "1280,720")
+	isz = isz.replace(isz, "500,750")
 else:
-	isz = isz.replace(isz, "1280,720")
+	isz = isz.replace(isz, "780,1170")
 
 
 '''
@@ -154,7 +154,7 @@ Logo (SVG)  500×1 → Vector graphic  Variable
 '''
 
 
-class AgbDownloadThread(Thread):
+class AgbanDownloadThread(Thread):
 	def __init__(self):
 		Thread.__init__(self)
 		self.checkMovie = [
@@ -175,19 +175,20 @@ class AgbDownloadThread(Thread):
 			"culture", "infos", "feuilleton", "téléréalité", "société",
 			"clips", "concert", "santé", "éducation", "variété"
 		]
+
 		if agp_use_cache.value:
-			self.search_tmdb = lru_cache(maxsize=100)(self.search_tmdb)
-			self.search_tvdb = lru_cache(maxsize=100)(self.search_tvdb)
+			self.search_tmdb = lru_cache(maxsize=500)(self.search_tmdb)
+			self.search_tvdb = lru_cache(maxsize=250)(self.search_tvdb)
 			self.search_fanart = lru_cache(maxsize=100)(self.search_fanart)
-			self.search_omdb = lru_cache(maxsize=100)(self.search_omdb)
-			self.search_imdb = lru_cache(maxsize=100)(self.search_imdb)
+			self.search_omdb = lru_cache(maxsize=250)(self.search_omdb)
+			self.search_imdb = lru_cache(maxsize=250)(self.search_imdb)
 			self.search_programmetv_google = lru_cache(maxsize=100)(self.search_programmetv_google)
 			self.search_molotov_google = lru_cache(maxsize=100)(self.search_molotov_google)
 			self.search_elcinema = lru_cache(maxsize=100)(self.search_elcinema)
-			self.search_google = lru_cache(maxsize=100)(self.search_google)
+			self.search_google = lru_cache(maxsize=250)(self.search_google)
 
-	def search_tmdb(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
-		"""Download backdrop from TMDB with full verification pipeline"""
+	def search_tmdb(self, dwn_poster, title, shortdesc, fulldesc, channel=None, api_key=None):
+		"""Download banner from TMDB with full verification pipeline"""
 		self.title_safe = self.UNAC(title.replace("+", " ").strip())
 		tmdb_api_key = api_key or tmdb_api
 
@@ -195,19 +196,15 @@ class AgbDownloadThread(Thread):
 			return False, "No API key"
 
 		try:
-			if not dwn_backdrop:
+			if not dwn_poster or not title:
 				return (False, "Invalid input parameters")
 
 			if not self.title_safe:
 				return (False, "Invalid title after cleaning")
 
 			srch, fd = self.checkType(shortdesc, fulldesc)
-			# year = self._extract_year(fd)
 			url = f"https://api.themoviedb.org/3/search/{srch}?api_key={tmdb_api_key}&language={lng}&query={self.title_safe}"  # &page=1&include_adult=false"
-			"""
-			# if year and srch == "movie":
-				# url += f"&year={year}"
-			"""
+
 			# Make API request with retries
 			retries = Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
 			adapter = HTTPAdapter(max_retries=retries)
@@ -220,7 +217,7 @@ class AgbDownloadThread(Thread):
 			if response.status_code == codes.ok:
 				try:
 					data = response.json()
-					return self.downloadData2(data, dwn_backdrop, shortdesc, fulldesc)
+					return self.downloadBannerData(data, dwn_poster, shortdesc, fulldesc)
 				except ValueError as e:
 					logger.error("TMDb response decode error: " + str(e))
 					return False, "Error parsing TMDb response"
@@ -242,9 +239,9 @@ class AgbDownloadThread(Thread):
 			logger.error("TMDb search error: " + str(e))
 			return False, "Unexpected error during TMDb search"
 
-	def downloadData2(self, data, dwn_backdrop, shortdesc="", fulldesc=""):
+	def downloadBannerData(self, data, dwn_poster, shortdesc="", fulldesc=""):
 		if isinstance(data, bytes):
-			data = data.decode("utf-8", errors="ignore")
+			data = data.decode('utf-8')
 		data_json = data if isinstance(data, dict) else loads(data)
 
 		if 'results' in data_json:
@@ -256,20 +253,20 @@ class AgbDownloadThread(Thread):
 					continue
 
 				title = each.get('name', each.get('title', ''))
-				backdrop_path = each.get('backdrop_path')
+				banner_path = each.get('backdrop_path')
 
-				if not backdrop_path:
+				if not banner_path:
 					continue
 
-				backdrop = f"http://image.tmdb.org/t/p/original{backdrop_path}"
-				if backdrop.strip() and not backdrop.endswith("/original"):
-					callInThread(self.saveBackdrop, backdrop, dwn_backdrop)
-					if exists(dwn_backdrop):
-						return True, f"[SUCCESS] backdrop math: {title}"
+				banner = f"http://image.tmdb.org/t/p/original{banner_path}"
+				if banner.strip() and not banner.endswith("/original"):
+					callInThread(self.saveBanner, banner, dwn_poster)
+					if exists(dwn_poster):
+						return True, f"[SUCCESS] Banner matched: {title}"
 		return False, "[SKIP] No valid Result"
 
-	def search_tvdb(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
-		"""Download backdrop from TVDB with full verification pipeline"""
+	def search_tvdb(self, dwn_poster, title, shortdesc, fulldesc, channel=None, api_key=None):
+		"""Download banner from TVDB with full verification pipeline"""
 		self.title_safe = self.UNAC(title.replace("+", " ").strip())
 		thetvdb_api_key = api_key or thetvdb_api
 
@@ -277,7 +274,7 @@ class AgbDownloadThread(Thread):
 			return False, "No API key"
 
 		try:
-			if not exists(dwn_backdrop):
+			if not exists(dwn_poster):
 				return (False, "[ERROR] File not created")
 
 			series_nb = -1
@@ -299,7 +296,7 @@ class AgbDownloadThread(Thread):
 					break
 				i += 1
 
-			backdrop = None
+			banner = None
 			if series_nb >= 0 and len(series_id) > series_nb and series_id[series_nb]:
 				if series_name and len(series_name) > series_nb:
 					series_name_clean = self.UNAC(series_name[series_nb])
@@ -314,13 +311,13 @@ class AgbDownloadThread(Thread):
 					url_tvdb += "/{}".format(lng if "lng" in globals() and lng else "en")
 
 					url_read = get(url_tvdb).text
-					backdrop = findall(r"<backdrop>(.*?)</backdrop>", url_read)
-					if backdrop and backdrop[0]:
-						url_backdrop = "https://artworks.thetvdb.com/banners/{}".format(backdrop[0])
-						callInThread(self.saveBackdrop, url_backdrop, dwn_backdrop)
-						if exists(dwn_backdrop):
+					banner = findall(r"<banner>(.*?)</banner>", url_read)
+					if banner and banner[0]:
+						url_banner = "https://artworks.thetvdb.com/banners/{}".format(banner[0])
+						callInThread(self.saveBanner, url_banner, dwn_poster)
+						if exists(dwn_poster):
 							return True, "[SUCCESS : tvdb] {} [{}-{}] => {} => {} => {}".format(
-								self.title_safe, chkType, year, url_tvdbg, url_tvdb, url_backdrop
+								self.title_safe, chkType, year, url_tvdbg, url_tvdb, url_banner
 							)
 
 					return False, "[SKIP : tvdb] {} [{}-{}] => {} (Not found)".format(
@@ -342,14 +339,14 @@ class AgbDownloadThread(Thread):
 			logger.error("tvdb search error: " + str(e))
 			return False, "[ERROR : tvdb] {} => {} ({})".format(self.title_safe, url_tvdbg, str(e))
 
-	def search_fanart(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
-		"""Download backdrop from FANART with full verification pipeline"""
+	def search_fanart(self, dwn_poster, title, shortdesc, fulldesc, channel=None, api_key=None):
+		"""Download banner from FANART with full verification pipeline"""
 		self.title_safe = self.UNAC(title.replace("+", " ").strip())
 		fanart_api_key = api_key or fanart_api
 		if not fanart_api_key:
 			return False, "No API key"
 
-		if not exists(dwn_backdrop):
+		if not exists(dwn_poster):
 			return (False, "[ERROR] File not created")
 
 		url_maze = ""
@@ -375,17 +372,17 @@ class AgbDownloadThread(Thread):
 			fjs = resp.json()
 			url = ""
 
-			if "showbackground" in fjs and fjs["showbackground"]:
-				url = fjs["showbackground"][0]["url"]
-			elif "moviebackground" in fjs and fjs["moviebackground"]:
-				url = fjs["moviebackground"][0]["url"]
+			if "tvbanner" in fjs and fjs["tvbanner"]:
+				url = fjs["tvbanner"][0]["url"]
+			elif "moviebanner" in fjs and fjs["moviebanner"]:
+				url = fjs["moviebanner"][0]["url"]
 
 			if url:
-				callInThread(self.saveBackdrop, url, dwn_backdrop)
-				msg = "[SUCCESS backdrop: fanart] {} [{}-{}] => {} => {} => {}".format(
+				callInThread(self.saveBanner, url, dwn_poster)
+				msg = "[SUCCESS banner: fanart] {} [{}-{}] => {} => {} => {}".format(
 					self.title_safe, chkType, year, url_maze, url_fanart, url
 				)
-				if exists(dwn_backdrop):
+				if exists(dwn_poster):
 					return True, msg
 			else:
 				return False, f"[SKIP : fanart] {self.title_safe} [{chkType}-{year}] => {url_fanart} (Not found)"
@@ -401,301 +398,32 @@ class AgbDownloadThread(Thread):
 			logger.error("fanart search error: " + str(e))
 			return False, "[ERROR : fanart] {} [{}-{}] => {} ({})".format(self.title_safe, chkType, year, url_maze, str(e))
 
-	def search_omdb(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
-		"""OMDb NOT HAVE A backdrop Downloader using API: RETURN FALSE!!!"""
-		return False, "[SKIP : omdb] {} [OMDb NOT HAVE A backdrop Downloader using API: RETURN FALSE!!!] => OMDb does not support backdrops.".format(
-			title
-		)
+	def search_omdb(self, dwn_poster, title, shortdesc, fulldesc, channel=None, api_key=None):
+		"""Search for banner from OMDB (which does not have banners)"""
+		return False, "[SKIP] No banners available on omdb"
 
-	def search_imdb(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
-		"""Download backdrop from IMDb media gallery using centralized request system"""
-		self.title_safe = self.UNAC(title.replace("+", " ").strip())
-		if not exists(dwn_backdrop):
-			return (False, "[ERROR] File not created")
+	def search_imdb(self, dwn_poster, title, shortdesc, fulldesc, channel=None, api_key=None):
+		"""IMDb Poster Downloader not using API"""
+		return False, "[SKIP] No banners available on imdb"
 
-		chkType, fd = self.checkType(shortdesc, fulldesc)
-		year = self._extract_year(fd)
-		aka_info = self._extract_aka(fd)
-		url_backdrop = ""
-		try:
-			# Extract metadata
+	def search_programmetv_google(self, dwn_poster, title, shortdesc, fulldesc, channel=None, api_key=None):
+		"""Programmetv Google Poster Downloader (does not provide banners)"""
+		return False, "[SKIP] No banners available on programmetv_google"
 
-			# Build search URL
-			search_url = self._build_imdb_search_url(self.title_safe, aka_info)
+	def search_molotov_google(self, dwn_poster, title, shortdesc, fulldesc, channel=None, api_key=None):
+		"""Molotov Google Poster Downloader (does not provide banners)"""
+		return False, "[SKIP] No banners available on molotov_google"
 
-			# Fetch search results
-			try:
-				# Make API request with retries
-				retries = Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
-				adapter = HTTPAdapter(max_retries=retries)
-				http = Session()
-				http.mount("http://", adapter)
-				http.mount("https://", adapter)
-				response = http.get(search_url, headers=headers, timeout=(10, 20), verify=False)
-				response.raise_for_status()
-				results = self._parse_imdb_results(response.text)
+	def search_google(self, dwn_poster, title, shortdesc, fulldesc, channel=None, api_key=None):
+		"""GOOGLE Poster Downloader  (does not provide banners)"""
+		return False, "[SKIP] No banners available on google"
 
-				if not results and aka_info:
-					fallback_url = "https://m.imdb.com/find?q={}".format(quoteEventName(self.title_safe))
-					response = http.get(fallback_url, headers=headers, timeout=(10, 20), verify=False)
-					response.raise_for_status()
-					results = self._parse_imdb_results(response.text)
+	def search_elcinema(self, dwn_poster, title, shortdesc, fulldesc, channel=None, api_key=None):
+		""" ElCinema poster Download (does not provide banners)"""
+		return False, "[SKIP] No banners available on ElCinema"
 
-			except Exception as e:
-				logger.error(f"IMDb search error: {str(e)}")
-				return (False, f"[ERROR] IMDb connection: {str(e)}")
-
-			# Find best match
-			match = self._find_best_match(results, year, self.title_safe, aka_info)
-			if not match or "imdb_id" not in match:
-				return (False, f"[SKIP] No IMDb match for {self.title_safe}")
-
-			# Open gallery page
-			gallery_url = "https://www.imdb.com/title/{}/mediaindex/".format(match["imdb_id"])
-			response = get(gallery_url, headers=headers, timeout=(10, 20), verify=False)
-			response.raise_for_status()
-			html = response.text.replace("&#39;", "'").replace("&quot;", '"')
-
-			# Find backdrop image
-			matches = findall(r'<img src="(https://m\.media-amazon\.com/images/.*?)"', html)
-			if matches:
-				url_backdrop = matches[0].split("._")[0] + ".jpg"
-				callInThread(self.saveBackdrop, url_backdrop, dwn_backdrop)
-
-				if exists(dwn_backdrop):
-					return (True, "[SUCCESS] IMDb backdrop downloaded")
-
-			return (False, f"[SKIP] Download failed for {self.title_safe}")
-
-		except Exception as e:
-			logger.error(f"IMDb backdrop processing error: {str(e)}")
-			return (False, f"[ERROR] IMDb search: {str(e)}")
-
-	def _build_imdb_search_url(self, title, aka):
-		"""Construct IMDb search URL with AKA if available"""
-		if aka and aka != title:
-			return f"https://m.imdb.com/find?q={quoteEventName(title)}%20({quoteEventName(aka)})"
-		return f"https://m.imdb.com/find?q={quoteEventName(title)}"
-
-	def _parse_imdb_results(self, html_content):
-		"""Parse IMDb search results page with IMDb ID"""
-		pattern = compile(
-			r'<a href="/title/(tt\d+)/".*?<img src="(.*?)".*?<span class="h3">\n(.*?)\n</span>.*?\((\d+)\)(\s\(.*?\))?(.*?)</a>',
-			DOTALL
-		)
-
-		return [{
-			"imdb_id": match[0],
-			"url_backdrop": match[1],
-			"title": self.UNAC(match[2]),
-			"year": match[3],
-			"aka": self._parse_aka_title(match[5])
-		} for match in pattern.findall(html_content)]
-
-	def search_programmetv_google(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
-		"""PROGRAMMETV backdrop Downloader not using API"""
-		self.title_safe = self.UNAC(title.replace("+", " ").strip())
-		# self.title_safe = title.replace("+", " ").strip()
-
-		if not exists(dwn_backdrop):
-			return (False, "[ERROR] File not created")
-		try:
-			url_ptv = ""
-			chkType, fd = self.checkType(shortdesc, fulldesc)
-
-			if chkType.startswith("movie"):
-				return False, f"[SKIP : programmetv-google] {self.title_safe} [{chkType}] => Skip movie title"
-
-			url_ptv = f"site:programme-tv.net+{self.title_safe}"
-			if channel and self.title_safe.find(channel.split()[0]) < 0:
-				url_ptv += "+" + quoteEventName(channel)
-			url_ptv = "https://www.google.com/search?q={}&tbm=isch&tbs=ift:jpg%2Cisz:m".format(url_ptv)
-			default_headers = {"User-Agent": "Mozilla/5.0"}
-			try:
-				ff = get(url_ptv, stream=True, headers=headers, cookies={'CONSENT': 'YES+'}).text
-			except NameError:
-				ff = get(url_ptv, stream=True, headers=default_headers, cookies={'CONSENT': 'YES+'}).text
-
-			ptv_id = 0
-			plst = findall(r'\],\["https://www.programme-tv.net(.*?)",\d+,\d+]', ff)
-			for backdroplst in plst:
-				ptv_id += 1
-				url_backdrop = f"https://www.programme-tv.net{backdroplst}"
-				url_backdrop = sub(r"\\u003d", "=", url_backdrop)
-				url_backdrop_size = findall(r'([\d]+)x([\d]+).*?([\w\.-]+).jpg', url_backdrop)
-				if url_backdrop_size and url_backdrop_size[0]:
-					get_title = self.UNAC(url_backdrop_size[0][2].replace('-', ''))
-					if self.title_safe == get_title:
-						h_ori = float(url_backdrop_size[0][1])
-						try:
-							h_tar = 278.0
-						except Exception:
-							h_tar = 278.0
-						ratio = h_ori / h_tar
-						w_ori = float(url_backdrop_size[0][0])
-						w_tar = int(w_ori / ratio)
-						h_tar = int(h_tar)
-						url_backdrop = sub(r'/\d+x\d+/', "/{}x{}/".format(w_tar, h_tar), url_backdrop)
-						url_backdrop = sub(r'crop-from/top/', '', url_backdrop)
-						callInThread(self.saveBackdrop, url_backdrop, dwn_backdrop)
-						if exists(dwn_backdrop):
-							return True, "[SUCCESS url_backdrop: programmetv-google] {} [{}] => Found self.title_safe : '{}' => {} => {} (initial size: {}) [{}]".format(
-								self.title_safe, chkType, get_title, url_ptv, url_backdrop, url_backdrop_size, ptv_id
-							)
-			return False, "[SKIP : programmetv-google] {} [{}] => Not found [{}] => {}".format(
-				self.title_safe, chkType, ptv_id, url_ptv
-			)
-		except Exception as e:
-			return False, f"[ERROR : programmetv-google] {self.title_safe} [{chkType}] => {url_ptv} ({str(e)})"
-
-		except HTTPError as e:
-			if e.response is not None and e.response.status_code == 404:
-				return False, "No results found on programmetv-google"
-			else:
-				logger.error(f"programmetv-google HTTP error: {str(e)}")
-				return False, "HTTP error during programmetv-google search"
-
-	def search_molotov_google(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
-		"""MOLOTOV Backdrop Downloader not using API"""
-		self.title_safe = self.UNAC(title.replace("+", " ").strip())
-		if not exists(dwn_backdrop):
-			return (False, "[ERROR] File not created")
-		try:
-			url_mgoo = ""
-			chkType, fd = self.checkType(shortdesc, fulldesc)
-			if chkType.startswith("movie"):
-				return False, f"[SKIP : molotov-google] {self.title_safe} [{chkType}] => Skip movie title"
-
-			pchannel = self.UNAC(channel).replace(' ', '') if channel else ''
-			url_mgoo = f"site:molotov.tv+{self.title_safe}"
-			if channel and self.title_safe.find(channel.split()[0]) < 0:
-				url_mgoo += "+" + quoteEventName(channel)
-			url_mgoo = "https://www.google.com/search?q={}&tbm=isch".format(url_mgoo)
-
-			default_headers = {"User-Agent": "Mozilla/5.0"}
-			try:
-				ff = get(url_mgoo, stream=True, headers=headers, cookies={'CONSENT': 'YES+'}).text
-			except NameError:
-				ff = get(url_mgoo, stream=True, headers=default_headers, cookies={'CONSENT': 'YES+'}).text
-
-			plst = findall(r'https://www.molotov.tv/(.*?)"(?:.*?)?"(.*?)"', ff)
-			molotov_table = [0, 0, None, None, 0]  # [title match, channel match, title, path, id]
-
-			for pl in plst:
-				get_path = "https://www.molotov.tv/{}".format(pl[0])
-				get_name = self.UNAC(pl[1])
-				get_title_match = findall(r'(.*?)[ ]+en[ ]+streaming', get_name)
-				get_title = get_title_match[0] if get_title_match else ""
-				get_channel = self.extract_channel(get_name)
-				partialtitle = self.PMATCH(self.title_safe, get_title)
-				partialchannel = self.PMATCH(pchannel, get_channel or '')
-
-				if partialtitle > molotov_table[0]:
-					molotov_table = [partialtitle, partialchannel, get_name, get_path, len(molotov_table)]
-
-				if partialtitle == 100 and partialchannel == 100:
-					break
-
-			if molotov_table[0]:
-				return self.handle_backdrop_result(molotov_table, headers if "headers" in locals() else default_headers, dwn_backdrop, "molotov")
-			else:
-				return self.handle_fallback(ff, pchannel, self.title_safe, headers if "headers" in locals() else default_headers, dwn_backdrop)
-
-		except Exception as e:
-			return False, f"[ERROR : molotov-google] {self.title_safe} => {str(e)}"
-
-		except HTTPError as e:
-			if e.response is not None and e.response.status_code == 404:
-				return False, "No results found on molotov-google"
-			else:
-				logger.error(f"molotov-google HTTP error: {str(e)}")
-				return False, "HTTP error during molotov-google search"
-
-	def extract_channel(self, get_name):
-		get_channel = findall(r'(?:streaming|replay)?[ ]+sur[ ]+(.*?)[ ]+molotov.tv', get_name) or \
-			findall(r'regarder[ ]+(.*?)[ ]+en', get_name)
-		return self.UNAC(get_channel[0]).replace(' ', '') if get_channel else None
-
-	def handle_backdrop_result(self, molotov_table, headers, dwn_backdrop, platform):
-		ffm = get(molotov_table[3], stream=True, headers=headers).text
-
-		pltt = findall(r'"https://fusion.molotov.tv/(.*?)/jpg" alt="(.*?)"', ffm)
-		if len(pltt) > 0:
-			url_backdrop = f"https://fusion.molotov.tv/{pltt[0][0]}/jpg"
-			callInThread(self.saveBackdrop, url_backdrop, dwn_backdrop)
-			if exists(dwn_backdrop):
-				return True, f"[SUCCESS {platform}-google] Found backdrop for {self.title_safe} => {url_backdrop}"
-		else:
-			return False, f"[SKIP : {platform}-google] No suitable backdrop found."
-
-	def handle_fallback(self, ff, pchannel, title_safe, headers, dwn_backdrop):
-		plst = findall(r'\],\["https://(.*?)",\d+,\d+].*?"https://.*?","(.*?)"', ff)
-		if plst:
-			for pl in plst:
-				if pl[1].startswith("Regarder"):
-					url_backdrop = f"https://{pl[0]}"
-					callInThread(self.saveBackdrop, url_backdrop, dwn_backdrop)
-					if exists(dwn_backdrop):
-						return True, f"[SUCCESS fallback] Found fallback backdrop for {title_safe} => {url_backdrop}"
-		return False, "[SKIP : fallback] No suitable fallback found."
-
-	def search_google(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
-		"""GOOGLE Backdrop Downloader not using API"""
-		self.title_safe = self.UNAC(title.replace("+", " ").strip())
-
-		if not exists(dwn_backdrop):
-			return (False, "[ERROR] File not created")
-
-		try:
-			chkType, fd = self.checkType(shortdesc, fulldesc)
-			year = self._extract_year(fd)
-			url_google = f'"{self.title_safe}"'
-			if channel and self.title_safe.find(channel) < 0:
-				url_google += f"+{quoteEventName(channel)}"
-			if chkType.startswith("movie"):
-				url_google += f"+{chkType[6:]}"
-			if year:
-				url_google += f"+{year}"
-
-			def fetch_images(url):
-				return get(url, stream=True, headers=headers, cookies={'CONSENT': 'YES+'}).text
-
-			url_google = f"https://www.google.com/search?q={url_google}&tbm=isch&tbs=sbd:0"
-			ff = fetch_images(url_google)
-
-			backdroplst = findall(r'\],\["https://(.*?)",\d+,\d+]', ff)
-
-			if not backdroplst:
-				url_google = f"https://www.google.com/search?q={self.title_safe}&tbm=isch&tbs=ift:jpg%2Cisz:m"
-				ff = fetch_images(url_google)
-				backdroplst = findall(r'\],\["https://(.*?)",\d+,\d+]', ff)
-
-			for pl in backdroplst:
-				url_backdrop = f"https://{pl}"
-				url_backdrop = sub(r"\\u003d", "=", url_backdrop)
-				callInThread(self.saveBackdrop, url_backdrop, dwn_backdrop)
-				if exists(dwn_backdrop):
-					return True, f"[SUCCESS google] Found backdrop for {self.title_safe} => {url_backdrop}"
-
-			return False, f"[SKIP : google] No backdrop found for {self.title_safe}"
-
-		except Exception as e:
-			return False, f"[ERROR : google] {self.title_safe} => {str(e)}"
-
-		except HTTPError as e:
-			if e.response is not None and e.response.status_code == 404:
-				# Suppress 404 HTTP errors
-				return False, "No results found on google"
-			else:
-				logger.error("programmetv-google HTTP error: " + str(e))
-				return False, "HTTP error during google search"
-
-	def search_elcinema(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
-		"""ElCinema does not support backdrops, fallback function"""
-		return False, "[SKIP] No valid result"
-
-	def saveBackdrop(self, url, filepath):
-		"""Robust backdrop download with atomic writes and validation"""
+	def savePoster(self, url, filepath):
+		"""Robust poster download with atomic writes and validation"""
 		if not url:
 			logger.debug("Empty URL provided")
 			return False
@@ -758,9 +486,9 @@ class AgbDownloadThread(Thread):
 		# logger.error("Failed after " + str(max_retries) + " attempts: " + url)
 		return False
 
-	def resizeBackdrop(self, dwn_backdrop):
+	def resizePoster(self, dwn_poster):
 		try:
-			img = Image.open(dwn_backdrop)
+			img = Image.open(dwn_poster)
 			width, height = img.size
 			ratio = float(width) // float(height)
 			new_height = int(isz.split(",")[1])
@@ -770,27 +498,27 @@ class AgbDownloadThread(Thread):
 			except:
 				rimg = img.resize((new_width, new_height), Image.ANTIALIAS)
 			img.close()
-			rimg.save(dwn_backdrop)
+			rimg.save(dwn_poster)
 			rimg.close()
 		except Exception as e:
 			print("ERROR:{}".format(e))
 
-	def verifyBackdrop(self, dwn_backdrop):
+	def verifyPoster(self, dwn_poster):
 		try:
-			img = Image.open(dwn_backdrop)
+			img = Image.open(dwn_poster)
 			img.verify()
 			if img.format == "JPEG":
 				pass
 			else:
 				try:
-					remove(dwn_backdrop)
+					remove(dwn_poster)
 				except:
 					pass
 				return False
 		except Exception as e:
 			print(e)
 			try:
-				remove(dwn_backdrop)
+				remove(dwn_poster)
 			except:
 				pass
 			return False
@@ -827,7 +555,7 @@ class AgbDownloadThread(Thread):
 			if score > highest_score:
 				highest_score = score
 				best_match = {
-					'url_backdrop': self._format_url_backdrop(result['backdrop']),
+					'url_poster': self._format_url_poster(result['backdrop']),
 					'title': result['title'],
 					'year': result['year'],
 					'index': idx
@@ -835,7 +563,7 @@ class AgbDownloadThread(Thread):
 
 		return best_match if highest_score > 50 else None
 
-	def _format_url_backdrop(self, url):
+	def _format_url_poster(self, url):
 		"""Ensure poster URL is correctly formatted"""
 		if not url:
 			return ""
