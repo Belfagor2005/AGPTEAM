@@ -43,7 +43,9 @@ from datetime import datetime
 from os import remove, makedirs
 from os.path import join, exists, getsize
 from re import compile, sub
+import threading
 from threading import Thread, Lock
+from datetime import timedelta
 from time import sleep, time
 from traceback import print_exc, format_exc
 from collections import OrderedDict
@@ -82,6 +84,12 @@ extensions = ['.jpg']
 autobouquet_file = None
 apdb = dict()
 SCAN_TIME = "02:00"
+
+
+global global_agb_auto_db
+AgbDB = None
+db_lock = Lock()
+global_agb_auto_db = None
 
 
 """
@@ -213,7 +221,7 @@ class AglareBackdropX(Renderer):
 			# Check if program changed
 			curCanal = f"{self.canal[1]}-{self.canal[2]}"
 			if curCanal == self.oldCanal:
-				return  # Same program, no update needed
+				return
 
 			if self.instance:
 				self.instance.hide()
@@ -380,7 +388,7 @@ class BackdropDB(AgbDownloadThread):
 			"thetvdb": self.search_tvdb,
 			"elcinema": self.search_elcinema,  # no apikey
 			"google": self.search_google,  # no apikey
-			# "omdb": self.search_omdb,
+			"omdb": self.search_omdb,
 			"imdb": self.search_imdb,  # no apikey
 			"programmetv": self.search_programmetv_google,  # no apikey
 			"molotov": self.search_molotov_google,  # no apikey
@@ -393,7 +401,7 @@ class BackdropDB(AgbDownloadThread):
 	def run(self):
 		"""Main processing loop - handles incoming channel requests"""
 		while True:
-			canal = pdb.get()  # Get channel from queue
+			canal = pdb.get()
 			self.process_canal(canal)
 			pdb.task_done()
 
@@ -542,17 +550,24 @@ class BackdropAutoDB(AgbDownloadThread):
 		super().__init__()
 		self._initialized = True
 
+		self._stop_event = threading.Event()
+		self._active_event = threading.Event()
+		self._active_event.set()
+		self._scan_lock = Lock()
+		self.daemon = True
+
 		if not config.plugins.Aglare.bkddown.value:
 			logger.debug("BackdropAutoDB: Automatic downloads DISABLED in configuration")
 			self.active = False
 			return
 
-		logger.debug("BackdropAutoDB: Automatic downloads ENABLED in configuration")
-		self.active = True
 		if not any(api_key_manager.get_active_providers().values()):
 			logger.debug("Disabilitato - nessun provider attivo")
 			self.active = False
 			return
+
+		logger.debug("BackdropAutoDB: Automatic downloads ENABLED in configuration")
+		self.active = True
 
 		self.providers = api_key_manager.get_active_providers()
 
@@ -574,14 +589,13 @@ class BackdropAutoDB(AgbDownloadThread):
 		self.provider_engines = self.build_providers()
 
 		try:
-			# Get scan time from config instead of global
 			scan_time = config.plugins.Aglare.bscan_time.value
-			hour, minute = map(int, scan_time.split(":"))
-			self.scheduled_hour = hour
-			self.scheduled_minute = minute
+			self.scheduled_hour = int(scan_time[0])
+			self.scheduled_minute = int(scan_time[1])
+			logger.debug(f"Configured time: {self.scheduled_hour:02d}:{self.scheduled_minute:02d}")
 		except Exception as e:
-			logger.error(f"Error parsing scan time: {str(e)}")
-			self.scheduled_hour = 0  # Default to midnight
+			logger.error("Error parsing scan time: " + str(e))
+			self.scheduled_hour = 0
 			self.scheduled_minute = 0
 
 		self.last_scheduled_run = None
@@ -598,68 +612,112 @@ class BackdropAutoDB(AgbDownloadThread):
 		return cls._instance
 
 	def build_providers(self):
-		"""Initialize enabled provider search engines"""
+		active_providers = api_key_manager.get_active_providers()
+		valid_providers = []
 		provider_mapping = {
 			"tmdb": self.search_tmdb,
 			"fanart": self.search_fanart,
 			"thetvdb": self.search_tvdb,
 			"elcinema": self.search_elcinema,  # no apikey
 			"google": self.search_google,  # no apikey
-			# "omdb": self.search_omdb,
+			"omdb": self.search_omdb,
 			"imdb": self.search_imdb,  # no apikey
 			"programmetv": self.search_programmetv_google,  # no apikey
 			"molotov": self.search_molotov_google,  # no apikey
 		}
-		return [
-			(name, func) for name, func in provider_mapping.items()
-			if self.providers.get(name, False)
-		]
+		for name, func in provider_mapping.items():
+			if active_providers.get(name, False):
+				if name in ["tmdb", "fanart", "omdb"]:  # Providers requiring API keys
+					key = api_key_manager.get_api_key(name)
+					if not key:
+						logger.error(f"Invalid API key for {name}")
+						continue
+				valid_providers.append((name, func))
+
+		logger.debug(f"Active providers: {[p[0] for p in valid_providers]}")
+		return valid_providers
+
+	@property
+	def active(self):
+		return self._active_event.is_set()
+
+	@active.setter
+	def active(self, value):
+		if value:
+			self._active_event.set()
+		else:
+			self._active_event.clear()
+
+	def start(self):
+		if not self.is_alive():
+			self.active = True
+			super().start()
 
 	def run(self):
-		"""Main execution loop - handles scheduled operations"""
-		self._log("Renderer initialized - Starting main loop")
-
-		if not hasattr(self, 'active') or not self.active:
-			logger.debug("BackdropAutoDB thread terminated - disabled in configuration")
-			return
-
-		if not config.plugins.Aglare.bkddown:
-			self._log("Auto download disabled - thread termination")
-			return
-
-		while True:
-			try:
-				current_time = time()
+		logger.info("BackdropAutoDB THREAD STARTED")
+		# logger.info("RUNNING IN TEST MODE - BYPASSING SCHEDULER")
+		# self._execute_scheduled_scan()  # Force immediate scan
+		# logger.info("TEST SCAN COMPLETED")
+		try:
+			while self.active:
 				now = datetime.now()
+				next_run = self._calculate_next_run(now)
+				logger.debug(f"Scheduled for: {next_run}")
 
-				# Check if 2 hours passed since last scan
-				do_time_scan = current_time - self.last_scan > 7200 or not self.last_scan
+				# Wait until scheduled time
+				while True:
+					now = datetime.now()
+					remaining = (next_run - now).total_seconds()
+					if remaining <= 0:
+						break
 
-				# Check scheduled daily scan time
-				do_scheduled_scan = (
-					now.hour == self.scheduled_hour and
-					now.minute == self.scheduled_minute and
-					(not self.last_scheduled_run or self.last_scheduled_run.date() != now.date())
-				)
+					logger.debug(f"Waiting {remaining:.1f}s")
+					sleep(min(remaining, 60))  # Check every minute
 
-				if do_time_scan or do_scheduled_scan:
-					self._full_scan()
-					self.last_scan = current_time
-					if do_scheduled_scan:
-						self.last_scheduled_run = now
-					self.current_retry = 0
+				logger.debug("=== SCANNING NOW ===")
+				self._execute_scheduled_scan()
 
+		except Exception as e:
+			logger.error(f"CRASH: {str(e)}")
+		finally:
+			logger.info("BackdropAutoDB STOPPED")
+
+	def _calculate_next_run(self, current_time):
+		next_run = datetime(
+			year=current_time.year,
+			month=current_time.month,
+			day=current_time.day,
+			hour=self.scheduled_hour,
+			minute=self.scheduled_minute,
+			second=0  # Force seconds to 0
+		)
+		if next_run <= current_time:  # Use <= instead of <
+			next_run += timedelta(days=1)
+
+		logger.debug(f"Next scan: {next_run.strftime('%Y-%m-%d %H:%M:%S')}")
+		return next_run
+
+	def _execute_scheduled_scan(self):
+		"""Run a single scheduled scan"""
+		with self._scan_lock:
+			if self.active:
+				logger.debug("Starting scheduled scan")
+				self._full_scan()
 				self._process_services()
-				sleep(60)
+				self.last_scan = time()
+				logger.debug("Scheduled scan completed")
 
-			except Exception as e:
-				self.current_retry += 1
-				self._log_error(f"Error in main loop (retry {self.current_retry}/{self.max_retries}): {str(e)}")
-				print_exc()
-				if self.current_retry >= self.max_retries:
-					self._log("Max retries reached, restarting...")
-					self.current_retry = 0
-					sleep(300)
+	def stop(self):
+		"""Safe stop with timeout"""
+		self.active = False
+		self._active_event.set()
+		if self.is_alive():
+			self.join(timeout=2.0)
+		logger.debug("BackdropAutoDB fully stopped")
+
+	def _cleanup(self):
+		self.active = False
+		logger.info("BackdropAutoDB stopped gracefully")
 
 	def _full_scan(self):
 		"""Scan all available TV services"""
@@ -727,23 +785,33 @@ class BackdropAutoDB(AgbDownloadThread):
 				print_exc()
 
 	def _prepare_canal_data(self, service_ref, event):
-		"""Prepare channel data from EPG event"""
 		try:
+			# Get service name from service reference
 			service_name = ServiceReference(service_ref).getServiceName()
-			if not service_name:
-				service_name = "Channel_" + service_ref.split(':')[3]
+			service_name = service_name.replace("\xc2\x86", "").replace("\xc2\x87", "")
 
-			canal = [
-				service_name.replace('\xc2\x86', '').replace('\xc2\x87', ''),
-				event[1],  # begin_time
-				event[4],  # event_name
-				event[5],  # extended_desc
-				event[6],  # short_desc
-				event[4]   # backdrop name
+			# Safely get the raw event title (could be None)
+			raw_title = event[4] or ""  
+			event_name = raw_title.strip()
+			if not event_name:
+				# nothing to search for, skip this event
+				return None
+
+			clean_title = clean_for_tvdb(event_name)
+
+			logger.debug(f"Processing event: {event_name} -> {clean_title}")
+
+			return [
+				service_name,
+				event[1],      # begin_time
+				event_name,
+				event[5],      # extended_desc
+				event[6],      # short_desc
+				clean_title,
 			]
-			return canal
+
 		except Exception as e:
-			self._log_error(f"Error preparing channel data: {str(e)}")
+			logger.error(f"Failed to parse event: {str(e)}")
 			return None
 
 	def _download_backdrop(self, canal):
@@ -788,11 +856,9 @@ class BackdropAutoDB(AgbDownloadThread):
 		"""Try downloading with a specific provider"""
 		try:
 			api_key = api_key_manager.get_api_key(provider_name)
-			if not api_key:
-				logger.warning(f"API key missing for {provider_name}")
-				return False
-
+			# logger.debug(f"Trying {provider_name} with key: {api_key[:3]}...")
 			backdrop_path = join(BACKDROP_FOLDER, f"{self.pstcanal}.jpg")
+			# logger.debug(f"Searching: {self.pstcanal} | Channel: {canal[0]}")
 			result = provider_func(
 				dwn_backdrop=backdrop_path,
 				title=self.pstcanal,
@@ -801,9 +867,12 @@ class BackdropAutoDB(AgbDownloadThread):
 				channel=canal[0],
 				api_key=api_key
 			)
-			if result and self._validate_download(backdrop_path):
-				logger.info(f"Download successful with {provider_name}")
-				return True
+			if result:
+				logger.debug(f"{provider_name} returned URL: {result}")
+				if self._validate_download(backdrop_path):
+					return True
+			else:
+				logger.debug(f"{provider_name} returned no results")
 
 		except Exception as e:
 			logger.error(f"Error with {provider_name}: {str(e)}")
@@ -899,32 +968,27 @@ api_key_manager = ApiKeyManager()
 # download on requests
 if any(api_key_manager.get_active_providers().values()):
 	logger.debug("Starting BackdropDB with active providers")
-	AgbDB = BackdropDB()
-	AgbDB.daemon = True
-	AgbDB.start()
+	with db_lock:
+		if AgbDB is None or not AgbDB.is_alive():
+			AgbDB = BackdropDB()
+			AgbDB.daemon = True
+			AgbDB.start()
+			logger.debug("BackdropDB started with PID: %s" % AgbDB.ident)
 else:
 	logger.debug("BackdropDB not started - no active providers")
 
+
 # automatic download
 if config.plugins.Aglare.bkddown.value:
-	logger.debug("Start BackdropAutoDB - configuration ENABLED")
-	# Get active providers from the central manager
-	active_providers = api_key_manager.get_active_providers()
+	logger.debug("Starting BackdropAutoDB...")
 
-	if any(active_providers.values()):
-		logger.debug("VALID configuration - at least one provider is active")
-		AgbAutoDB = BackdropAutoDB()
+	# Stop existing instance if any
+	if global_agb_auto_db:
+		global_agb_auto_db.stop()
+		global_agb_auto_db = None
 
-		if AgbAutoDB.active:
-			AgbAutoDB.daemon = True
-			AgbAutoDB.start()
-			logger.debug("BackdropAutoDB SUCCESSFULLY STARTED")
-		else:
-			logger.debug("BackdropAutoDB internally disabled")
-			AgbAutoDB = type('DisabledBackdropAutoDB', (), {'start': lambda self: None})()
-	else:
-		logger.debug("INVALID configuration - no active providers")
-		AgbAutoDB = type('DisabledBackdropAutoDB', (), {'start': lambda self: None})()
-else:
-	logger.debug("BackdropAutoDB NOT started - downloads disabled in configuration")
-	AgbAutoDB = type('DisabledBackdropAutoDB', (), {'start': lambda self: None})()
+	# Start new instance
+	global_agb_auto_db = BackdropAutoDB()
+	global_agb_auto_db.daemon = True
+	global_agb_auto_db.start()
+	logger.debug("BackdropAutoDB ACTIVE")
