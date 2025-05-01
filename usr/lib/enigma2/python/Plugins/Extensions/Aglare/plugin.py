@@ -287,8 +287,10 @@ config.plugins.Aglare.E2iplayerskins = ConfigSelection(default='OFF', choices=[
 """ end assign apikey """
 # constants
 my_cur_skin = False
-cur_skin = config.skin.primary_skin.value.replace('/skin.xml', '')
 mvi = '/usr/share/'
+cur_skin = config.skin.primary_skin.value.replace("/skin.xml", "").strip()
+skinversion = None
+fullurl = None
 
 
 # Process order
@@ -437,10 +439,10 @@ class AglareSetup(ConfigListScreen, Screen):
 		'''
 
 	def __init__(self, session):
-		self.version = '.Aglare-FHD-PLI'
 		Screen.__init__(self, session)
 		self.session = session
-		self.skinFile = '/usr/share/enigma2/Aglare-FHD-PLI/skin.xml'
+		self.version = skinversion
+		self.skinFile = join("/usr/share/enigma2", config.skin.primary_skin.value)
 		self.previewFiles = '/usr/lib/enigma2/python/Plugins/Extensions/Aglare/sample/'
 		self['Preview'] = Pixmap()
 		self.onChangedEntry = []
@@ -813,55 +815,69 @@ class AglareSetup(ConfigListScreen, Screen):
 		return SetupSummary
 
 	def keySave(self):
-		if not fileExists(self.skinFile + self.version):
+		def load_xml_to_skin_lines(file_path):
+			try:
+				with open(file_path, 'r') as file:
+					return file.readlines()
+			except FileNotFoundError:
+				return []
+
+		if not fileExists(self.version):
+			print("File not found: {}".format(self.version))
 			for x in self['config'].list:
 				if len(x) > 1:
+					print("Cancelling {}".format(x[1]))  # Aggiungi un log per vedere cosa stai cancellando
 					x[1].cancel()
 			self.close()
 			return
 
+		print("File exists, proceeding with saving...")
 		for x in self['config'].list:
-			if len(x) > 1:
+			if len(x) > 1:  # Check if x has at least two elements
+				print("Saving {}".format(x[1]))  # Aggiungi un log per vedere cosa stai salvando
 				x[1].save()
 
 		config.plugins.Aglare.save()
 		configfile.save()
 
-		def append_skin_file(file_path, skin_lines):
-			try:
-				with open(file_path, 'r') as skFile:
-					skin_lines.extend(skFile.readlines())
-			except FileNotFoundError:
-				print("File not found:", file_path)
+		try:
+			skin_lines = []
+			xml_files = [
+				'head-' + config.plugins.Aglare.colorSelector.value,
+				'font-' + config.plugins.Aglare.FontStyle.value,
+				'infobar-' + config.plugins.Aglare.InfobarStyle.value,
+				'infobar-' + config.plugins.Aglare.InfobarPosterx.value,
+				'infobar-' + config.plugins.Aglare.InfobarXtraevent.value,
+				'infobar-' + config.plugins.Aglare.InfobarDate.value,
+				'infobar-' + config.plugins.Aglare.InfobarWeather.value,
+				'secondinfobar-' + config.plugins.Aglare.SecondInfobarStyle.value,
+				'secondinfobar-' + config.plugins.Aglare.SecondInfobarPosterx.value,
+				'secondinfobar-' + config.plugins.Aglare.SecondInfobarXtraevent.value,
+				'channellist-' + config.plugins.Aglare.ChannSelector.value,
+				'eventview-' + config.plugins.Aglare.EventView.value,
+				'vol-' + config.plugins.Aglare.VolumeBar.value,
+				'e2iplayer-' + config.plugins.Aglare.E2iplayerskins.value
+			]
 
-		skin_lines = []
+			for filename in xml_files:
+				skin_lines.extend(load_xml_to_skin_lines(self.previewFiles + filename + '.xml'))
 
-		file_paths = [
-			self.previewFiles + 'head-' + config.plugins.Aglare.colorSelector.value + '.xml',
-			self.previewFiles + 'font-' + config.plugins.Aglare.FontStyle.value + '.xml',
-			self.previewFiles + 'infobar-' + config.plugins.Aglare.InfobarStyle.value + '.xml',
-			self.previewFiles + 'infobar-' + config.plugins.Aglare.InfobarPosterx.value + '.xml',
-			self.previewFiles + 'infobar-' + config.plugins.Aglare.InfobarXtraevent.value + '.xml',
-			self.previewFiles + 'infobar-' + config.plugins.Aglare.InfobarDate.value + '.xml',
-			self.previewFiles + 'infobar-' + config.plugins.Aglare.InfobarWeather.value + '.xml',
-			self.previewFiles + 'secondinfobar-' + config.plugins.Aglare.SecondInfobarStyle.value + '.xml',
-			self.previewFiles + 'secondinfobar-' + config.plugins.Aglare.SecondInfobarPosterx.value + '.xml',
-			self.previewFiles + 'secondinfobar-' + config.plugins.Aglare.SecondInfobarXtraevent.value + '.xml',
-			self.previewFiles + 'channellist-' + config.plugins.Aglare.ChannSelector.value + '.xml',
-			self.previewFiles + 'eventview-' + config.plugins.Aglare.EventView.value + '.xml',
-			self.previewFiles + 'vol-' + config.plugins.Aglare.VolumeBar.value + '.xml',
-			self.previewFiles + 'e2iplayer-' + config.plugins.Aglare.E2iplayerskins.value + '.xml'
-		]
+			base_file = 'base1.xml' if config.plugins.Aglare.skinSelector.value == 'base1' else 'base.xml'
+			skin_lines.extend(load_xml_to_skin_lines(self.previewFiles + base_file))
 
-		base_file = 'base.xml'
-		if config.plugins.Aglare.skinSelector.value == 'base1':
-			base_file = 'base1.xml'
-		file_paths.append(self.previewFiles + base_file)
-		for path in file_paths:
-			append_skin_file(path, skin_lines)
-		with open(self.skinFile, 'w') as xFile:
-			xFile.writelines(skin_lines)
-		restartbox = self.session.openWithCallback(self.restartGUI, MessageBox, _('GUI needs a restart to apply a new skin.\nDo you want to Restart the GUI now?'), MessageBox.TYPE_YESNO)
+			print("Writing to file: {}".format(self.skinFile))
+			with open(self.skinFile, 'w') as xFile:
+				xFile.writelines(skin_lines)
+
+		except Exception as e:
+			self.session.open(MessageBox, _('Error by processing the skin file: {}').format(str(e)), MessageBox.TYPE_ERROR)
+
+		restartbox = self.session.openWithCallback(
+			self.restartGUI,
+			MessageBox,
+			_('GUI needs a restart to apply a new skin.\nDo you want to Restart the GUI now?'),
+			MessageBox.TYPE_YESNO
+		)
 		restartbox.setTitle(_('Restart GUI now?'))
 
 	def restartGUI(self, answer):
@@ -873,8 +889,8 @@ class AglareSetup(ConfigListScreen, Screen):
 	def checkforUpdate(self):
 		try:
 			fp = ''
-			destr = '/tmp/aglarepliversion.txt'
-			req = Request('https://raw.githubusercontent.com/popking159/skins/main/aglarepli/aglarepliversion.txt')
+			destr = '/tmp/' + destr
+			req = Request(fullurl)
 			req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36')
 			fp = urlopen(req)
 			fp = fp.read().decode('utf-8')
@@ -1041,6 +1057,29 @@ def removePng():
 		print("The folder " + patch_backdrop + " does not exist.")
 
 
+def main(session, **kwargs):
+	global skinversion, destr, fullurl
+	cur_skin = config.skin.primary_skin.value.replace("/skin.xml", "")
+
+	if cur_skin == "Aglare-FHD-PLI":
+		skinversion = join("/usr/share/enigma2", cur_skin, ".Aglare-FHD-PLI")
+		destr = "aglarepliversion.txt"
+		myurl = "https://raw.githubusercontent.com/popking159/skins/main/aglarepli/"
+		fullurl = join(myurl, destr)
+	elif cur_skin == "Aglare-FHD":
+		skinversion = join("/usr/share/enigma2", cur_skin, ".Aglare-FHD")
+		destr = "aglareatvversion.txt"
+		myurl = "https://raw.githubusercontent.com/popking159/skins/main/aglareatv/"
+		fullurl = join(myurl, destr)
+	else:
+		def closePlugin(*args):
+			session.close()
+		session.openWithCallback(closePlugin, MessageBox, "Skin not supported.\nPlugin closed.", MessageBox.TYPE_ERROR, timeout=5)
+		return
+
+	session.open(AglareSetup)
+
+
 def Plugins(**kwargs):
 	return PluginDescriptor(
 		name='Setup Aglare',
@@ -1049,10 +1088,6 @@ def Plugins(**kwargs):
 		icon='plugin.png',
 		fnc=main
 	)
-
-
-def main(session, **kwargs):
-	session.open(AglareSetup)
 
 
 def remove_exif(image_path):
