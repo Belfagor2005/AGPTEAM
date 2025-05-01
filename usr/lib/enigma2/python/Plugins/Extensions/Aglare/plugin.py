@@ -45,7 +45,7 @@ from enigma import ePicLoad, eTimer, loadPic
 
 # Enigma2 Components
 from Components.AVSwitch import AVSwitch
-from Components.ActionMap import ActionMap
+from Components.ActionMap import HelpableActionMap
 from Components.ConfigList import ConfigListScreen
 from Components.Label import Label
 from Components.Pixmap import Pixmap
@@ -453,30 +453,24 @@ class AglareSetup(ConfigListScreen, Screen):
 		section = '--------------------------( SKIN APIKEY SETUP )-----------------------'
 		list.append(getConfigListEntry(section))
 		ConfigListScreen.__init__(self, list, session=self.session, on_change=self.changedEntry)
-		self["actions"] = ActionMap(
-			[
-				"OkCancelActions",
-				"InputBoxActions",
-				"HotkeyActions",
-				"VirtualKeyboardActions",
-				"NumberActions",
-				"InfoActions",
-				"ColorActions"
-			],
+		self["actions"] = HelpableActionMap(
+			self,
+			"AglareActions",
 			{
 				"left": self.keyLeft,
 				"right": self.keyRight,
 				"down": self.keyDown,
 				"up": self.keyUp,
+				"cancel": self.keyExit,
 				"red": self.keyExit,
-				"green": self.keySave,
+				"save": self.keySave,
 				"yellow": self.checkforUpdate,
 				"showVirtualKeyboard": self.KeyText,
 				"ok": self.keyRun,
 				"info": self.info,
 				"blue": self.info,
-				# "5": self.Checkskin,
-				"cancel": self.keyExit
+				"tv": self.Checkskin,
+				"back": self.keyExit
 			},
 			-1
 		)
@@ -535,22 +529,22 @@ class AglareSetup(ConfigListScreen, Screen):
 				for api in api_key_manager.API_CONFIG:
 					upper = api.upper()
 					list.append(getConfigListEntry(
-						f"{upper}:",
+						"{}:".format(upper),
 						getattr(config.plugins.Aglare, api),
-						_(f"Activate/Deactivate {upper}")
+						_("Activate/Deactivate {}".format(upper))
 					))
 
 					if getattr(config.plugins.Aglare, api).value:
 						cfg = api_key_manager.API_CONFIG[api]
 						list.append(getConfigListEntry(
-							f"-- Load Key {upper}",
+							"-- Load Key {}".format(upper),
 							cfg['load_action'],
-							_(f"Load from /tmp/{api}key.txt")
+							_("Load from /tmp/{}key.txt".format(api))
 						))
 						list.append(getConfigListEntry(
-							f"-- Set key {upper}",
+							"-- Set key {}".format(upper),
 							cfg['config_entry'],
-							_(f"Personal API key for {upper}")
+							_("Personal API key for {}".format(upper))
 						))
 
 				list.append(getConfigListEntry("ELCINEMA:", config.plugins.Aglare.elcinema, _("Activate/Deactivate ELCINEMA")))
@@ -826,7 +820,7 @@ class AglareSetup(ConfigListScreen, Screen):
 			print("File not found: {}".format(self.version))
 			for x in self['config'].list:
 				if len(x) > 1:
-					print("Cancelling {}".format(x[1]))  # Aggiungi un log per vedere cosa stai cancellando
+					print("Cancelling {}".format(x[1]))
 					x[1].cancel()
 			self.close()
 			return
@@ -834,7 +828,7 @@ class AglareSetup(ConfigListScreen, Screen):
 		print("File exists, proceeding with saving...")
 		for x in self['config'].list:
 			if len(x) > 1:  # Check if x has at least two elements
-				print("Saving {}".format(x[1]))  # Aggiungi un log per vedere cosa stai salvando
+				print("Saving {}".format(x[1]))
 				x[1].save()
 
 		config.plugins.Aglare.save()
