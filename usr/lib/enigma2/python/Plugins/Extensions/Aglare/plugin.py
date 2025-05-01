@@ -51,6 +51,7 @@ from Components.Label import Label
 from Components.Pixmap import Pixmap
 from Components.Sources.Progress import Progress
 from Components.Sources.StaticText import StaticText
+from time import localtime, mktime
 from Components.config import (
 	configfile,
 	ConfigOnOff,
@@ -61,7 +62,8 @@ from Components.config import (
 	ConfigYesNo,
 	config,
 	getConfigListEntry,
-	ConfigClock
+	ConfigClock,
+	# ConfigInteger
 )
 
 # Enigma2 Screens
@@ -110,6 +112,12 @@ This allows the plugin to use custom API keys depending on the active skin.
 """
 
 """ assign path """
+
+
+def calcTime(hours, minutes):
+	now_time = localtime()
+	ret_time = mktime((now_time.tm_year, now_time.tm_mon, now_time.tm_mday, hours, minutes, 0, now_time.tm_wday, now_time.tm_yday, now_time.tm_isdst))
+	return ret_time
 
 
 def isMountedInRW(mount_point):
@@ -167,9 +175,8 @@ config.plugins.Aglare.molotov = ConfigOnOff(default=False)
 config.plugins.Aglare.cache = ConfigOnOff(default=False)
 config.plugins.Aglare.pstdown = ConfigOnOff(default=False)
 config.plugins.Aglare.bkddown = ConfigOnOff(default=False)
-config.plugins.Aglare.pscan_time = ConfigClock(default=(0, 0))  # 00:00
-config.plugins.Aglare.bscan_time = ConfigClock(default=(2, 0))  # 02:00
-
+config.plugins.Aglare.pscan_time = ConfigClock(calcTime(0, 0))  # 00:00
+config.plugins.Aglare.bscan_time = ConfigClock(calcTime(2, 0))  # 02:00
 config.plugins.Aglare.png = NoSave(ConfigYesNo(default=False))
 agp_use_cache = config.plugins.Aglare.cache
 
@@ -183,7 +190,9 @@ config.plugins.Aglare.colorSelector = ConfigSelection(default='color0', choices=
 	('color5', _('Blue')),
 	('color6', _('Red')),
 	('color7', _('Purple')),
-	('color8', _('Dark Green'))])
+	('color8', _('Green2'))
+])
+
 config.plugins.Aglare.FontStyle = ConfigSelection(default='basic', choices=[
 	('basic', _('Default')),
 	('font1', _('HandelGotD')),
@@ -191,38 +200,61 @@ config.plugins.Aglare.FontStyle = ConfigSelection(default='basic', choices=[
 	('font3', _('BebasNeue')),
 	('font4', _('Greta')),
 	('font5', _('Segoe UI light')),
-	('font6', _('MV Boli'))])
+	('font6', _('MV Boli'))
+])
+
 config.plugins.Aglare.skinSelector = ConfigSelection(default='base', choices=[
-	('base', _('Default'))])
+	('base', _('Default'))
+])
+
 config.plugins.Aglare.InfobarStyle = ConfigSelection(default='infobar_base1', choices=[
 	('infobar_base1', _('Default')),
 	('infobar_base2', _('Style2')),
 	('infobar_base3', _('Style3')),
-	('infobar_base4', _('Style4'))])
+	('infobar_base4', _('Style4')),
+	('infobar_base5', _('Style5 CD'))
+])
+
 config.plugins.Aglare.InfobarPosterx = ConfigSelection(default='infobar_posters_posterx_off', choices=[
 	('infobar_posters_posterx_off', _('OFF')),
-	('infobar_posters_posterx_on', _('ON'))])
+	('infobar_posters_posterx_on', _('ON')),
+	('infobar_posters_posterx_cd', _('CD'))
+])
+
 config.plugins.Aglare.InfobarXtraevent = ConfigSelection(default='infobar_posters_xtraevent_off', choices=[
 	('infobar_posters_xtraevent_off', _('OFF')),
 	('infobar_posters_xtraevent_on', _('ON')),
-	('infobar_posters_xtraevent_info', _('Backdrop'))])
+	('infobar_posters_xtraevent_cd', _('CD')),
+	('infobar_posters_xtraevent_info', _('Backdrop'))
+])
+
 config.plugins.Aglare.InfobarDate = ConfigSelection(default='infobar_no_date', choices=[
 	('infobar_no_date', _('Infobar_NO_Date')),
-	('infobar_date', _('Infobar_Date'))])
+	('infobar_date', _('Infobar_Date'))
+])
+
 config.plugins.Aglare.InfobarWeather = ConfigSelection(default='infobar_no_weather', choices=[
 	('infobar_no_weather', _('Infobar_NO_Weather')),
-	('infobar_weather', _('Infobar_Weather'))])
+	('infobar_weather', _('Infobar_Weather'))
+])
+
 config.plugins.Aglare.SecondInfobarStyle = ConfigSelection(default='secondinfobar_base1', choices=[
 	('secondinfobar_base1', _('Default')),
 	('secondinfobar_base2', _('Style2')),
 	('secondinfobar_base3', _('Style3')),
-	('secondinfobar_base4', _('Style4'))])
+	('secondinfobar_base4', _('Style4'))
+])
+
 config.plugins.Aglare.SecondInfobarPosterx = ConfigSelection(default='secondinfobar_posters_posterx_off', choices=[
 	('secondinfobar_posters_posterx_off', _('OFF')),
-	('secondinfobar_posters_posterx_on', _('ON'))])
+	('secondinfobar_posters_posterx_on', _('ON'))
+])
+
 config.plugins.Aglare.SecondInfobarXtraevent = ConfigSelection(default='secondinfobar_posters_xtraevent_off', choices=[
 	('secondinfobar_posters_xtraevent_off', _('OFF')),
-	('secondinfobar_posters_xtraevent_on', _('ON'))])
+	('secondinfobar_posters_xtraevent_on', _('ON'))
+])
+
 config.plugins.Aglare.ChannSelector = ConfigSelection(default='channellist_no_posters', choices=[
 	('channellist_no_posters', _('ChannelSelection_NO_Posters')),
 	('channellist_no_posters_no_picon', _('ChannelSelection_NO_Posters_NO_Picon')),
@@ -231,18 +263,24 @@ config.plugins.Aglare.ChannSelector = ConfigSelection(default='channellist_no_po
 	('channellist_1_poster', _('ChannelSelection_1_Poster')),
 	('channellist_4_posters', _('ChannelSelection_4_Posters')),
 	('channellist_6_posters', _('ChannelSelection_6_Posters')),
-	('channellist_big_mini_tv', _('ChannelSelection_big_mini_tv'))])
+	('channellist_big_mini_tv', _('ChannelSelection_big_mini_tv'))
+])
+
 config.plugins.Aglare.EventView = ConfigSelection(default='eventview_no_posters', choices=[
 	('eventview_no_posters', _('EventView_NO_Posters')),
-	('eventview_7_posters', _('EventView_7_Posters'))])
+	('eventview_7_posters', _('EventView_7_Posters'))
+])
 
 config.plugins.Aglare.VolumeBar = ConfigSelection(default='volume1', choices=[
 	('volume1', _('Default')),
-	('volume2', _('volume2'))])
+	('volume2', _('volume2'))
+])
 
 config.plugins.Aglare.E2iplayerskins = ConfigSelection(default='OFF', choices=[
 	('e2iplayer_skin_off', _('OFF')),
-	('e2iplayer_skin_on', _('ON'))])
+	('e2iplayer_skin_on', _('ON'))
+])
+
 
 """ Config and setting maintenance """
 
@@ -435,7 +473,7 @@ class AglareSetup(ConfigListScreen, Screen):
 				"ok": self.keyRun,
 				"info": self.info,
 				"blue": self.info,
-				"5": self.Checkskin,
+				# "5": self.Checkskin,
 				"cancel": self.keyExit
 			},
 			-1
@@ -777,7 +815,8 @@ class AglareSetup(ConfigListScreen, Screen):
 	def keySave(self):
 		if not fileExists(self.skinFile + self.version):
 			for x in self['config'].list:
-				x[1].cancel()
+				if len(x) > 1:
+					x[1].cancel()
 			self.close()
 			return
 

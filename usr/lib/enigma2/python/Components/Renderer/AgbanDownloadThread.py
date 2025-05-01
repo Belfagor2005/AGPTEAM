@@ -175,7 +175,6 @@ class AgbanDownloadThread(Thread):
 			"culture", "infos", "feuilleton", "téléréalité", "société",
 			"clips", "concert", "santé", "éducation", "variété"
 		]
-
 		if agp_use_cache.value:
 			self.search_tmdb = lru_cache(maxsize=500)(self.search_tmdb)
 			self.search_tvdb = lru_cache(maxsize=250)(self.search_tvdb)
@@ -217,7 +216,7 @@ class AgbanDownloadThread(Thread):
 			if response.status_code == codes.ok:
 				try:
 					data = response.json()
-					return self.downloadBannerData(data, dwn_poster, shortdesc, fulldesc)
+					return self.downloadData2(data, dwn_poster, shortdesc, fulldesc)
 				except ValueError as e:
 					logger.error("TMDb response decode error: " + str(e))
 					return False, "Error parsing TMDb response"
@@ -239,7 +238,7 @@ class AgbanDownloadThread(Thread):
 			logger.error("TMDb search error: " + str(e))
 			return False, "Unexpected error during TMDb search"
 
-	def downloadBannerData(self, data, dwn_poster, shortdesc="", fulldesc=""):
+	def downloadData2(self, data, dwn_poster, shortdesc="", fulldesc=""):
 		if isinstance(data, bytes):
 			data = data.decode('utf-8')
 		data_json = data if isinstance(data, dict) else loads(data)

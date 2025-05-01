@@ -142,7 +142,12 @@ def _load_api_keys():
 
 
 # Initialize API keys during module import
-if not _load_api_keys():
-	print("[API Config] Using default API keys")
+def load_api_keys():
+	if not _load_api_keys():
+		print("[API Config] Using default API keys")
+
+
+load_api_keys()
+
 
 # ================ END SERVICE API CONFIGURATION ================

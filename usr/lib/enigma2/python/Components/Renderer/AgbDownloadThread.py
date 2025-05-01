@@ -41,7 +41,7 @@ __copyright__ = "AGP Team"
 # Standard library
 from os import remove, rename
 from os.path import exists, getsize
-from re import compile, findall, DOTALL, sub  # , search, I
+from re import compile, findall, DOTALL, sub
 from threading import Thread
 from json import loads
 from random import choice
@@ -495,7 +495,6 @@ class AgbDownloadThread(Thread):
 	def search_programmetv_google(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
 		"""PROGRAMMETV backdrop Downloader not using API"""
 		self.title_safe = self.UNAC(title.replace("+", " ").strip())
-		# self.title_safe = title.replace("+", " ").strip()
 
 		if not exists(dwn_backdrop):
 			return (False, "[ERROR] File not created")
