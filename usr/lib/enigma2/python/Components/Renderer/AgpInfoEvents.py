@@ -51,13 +51,13 @@ from Components.Sources.CurrentService import CurrentService
 from Components.Sources.Event import Event
 from Components.Sources.EventInfo import EventInfo
 from Components.Sources.ServiceEvent import ServiceEvent
-from Components.config import config, ConfigSubsection, ConfigText, ConfigSelection
 from enigma import eLabel, eEPGCache
 import NavigationInstance
 from ServiceReference import ServiceReference
 
 # Local imports
 from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, clean_filename, logger  # , noposter
+from Plugins.Extensions.Aglare.plugin import config
 
 # Constants
 epgcache = eEPGCache.getInstance()
@@ -94,8 +94,8 @@ class AgpInfoEvents(Renderer, VariableText):
 		if len(self.quick_cache) > 50:
 			self.quick_cache.clear()
 		self.last_service = None
-		self.display_mode = config.plugins.AgpInfoEvents.display_mode.value
-		self.info_format = config.plugins.AgpInfoEvents.info_format.value
+		self.display_mode = config.plugins.Aglare.info_display_mode.value
+		self.info_format = config.plugins.Aglare.info_format.value
 		logger.info("AgpInfoEvents Renderer initialized")
 
 	def applySkin(self, desktop, parent):
@@ -280,21 +280,21 @@ class AgpInfoEvents(Renderer, VariableText):
 			logger.error(f"Error saving info: {str(e)}")
 
 
-def setupConfig():
-	"""Initialize configuration options"""
-	config.plugins.AgpInfoEvents = ConfigSubsection()
-	config.plugins.AgpInfoEvents.display_mode = ConfigSelection(
-		choices=[("short", "Short info"), ("full", "Full info"), ("custom", "Custom format")],
-		default="short"
-	)
-	config.plugins.AgpInfoEvents.info_format = ConfigText(
-		default="{title} ({year})\nRating: {rating}\nGenres: {genres}\n\n{overview}",
-		fixed_size=False
-	)
+# def setupConfig():
+	# """Initialize configuration options"""
+	# config.plugins.AgpInfoEvents = ConfigSubsection()
+	# config.plugins.AgpInfoEvents.info_display_mode = ConfigSelection(
+		# choices=[("short", "Short info"), ("full", "Full info"), ("custom", "Custom format")],
+		# default="short"
+	# )
+	# config.plugins.AgpInfoEvents.info_format = ConfigText(
+		# default="{title} ({year})\nRating: {rating}\nGenres: {genres}\n\n{overview}",
+		# fixed_size=False
+	# )
 
 
-# Initialize configuration
-try:
-	setupConfig()
-except Exception as e:
-	logger.error(f"Config setup error: {str(e)}")
+# # Initialize configuration
+# try:
+	# setupConfig()
+# except Exception as e:
+	# logger.error(f"Config setup error: {str(e)}")

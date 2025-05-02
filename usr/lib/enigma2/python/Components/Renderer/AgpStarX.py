@@ -52,14 +52,14 @@ from Components.Sources.Event import Event
 from Components.Sources.EventInfo import EventInfo
 from Components.Sources.ServiceEvent import ServiceEvent
 from Components.VariableValue import VariableValue
-from Components.config import config
+# from Components.config import config
 
 import NavigationInstance
 from ServiceReference import ServiceReference
 
 # Local imports
 from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, clean_filename, logger
-
+from Plugins.Extensions.Aglare.plugin import config
 # Constants
 epgcache = eEPGCache.getInstance()
 epgcache.load()
@@ -89,8 +89,8 @@ class AgpStarX(VariableValue, Renderer):
 		self.quick_cache = {}
 		if len(self.quick_cache) > 50:
 			self.quick_cache.clear()
-		self.rating_source = config.plugins.AgpStarX.rating_source.value
-		self.display_mode = config.plugins.AgpStarX.display_mode.value
+		self.rating_source = config.plugins.Aglare.rating_source.value
+		self.display_mode = config.plugins.Aglare.display_mode.value
 		logger.info("AgpStarX Renderer initialized")
 
 	def applySkin(self, desktop, parent):
@@ -239,26 +239,27 @@ class AgpStarX(VariableValue, Renderer):
 		return (self.__start, self.__end)
 
 
-def setupConfig():
-	"""Initialize configuration options"""
-	from Components.config import ConfigSubsection, ConfigSelection
-	config.plugins.AgpStarX = ConfigSubsection()
-	config.plugins.AgpStarX.rating_source = ConfigSelection(
-		choices=[("tmdb", "TMDB Rating"), ("imdb", "IMDB Rating")],
-		default="tmdb"
-	)
-	config.plugins.AgpStarX.display_mode = ConfigSelection(
-		choices=[
-			("percentage", "Percentage (0-100)"),
-			("stars5", "5-Star Rating"),
-			("stars10", "10-Star Rating")
-		],
-		default="percentage"
-	)
+"""
+# def setupConfig():
+	# from Components.config import ConfigSubsection, ConfigSelection
+	# config.plugins.aglare = ConfigSubsection()
+	# config.plugins.AgpStarX.rating_source = ConfigSelection(
+		# choices=[("tmdb", "TMDB Rating"), ("imdb", "IMDB Rating")],
+		# default="tmdb"
+	# )
+	# config.plugins.AgpStarX.display_mode = ConfigSelection(
+		# choices=[
+			# ("percentage", "Percentage (0-100)"),
+			# ("stars5", "5-Star Rating"),
+			# ("stars10", "10-Star Rating")
+		# ],
+		# default="percentage"
+	# )
 
 
-# Initialize configuration
-try:
-	setupConfig()
-except Exception as e:
-	logger.error(f"Config setup error: {str(e)}")
+# # Initialize configuration
+# try:
+	# setupConfig()
+# except Exception as e:
+	# logger.error(f"Config setup error: {str(e)}")
+"""

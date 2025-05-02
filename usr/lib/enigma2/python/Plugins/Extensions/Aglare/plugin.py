@@ -173,14 +173,40 @@ config.plugins.Aglare.programmetv = ConfigOnOff(default=False)
 config.plugins.Aglare.molotov = ConfigOnOff(default=False)
 
 config.plugins.Aglare.cache = ConfigOnOff(default=False)
+agp_use_cache = config.plugins.Aglare.cache
+
 config.plugins.Aglare.pstdown = ConfigOnOff(default=False)
 config.plugins.Aglare.bkddown = ConfigOnOff(default=False)
 config.plugins.Aglare.pscan_time = ConfigClock(calcTime(0, 0))  # 00:00
 config.plugins.Aglare.bscan_time = ConfigClock(calcTime(2, 0))  # 02:00
+
 config.plugins.Aglare.png = NoSave(ConfigYesNo(default=False))
-agp_use_cache = config.plugins.Aglare.cache
 
 
+# stars
+config.plugins.Aglare.rating_source = ConfigSelection(
+	choices=[("tmdb", "TMDB Rating"), ("imdb", "IMDB Rating")],
+	default="tmdb"
+)
+config.plugins.Aglare.display_mode = ConfigSelection(
+	choices=[
+		("percentage", "Percentage (0-100)"),
+		("stars5", "5-Star Rating"),
+		("stars10", "10-Star Rating")
+	],
+	default="percentage"
+)
+# infoevents
+config.plugins.Aglare.info_display_mode = ConfigSelection(
+	choices=[("short", "Short info"), ("full", "Full info"), ("custom", "Custom format")],
+	default="short"
+)
+config.plugins.Aglare.info_format = ConfigText(
+	default="{title} ({year})\nRating: {rating}\nGenres: {genres}\n\n{overview}",
+	fixed_size=False
+)
+
+# skin style
 config.plugins.Aglare.colorSelector = ConfigSelection(default='color0', choices=[
 	('color0', _('Default')),
 	('color1', _('Black')),
@@ -446,7 +472,7 @@ class AglareSetup(ConfigListScreen, Screen):
 		self.previewFiles = '/usr/lib/enigma2/python/Plugins/Extensions/Aglare/sample/'
 		self['Preview'] = Pixmap()
 		self.onChangedEntry = []
-		self.setup_title = ('Aglare-FHD-PLI')
+		self.setup_title = (cur_skin)
 		list = []
 		section = '--------------------------( SKIN GENERAL SETUP )-----------------------'
 		list.append(getConfigListEntry(section))
@@ -463,7 +489,7 @@ class AglareSetup(ConfigListScreen, Screen):
 				"up": self.keyUp,
 				"cancel": self.keyExit,
 				"red": self.keyExit,
-				"save": self.keySave,
+				"green": self.keySave,
 				"yellow": self.checkforUpdate,
 				"showVirtualKeyboard": self.KeyText,
 				"ok": self.keyRun,
@@ -522,6 +548,12 @@ class AglareSetup(ConfigListScreen, Screen):
 
 			section = '---------------------------( APIKEY SKIN SETUP )------------------------'
 			list.append(getConfigListEntry(section))
+
+			list.append(getConfigListEntry(_('Type Display Star mode:'), config.plugins.Aglare.display_mode))
+			list.append(getConfigListEntry(_('Type Rating Star Style:'), config.plugins.Aglare.rating_source))
+			
+			list.append(getConfigListEntry(_('Type Display Infoevents mode:'), config.plugins.Aglare.info_display_mode))
+			list.append(getConfigListEntry(_('Type Infoevents Style:'), config.plugins.Aglare.info_format))
 
 			list.append(getConfigListEntry("API KEY SETUP:", config.plugins.Aglare.actapi, _("Settings Apikey Server")))
 
@@ -639,7 +671,7 @@ class AglareSetup(ConfigListScreen, Screen):
 	def info(self):
 		aboutbox = self.session.open(
 			MessageBox,
-			_("Setup Aglare Skin\nfor Aglare-FHD-Pli v.%s\n\nby Lululla @2020\n\nSupport forum on linuxsat-support.com\n\nSkinner creator: Odem2014 ") % version,
+			_("Setup Aglare Skin\nfor %s v.%s\n\nby Lululla @2020\n\nSupport forum on linuxsat-support.com\n\nSkinner creator: Odem2014 ") % (cur_skin, version),
 			MessageBox.TYPE_INFO
 		)
 		aboutbox.setTitle(_("Setup Aglare Skin Info"))
@@ -956,7 +988,7 @@ class AglareUpdater(Screen):
 
 	def startUpdate(self):
 		self['status'].setText(_('Downloading Aglare...'))
-		self.dlfile = '/tmp/aglarepli.ipk'
+		self.dlfile = '/tmp/aglare.ipk'
 		print('self.dlfile', self.dlfile)
 		self.download = downloadWithProgress(self.updateurl, self.dlfile)
 		self.download.addProgress(self.downloadProgress)
@@ -965,7 +997,7 @@ class AglareUpdater(Screen):
 	def downloadFinished(self, string=""):
 		self["status"].setText(_("Installing updates..."))
 
-		package_path = "/tmp/aglarepli.ipk"
+		package_path = "/tmp/aglare.ipk"
 
 		if fileExists(package_path):
 			# Install the package
@@ -1077,7 +1109,7 @@ def main(session, **kwargs):
 def Plugins(**kwargs):
 	return PluginDescriptor(
 		name='Setup Aglare',
-		description=_('Customization tool for Aglare-FHD-PLI Skin'),
+		description=_('Customization tool for %s Skin') % cur_skin,
 		where=PluginDescriptor.WHERE_PLUGINMENU,
 		icon='plugin.png',
 		fnc=main

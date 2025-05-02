@@ -283,7 +283,6 @@ class AglarePosterX(Renderer):
 
 			# Try to display existing poster
 			poster_path = join(self.path, f"{self.pstcanal}.jpg")
-
 			if checkPosterExistence(poster_path):
 				self.showPoster(poster_path)
 			else:
@@ -858,7 +857,7 @@ class PosterAutoDB(AgpDownloadThread):
 			service_name = service_name.replace("\xc2\x86", "").replace("\xc2\x87", "")
 
 			# Safely get the raw event title (could be None)
-			raw_title = event[4] or ""  
+			raw_title = event[4] or ""
 			event_name = raw_title.strip()
 			if not event_name:
 				# nothing to search for, skip this event

@@ -55,16 +55,18 @@ from concurrent.futures import ThreadPoolExecutor
 
 # Enigma2/Dreambox specific imports
 from enigma import ePixmap, loadJPG, eEPGCache, eTimer
-from Components.config import config
+# from Components.config import config
 from Components.Renderer.Renderer import Renderer
 from Components.Sources.Event import Event
 from Components.Sources.EventInfo import EventInfo
+from Components.Sources.CurrentService import CurrentService
+from Components.Sources.ServiceEvent import ServiceEvent
 from ServiceReference import ServiceReference
 import NavigationInstance
 
 # Local imports
 from Components.Renderer.AgbDownloadThread import AgbDownloadThread
-from Plugins.Extensions.Aglare.plugin import ApiKeyManager
+from Plugins.Extensions.Aglare.plugin import ApiKeyManager, config
 from .Agp_Utils import (
 	BACKDROP_FOLDER,
 	check_disk_space,
@@ -156,6 +158,9 @@ class AglareBackdropX(Renderer):
 		self.providers = api_key_manager.get_active_providers()
 
 		clear_all_log()
+		self.backdrop_cache = {}
+		if len(self.backdrop_cache) > 50:
+			self.backdrop_cache.clear()
 		self.show_timer = eTimer()
 		self.show_timer.callback.append(self.showBackdrop)
 		# Initialize helper classes with providers config
@@ -193,7 +198,13 @@ class AglareBackdropX(Renderer):
 		service = None
 		try:
 			# Handle different source types
-			if source_type is EventInfo:
+			if source_type is ServiceEvent:
+				service = self.source.getCurrentService()
+				servicetype = "ServiceEvent"
+			elif source_type is CurrentService:
+				service = self.source.getCurrentServiceRef()
+				servicetype = "CurrentService"
+			elif source_type is EventInfo:
 				service = NavigationInstance.instance.getCurrentlyPlayingServiceReference()
 				servicetype = "EventInfo"
 			elif source_type is Event:
@@ -211,6 +222,34 @@ class AglareBackdropX(Renderer):
 					self.canal[3] = source.event.getExtendedDescription()
 					self.canal[4] = source.event.getShortDescription()
 					self.canal[5] = event_name
+					# self._log_debug(f"Event details set: {self.canal}")
+			else:
+				servicetype = None
+
+			if service is not None:
+				service_str = service.toString()
+				# self._log_debug(f"Service string: {service_str}")
+				events = epgcache.lookupEvent(['IBDCTESX', (service_str, 0, -1, -1)])
+
+				if not events or len(events) <= self.nxts:
+					# self._log_debug("No events or insufficient events")
+					if self.instance:
+						self.instance.hide()
+					return
+
+				service_name = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '')
+				# self._log_debug(f"Service name: {service_name}")
+				self.canal = [None] * 6
+				self.canal[0] = service_name
+				self.canal[1] = events[self.nxts][1]
+				self.canal[2] = events[self.nxts][4]
+				self.canal[3] = events[self.nxts][5]
+				self.canal[4] = events[self.nxts][6]
+				self.canal[5] = self.canal[2]
+				# self._log_debug(f"Event data set: {self.canal}")
+
+				if not autobouquet_file and service_name not in apdb:
+					apdb[service_name] = service_str
 
 			# Skip if no valid program data
 			if not servicetype or not self.canal[5]:
@@ -230,6 +269,12 @@ class AglareBackdropX(Renderer):
 			self.pstcanal = clean_for_tvdb(self.canal[5])
 			if not self.pstcanal:
 				return
+
+			if self.pstcanal in self.backdrop_cache:
+				cached_path = self.backdrop_cache[self.pstcanal]
+				if checkBackdropExistence(cached_path):
+					self.showBackdrop(cached_path)
+					return
 
 			# Try to display existing backdrop
 			backdrop_path = join(self.path, f"{self.pstcanal}.jpg")
@@ -268,39 +313,55 @@ class AglareBackdropX(Renderer):
 		if not self.instance:
 			return
 
-		try:
-			path = backdrop_path or self.backrNm
-			if not path:
-				self.instance.hide()
-				return
-
-			if not self.check_valid_backdrop(path):
-				# logger.warning(f"Invalid backdrop file: {path}")
-				self.instance.hide()
-				return
-
-			max_attempts = 3
-			for attempt in range(max_attempts):
-				try:
-					pixmap = loadJPG(path)
-					if pixmap:
-						self.instance.setPixmap(pixmap)
-						self.instance.setScale(1)
-						self.instance.show()
-						# logger.debug(f"Displayed backdrop: {path}")
-						return
-					else:
-						logger.warning(f"Failed to load pixmap (attempt {attempt + 1})")
-						sleep(0.1 * (attempt + 1))
-				except Exception as e:
-					logger.error(f"Pixmap error (attempt {attempt + 1}): {str(e)}")
-					sleep(0.1 * (attempt + 1))
-
+		if self.instance:
 			self.instance.hide()
 
-		except Exception as e:
-			logger.error(f"Error in showBackdrop: {str(e)}")
-			self.instance.hide()
+		# Use cached path if none provided
+		if not backdrop_path and self.backrNm:
+			backdrop_path = self.backrNm
+		if backdrop_path and checkBackdropExistence(backdrop_path):
+			self.instance.setPixmap(loadJPG(backdrop_path))
+			self.instance.setScale(1)
+			self.instance.show()
+
+	"""
+	# def showBackdrop(self, backdrop_path=None):
+		# if not self.instance:
+			# return
+		# try:
+			# path = backdrop_path or self.backrNm
+			# if not path:
+				# self.instance.hide()
+				# return
+
+			# if not self.check_valid_backdrop(path):
+				# # logger.warning(f"Invalid backdrop file: {path}")
+				# self.instance.hide()
+				# return
+
+			# max_attempts = 3
+			# for attempt in range(max_attempts):
+				# try:
+					# pixmap = loadJPG(path)
+					# if pixmap:
+						# self.instance.setPixmap(pixmap)
+						# self.instance.setScale(1)
+						# self.instance.show()
+						# # logger.debug(f"Displayed backdrop: {path}")
+						# return
+					# else:
+						# logger.warning(f"Failed to load pixmap (attempt {attempt + 1})")
+						# sleep(0.1 * (attempt + 1))
+				# except Exception as e:
+					# logger.error(f"Pixmap error (attempt {attempt + 1}): {str(e)}")
+					# sleep(0.1 * (attempt + 1))
+
+			# self.instance.hide()
+
+		# except Exception as e:
+			# logger.error(f"Error in showBackdrop: {str(e)}")
+			# self.instance.hide()
+	"""
 
 	def waitBackdrop(self):
 		"""Wait for Backdrop download to complete with retries"""
@@ -365,7 +426,7 @@ class BackdropDB(AgbDownloadThread):
 		super().__init__()
 
 		self.queued_backdrops = set()
-		self.backdrop_cache = {}
+		# self.backdrop_cache = {}
 
 		self.executor = ThreadPoolExecutor(max_workers=4)
 		self.extensions = extensions
@@ -587,7 +648,6 @@ class BackdropAutoDB(AgbDownloadThread):
 		self.processed_titles = OrderedDict()  # Tracks processed shows
 		self.backdrop_download_count = 0
 		self.provider_engines = self.build_providers()
-
 		try:
 			scan_time = config.plugins.Aglare.bscan_time.value
 			self.scheduled_hour = int(scan_time[0])
@@ -791,7 +851,7 @@ class BackdropAutoDB(AgbDownloadThread):
 			service_name = service_name.replace("\xc2\x86", "").replace("\xc2\x87", "")
 
 			# Safely get the raw event title (could be None)
-			raw_title = event[4] or ""  
+			raw_title = event[4] or ""
 			event_name = raw_title.strip()
 			if not event_name:
 				# nothing to search for, skip this event
