@@ -62,8 +62,7 @@ from Components.config import (
 	ConfigYesNo,
 	config,
 	getConfigListEntry,
-	ConfigClock,
-	# ConfigInteger
+	ConfigClock
 )
 
 # Enigma2 Screens
@@ -82,7 +81,7 @@ from Plugins.Plugin import PluginDescriptor
 
 from urllib.request import Request,  urlopen
 
-version = '5.4'
+version = '5.7'
 
 """
 HELPER
@@ -172,7 +171,7 @@ config.plugins.Aglare.imdb = ConfigOnOff(default=False)
 config.plugins.Aglare.programmetv = ConfigOnOff(default=False)
 config.plugins.Aglare.molotov = ConfigOnOff(default=False)
 
-config.plugins.Aglare.cache = ConfigOnOff(default=False)
+config.plugins.Aglare.cache = ConfigOnOff(default=True)
 agp_use_cache = config.plugins.Aglare.cache
 
 config.plugins.Aglare.pstdown = ConfigOnOff(default=False)
@@ -180,22 +179,12 @@ config.plugins.Aglare.bkddown = ConfigOnOff(default=False)
 config.plugins.Aglare.pscan_time = ConfigClock(calcTime(0, 0))  # 00:00
 config.plugins.Aglare.bscan_time = ConfigClock(calcTime(2, 0))  # 02:00
 
+# remove png
 config.plugins.Aglare.png = NoSave(ConfigYesNo(default=False))
 
-
 # stars
-config.plugins.Aglare.rating_source = ConfigSelection(
-	choices=[("tmdb", "TMDB Rating"), ("imdb", "IMDB Rating")],
-	default="tmdb"
-)
-config.plugins.Aglare.display_mode = ConfigSelection(
-	choices=[
-		("percentage", "Percentage (0-100)"),
-		("stars5", "5-Star Rating"),
-		("stars10", "10-Star Rating")
-	],
-	default="percentage"
-)
+config.plugins.Aglare.rating_source = ConfigOnOff(default=False)
+
 # infoevents
 config.plugins.Aglare.info_display_mode = ConfigSelection(
 	choices=[("short", "Short info"), ("full", "Full info"), ("custom", "Custom format")],
@@ -286,9 +275,12 @@ config.plugins.Aglare.ChannSelector = ConfigSelection(default='channellist_no_po
 	('channellist_no_posters_no_picon', _('ChannelSelection_NO_Posters_NO_Picon')),
 	('channellist_backdrop_v', _('ChannelSelection_BackDrop_V')),
 	('channellist_backdrop_h', _('ChannelSelection_BackDrop_H')),
-	('channellist_1_poster', _('ChannelSelection_1_Poster')),
-	('channellist_4_posters', _('ChannelSelection_4_Posters')),
-	('channellist_6_posters', _('ChannelSelection_6_Posters')),
+	('channellist_1_poster_PX', _('ChannelSelection_1_Poster_X')),
+	('channellist_1_poster_EX', _('ChannelSelection_1_Poster_EX')),
+	('channellist_4_posters_PX', _('ChannelSelection_4_Posters_X')),
+	('channellist_4_posters_EX', _('ChannelSelection_4_Posters_EX')),
+	('channellist_6_posters_PX', _('ChannelSelection_6_Posters_X')),
+	('channellist_6_posters_EX', _('ChannelSelection_6_Posters_EX')),
 	('channellist_big_mini_tv', _('ChannelSelection_big_mini_tv'))
 ])
 
@@ -307,6 +299,7 @@ config.plugins.Aglare.E2iplayerskins = ConfigSelection(default='OFF', choices=[
 	('e2iplayer_skin_on', _('ON'))
 ])
 
+configfile.load()      # pull the values that were written to /etc/enigma2/settings
 
 """ Config and setting maintenance """
 
@@ -527,6 +520,62 @@ class AglareSetup(ConfigListScreen, Screen):
 	def createSetup(self):
 		try:
 			self.editListEntry = None
+			# ── NEW BLOCK: show "CD" in PosterX only when Style5 CD is active ──
+			is_style5_cd = (config.plugins.Aglare.InfobarStyle.value == 'infobar_base5')
+
+			# Always‑available PosterX choices
+			posterx_choices = [
+				('infobar_posters_posterx_off', _('OFF')),
+				('infobar_posters_posterx_on',  _('ON')),
+			]
+
+			# Add “CD” only if Style5 CD is selected
+			if is_style5_cd:
+				posterx_choices.append(('infobar_posters_posterx_cd', _('CD')))
+
+			# Safeguard: if user leaves Style5 CD, force a valid default
+			current_value = config.plugins.Aglare.InfobarPosterx.value
+			default_value = current_value if any(k == current_value for k, _ in posterx_choices) \
+				else 'infobar_posters_posterx_off'
+
+			# Apply the dynamic choice list
+			# PosterX --------------------------------------------------------
+			if config.plugins.Aglare.InfobarPosterx.value not in [v for v, _ in posterx_choices]:
+				config.plugins.Aglare.InfobarPosterx.value = posterx_choices[0][0]
+			config.plugins.Aglare.InfobarPosterx.setChoices(posterx_choices)
+			# ────────────────────────────────────────────────────────────────────
+			# ── NEW BLOCK: dynamic list for InfoBar Xtraevent ───────────────
+			style = config.plugins.Aglare.InfobarStyle.value  # current skin style
+
+			# Always–present options
+			xtraevent_choices = [
+				('infobar_posters_xtraevent_off', _('OFF')),
+				('infobar_posters_xtraevent_on',  _('ON')),
+			]
+
+			# Style‑dependent extras
+			if style == 'infobar_base1':               # Default style
+				xtraevent_choices.append(
+					('infobar_posters_xtraevent_info', _('Backdrop'))
+				)
+			elif style == 'infobar_base5':             # Style 5 CD
+				xtraevent_choices.append(
+					('infobar_posters_xtraevent_cd', _('CD'))
+				)
+
+			# Validate current value – fall back to OFF if it’s no longer valid
+			current = config.plugins.Aglare.InfobarXtraevent.value
+			safe_default = (
+				current if any(key == current for key, _ in xtraevent_choices)
+				else 'infobar_posters_xtraevent_off'
+			)
+
+			# Apply the new list
+			# Xtraevent ------------------------------------------------------
+			if config.plugins.Aglare.InfobarXtraevent.value not in [v for v, _ in xtraevent_choices]:
+				config.plugins.Aglare.InfobarXtraevent.value = xtraevent_choices[0][0]
+			config.plugins.Aglare.InfobarXtraevent.setChoices(xtraevent_choices)
+			# ────────────────────────────────────────────────────────────────
 			list = []
 			section = '-------------------------( GENERAL SKIN  SETUP )------------------------'
 			list.append(getConfigListEntry(section))
@@ -546,12 +595,15 @@ class AglareSetup(ConfigListScreen, Screen):
 			list.append(getConfigListEntry(_('VolumeBar Style:'), config.plugins.Aglare.VolumeBar))
 			list.append(getConfigListEntry(_('Support E2iplayer Skins:'), config.plugins.Aglare.E2iplayerskins))
 
+			section = '--------------------------( UTILITY SKIN SETUP )------------------------'
+			list.append(getConfigListEntry(section))
+			list.append(getConfigListEntry(_('Remove all png (poster - backdrop) (OK)'), config.plugins.Aglare.png, _("This operation remove all png from folder device (Poster-Backdrop)")))
+
 			section = '---------------------------( APIKEY SKIN SETUP )------------------------'
 			list.append(getConfigListEntry(section))
 
-			list.append(getConfigListEntry(_('Type Display Star mode:'), config.plugins.Aglare.display_mode))
-			list.append(getConfigListEntry(_('Type Rating Star Style:'), config.plugins.Aglare.rating_source))
-			
+			list.append(getConfigListEntry(_('Enable Rating Star:'), config.plugins.Aglare.rating_source))
+
 			list.append(getConfigListEntry(_('Type Display Infoevents mode:'), config.plugins.Aglare.info_display_mode))
 			list.append(getConfigListEntry(_('Type Infoevents Style:'), config.plugins.Aglare.info_format))
 
@@ -594,10 +646,6 @@ class AglareSetup(ConfigListScreen, Screen):
 					list.append(getConfigListEntry(_('Automatic download of backdrop'), config.plugins.Aglare.bkddown, _("Download favorite list backdrop with Epg automatically at startup")))
 					if config.plugins.Aglare.bkddown.value is True:
 						list.append(getConfigListEntry(_('Set Time our - minute for Backdrop download'), config.plugins.Aglare.bscan_time, _("Configure time for downloading backdrop")))
-
-			section = '--------------------------( UTILITY SKIN SETUP )------------------------'
-			list.append(getConfigListEntry(section))
-			list.append(getConfigListEntry(_('Remove all png (poster - backdrop) (OK)'), config.plugins.Aglare.png, _("This operation remove all png from folder device (Poster-Backdrop)")))
 
 			self["config"].list = list
 			self["config"].l.setList(list)
@@ -913,43 +961,66 @@ class AglareSetup(ConfigListScreen, Screen):
 			self.close()
 
 	def checkforUpdate(self):
+		"""Fetch version file from GitHub and prompt the user if an update exists."""
+		global destr, fullurl, version
+
+		if not fullurl:
+			self.session.open(
+				MessageBox,
+				_("Update URL not initialised – open the plugin once from the Plugins menu first."),
+				MessageBox.TYPE_ERROR
+			)
+			return
+
 		try:
-			fp = ''
-			destr = '/tmp/' + destr
-			req = Request(fullurl)
-			req.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36')
-			fp = urlopen(req)
-			fp = fp.read().decode('utf-8')
-			print('fp read:', fp)
-			with open(destr, 'w') as f:
-				f.write(str(fp))
-				f.seek(0)
-			if fileExists(destr):
-				with open(destr, 'r') as cc:
-					s1 = cc.readline()
-					vers = s1.split('#')[0]
-					url = s1.split('#')[1]
-					version_server = vers.strip()
-					self.updateurl = url.strip()
-					cc.close()
-					if str(version_server) == str(version):
-						message = '%s %s\n%s %s\n\n%s' % (
-							_('Server version:'), version_server,
-							_('Version installed:'), version,
-							_('You have the current version Aglare!')
-						)
-						self.session.open(MessageBox, message, MessageBox.TYPE_INFO)
-					elif version_server > version:
-						message = '%s %s\n%s %s\n\n%s' % (
-							_('Server version:'),  version_server,
-							_('Version installed:'), version,
-							_('The update is available!\n\nDo you want to run the update now?')
-						)
-						self.session.openWithCallback(self.update, MessageBox, message, MessageBox.TYPE_YESNO)
-					else:
-						self.session.open(MessageBox, _('You have version %s!!!') % version, MessageBox.TYPE_ERROR)
+			# write server‐side version file into /tmp
+			tmp_file = f'/tmp/{destr}'
+			req = Request(
+				fullurl,
+				headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'}
+			)
+			data = urlopen(req).read().decode('utf‑8')
+
+			with open(tmp_file, 'w') as f:
+				f.write(data)
+
+			if not fileExists(tmp_file):
+				raise IOError("Failed to write tmp version file")
+
+			with open(tmp_file, 'r') as fh:
+				line = fh.readline().strip()
+
+			# expected format: "<version>#<ipk‑url>"
+			try:
+				version_server, self.updateurl = (x.strip() for x in line.split('#', 1))
+			except ValueError:
+				raise ValueError(f"Malformed version string: {line}")
+
+			if version_server == version:
+				self.session.open(
+					MessageBox,
+					_("You already have the latest version ({}).").format(version),
+					MessageBox.TYPE_INFO
+				)
+			elif version_server > version:
+				self.session.openWithCallback(
+					self.update,
+					MessageBox,
+					_(
+						"Server version: {}\nInstalled version: {}\n\n"
+						"A newer build is available – update now?"
+					).format(version_server, version),
+					MessageBox.TYPE_YESNO
+				)
+			else:  # local build is somehow newer
+				self.session.open(
+					MessageBox,
+					_("Local build ({}) is newer than server build ({}).").format(version, version_server),
+					MessageBox.TYPE_INFO
+				)
+
 		except Exception as e:
-			print('error: ', str(e))
+			self.session.open(MessageBox, _("Update check failed: {}").format(str(e)), MessageBox.TYPE_ERROR)
 
 	def update(self, answer):
 		if answer is True:
@@ -1033,9 +1104,19 @@ class AglareUpdater(Screen):
 		return
 
 	def downloadProgress(self, recvbytes, totalbytes):
-		self['status'].setText(_('Download in progress...'))
-		self['progress'].value = int(100 * self.last_recvbytes // float(totalbytes))
-		self['progresstext'].text = '%d of %d kBytes (%.2f%%)' % (self.last_recvbytes // 1024, totalbytes // 1024, 100 * self.last_recvbytes // float(totalbytes))
+		"""Update the on‑screen progress bar and text."""
+		if totalbytes == 0:
+			pct = 0
+		else:
+			pct = int(100 * recvbytes / float(totalbytes))
+
+		self['status'].setText(_('Download in progress…'))
+		self['progress'].value = pct
+		self['progresstext'].text = '{} of {} kB ({:.2f} %)'.format(
+			recvbytes // 1024,
+			totalbytes // 1024 if totalbytes else 0,
+			pct
+		)
 		self.last_recvbytes = recvbytes
 
 	def restartGUI(self, answer=False):
@@ -1051,7 +1132,8 @@ def removePng():
 	if exists(path_poster):
 		png_files = glob_glob(join(path_poster, "*.png"))
 		jpg_files = glob_glob(join(path_poster, "*.jpg"))
-		files_to_remove = png_files + jpg_files
+		json_file = glob_glob(join(path_poster, "*.json"))
+		files_to_remove = png_files + jpg_files + json_file
 
 		if not files_to_remove:
 			print("No PNG or JPG files found in the folder " + path_poster)
@@ -1068,7 +1150,8 @@ def removePng():
 	if exists(patch_backdrop):
 		png_files_backdrop = glob_glob(join(patch_backdrop, "*.png"))
 		jpg_files_backdrop = glob_glob(join(patch_backdrop, "*.jpg"))
-		files_to_remove_backdrop = png_files_backdrop + jpg_files_backdrop
+		json_file_backdrop = glob_glob(join(path_poster, "*.json"))
+		files_to_remove_backdrop = png_files_backdrop + jpg_files_backdrop + json_file_backdrop
 
 		if not files_to_remove_backdrop:
 			print("No PNG or JPG files found in the folder " + patch_backdrop)

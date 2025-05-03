@@ -88,7 +88,7 @@ import time
 # IMPORTS FOR TEXT PROCESSING
 # ========================
 from unicodedata import normalize
-from re import sub, IGNORECASE
+from re import sub, IGNORECASE, S, I, search
 
 # ========================
 # ENIGMA SPECIFIC IMPORTS
@@ -445,6 +445,28 @@ def clean_for_tvdb_optimized(title):
 		return ""
 
 
+def cleanText(text):
+	cutlist = ['x264', '720p', '1080p', '1080i', 'PAL', 'GERMAN', 'ENGLiSH', 'WS', 'DVDRiP', 'UNRATED', 'RETAIL', 'Web-DL', 'DL', 'LD', 'MiC', 'MD', 'DVDR', 'BDRiP', 'BLURAY', 'DTS', 'UNCUT', 'ANiME',
+			   'AC3MD', 'AC3', 'AC3D', 'TS', 'DVDSCR', 'COMPLETE', 'INTERNAL', 'DTSD', 'XViD', 'DIVX', 'DUBBED', 'LINE.DUBBED', 'DD51', 'DVDR9', 'DVDR5', 'h264', 'AVC',
+			   'WEBHDTVRiP', 'WEBHDRiP', 'WEBRiP', 'WEBHDTV', 'WebHD', 'HDTVRiP', 'HDRiP', 'HDTV', 'ITUNESHD', 'REPACK', 'SYNC']
+	text = text.replace('.wmv', '').replace('.flv', '').replace('.ts', '').replace('.m2ts', '').replace('.mkv', '').replace('.avi', '').replace('.mpeg', '').replace('.mpg', '').replace('.iso', '').replace('.mp4', '')
+
+	for word in cutlist:
+		text = sub(r'(\_|\-|\.|\+)' + word + r'(\_|\-|\.|\+)', '+', text, flags=I)
+	text = text.replace('.', ' ').replace('-', ' ').replace('_', ' ').replace('+', '').replace(" Director's Cut", "").replace(" director's cut", "").replace("[Uncut]", "").replace("Uncut", "").replace("Elokuva: ", "").replace("Uusi Kino: ", "").replace("Kino Klassikko: ", "").replace("Kino Suomi: ", "").replace("Kino: ", "")
+
+	text_split = text.split()
+	if text_split and text_split[0].lower() in ("new:", "live:"):
+		text_split.pop(0)  # remove annoying prefixes
+	text = " ".join(text_split)
+
+	if search(r'[Ss][\d]+[Ee][\d]+', text):
+		text = sub(r'[Ss][\d]+[Ee][\d]+.*[\w]+', '', text, flags=S | I)
+	text = sub(r'\(.*\)', '', text).rstrip()  # remove episode number from series, like "series name (234)"
+
+	return text
+
+
 # @lru_cache(maxsize=2000)
 def clean_for_tvdb(title):
 	"""
@@ -497,6 +519,7 @@ def clean_for_tvdb(title):
 
 		# Process with convtext
 		final_title = convtext(clean_title)
+		# final_title = cleanText(clean_title)
 
 		# Handle convtext returning None
 		if final_title is None:
@@ -828,6 +851,8 @@ def delete_old_files_if_low_disk_space(POSTER_FOLDER, min_free_space_mb=50, max_
 
 
 delete_old_files_if_low_disk_space(POSTER_FOLDER, min_free_space_mb=50, max_age_days=30)
+delete_old_files_if_low_disk_space(BACKDROP_FOLDER, min_free_space_mb=50, max_age_days=30)
+delete_old_files_if_low_disk_space(IMOVIE_FOLDER, min_free_space_mb=50, max_age_days=30)
 
 # ================ END MEDIASTORAGE CONFIGURATION ===============
 

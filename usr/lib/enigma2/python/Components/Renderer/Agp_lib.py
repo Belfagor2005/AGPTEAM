@@ -60,16 +60,20 @@ else:
 	from urllib.parse import quote_plus
 
 
-def quoteEventName(eventName):
+def quoteEventName(eventName, safe="+"):
 	"""
 	Quote and clean event names for URL encoding
 	Handles special characters and encoding issues
+
+	:param eventName: Stringa da codificare
+	:param safe: Caratteri da mantenere non codificati (default: "+")
+	:return: Stringa codificata URL-safe
 	"""
 	try:
 		text = eventName.decode('utf8').replace(u'\x86', u'').replace(u'\x87', u'').encode('utf8')
 	except:
 		text = eventName
-	return quote_plus(text, safe="+")
+	return quote_plus(text, safe=safe)
 
 
 lng = "en"

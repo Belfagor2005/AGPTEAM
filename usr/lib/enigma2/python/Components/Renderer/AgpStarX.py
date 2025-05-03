@@ -41,225 +41,277 @@ __copyright__ = "AGP Team"
 
 # Standard library imports
 import json
-from hashlib import md5
-from os.path import join, exists
+from functools import lru_cache
+from os import remove
+from os.path import exists  # , join
+from threading import Lock, Thread, Timer
+from urllib.error import HTTPError
+from urllib.request import urlopen
 
 # Enigma2 imports
-from enigma import eSlider, eEPGCache
 from Components.Renderer.Renderer import Renderer
-from Components.Sources.CurrentService import CurrentService
-from Components.Sources.Event import Event
-from Components.Sources.EventInfo import EventInfo
-from Components.Sources.ServiceEvent import ServiceEvent
 from Components.VariableValue import VariableValue
-# from Components.config import config
-
-import NavigationInstance
-from ServiceReference import ServiceReference
+from enigma import eEPGCache, eSlider
 
 # Local imports
-from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, clean_filename, logger
-from Plugins.Extensions.Aglare.plugin import config
+from Plugins.Extensions.Aglare.plugin import ApiKeyManager, agp_use_cache, config
+from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, logger
+from .Agp_lib import quoteEventName
+
 # Constants
+api_key_manager = ApiKeyManager()
 epgcache = eEPGCache.getInstance()
 epgcache.load()
 
 
-"""skin configuration"""
-"""
-<widget source="Event" render="AgpStarX" position="x,y" size="width,height"
-	rating_source="imdb" display_mode="stars5" />
-"""
-"""
-<widget source="Event" render="AgpStarX" position="x,y" size="width,height"
-	rating_source="tmdb" display_mode="stars10" />
+try:
+	lng = config.osd.language.value
+	lng = lng[:-3]
+except:
+	lng = 'en'
+	pass
+
+
+"""skin configuration
+
+<widget source="ServiceEvent" render="AgpStarX"
+	position="1011,50"
+	size="316,27"
+	pixmap="skin_default/starsbar_empty.png"
+	alphatest="blend"
+	transparent="1"
+	zPosition="20"/>
+
+<widget source="ServiceEvent" render="AgpStarX"
+	position="1011,50"
+	size="316,27"
+	pixmap="skin_default/starsbar_filled.png"
+	alphatest="blend"
+	transparent="1"
+	zPosition="22"/>
+
 """
 
 
 class AgpStarX(VariableValue, Renderer):
-	"""Renderer for displaying star ratings from TMDB/IMDB data"""
+
 	GUI_WIDGET = eSlider
 
 	def __init__(self):
-		super().__init__()
+		Renderer.__init__(self)
 		VariableValue.__init__(self)
 		self.__start = 0
 		self.__end = 100
-		self.canal = [None] * 6
-		self.quick_cache = {}
-		if len(self.quick_cache) > 50:
-			self.quick_cache.clear()
+		self.text = ""
+		self.current_request = None
+		self.lock = Lock()
+		self._setup_caching()
+		self.last_channel = None
 		self.rating_source = config.plugins.Aglare.rating_source.value
-		self.display_mode = config.plugins.Aglare.display_mode.value
 		logger.info("AgpStarX Renderer initialized")
-
-	def applySkin(self, desktop, parent):
-		"""Handle skin attributes"""
-		attribs = []
-		for attrib, value in self.skinAttributes:
-			if attrib == "rating_source":
-				self.rating_source = str(value)
-			elif attrib == "display_mode":
-				self.display_mode = str(value)
-			attribs.append((attrib, value))
-		self.skinAttributes = attribs
-		return Renderer.applySkin(self, desktop, parent)
 
 	def changed(self, what):
 		"""Handle content changes"""
-		if not self.instance:
-			return
-
 		if what[0] == self.CHANGED_CLEAR:
 			(self.range, self.value) = ((0, 1), 0)
 			return
 
+		if not self.rating_source:
+			(self.range, self.value) = ((0, 1), 0)
+			return
+
+		if what[0] != self.CHANGED_CLEAR:
+			logger.info('AgpStarX event B what[0] != self.CHANGED_CLEAR')
+			if self.instance:
+				self.instance.hide()
+
+		self.infos()
+
+	def infos(self):
+		if not hasattr(self.source, 'event') or not self.source.event:
+			return
+
+		if not self.rating_source:
+			return
+
 		try:
-			service = None
-			if isinstance(self.source, ServiceEvent):
-				service = self.source.getCurrentService()
-			elif isinstance(self.source, CurrentService):
-				service = self.source.getCurrentServiceRef()
-			elif isinstance(self.source, EventInfo):
-				service = NavigationInstance.instance.getCurrentlyPlayingServiceReference()
-			elif isinstance(self.source, Event):
-				self._fill_from_event()
-				self._update_rating()
+			current_event = self.source.event
+			if not current_event:
 				return
 
-			if service:
-				self._fill_from_service(service)
-				self._update_rating()
+			current_channel = current_event.getEventName()
+			if current_channel == self.last_channel:
+				return
+
+			self.last_channel = current_channel
+			self.pstcanal = clean_for_tvdb(current_channel)
+
+			if self.current_request:
+				self.current_request = None
+
+			self.current_request = Thread(target=self.safe_download_info)
+			self.current_request.start()
 
 		except Exception as e:
-			logger.error(f"Changed error: {str(e)}")
-			(self.range, self.value) = ((0, 1), 0)
+			logger.error(f"AgpStarX Infos error: {str(e)}")
 
-	def _fill_from_event(self):
-		"""Extract event info from current event"""
-		event = self.source.event
-		self.canal[1] = event.getBeginTime()
-		event_name = event.getEventName().replace('\xc2\x86', '').replace('\xc2\x87', '')
-		self.canal[2] = event_name
-		self.canal[3] = event.getExtendedDescription()
-		self.canal[4] = event.getShortDescription()
-		self.canal[5] = event_name
+	def _setup_caching(self):
+		"""Dynamic caching configuration"""
+		if agp_use_cache.value:
+			self.cached_download = lru_cache(maxsize=100)(self._safe_download_impl)
+		else:
+			self.cached_download = self._safe_download_impl
 
-	def _fill_from_service(self, service):
-		"""Extract event info from service reference"""
-		service_str = service.toString()
-		events = epgcache.lookupEvent(['IBDCTESX', (service_str, 0, -1, -1)])
-		if not events:
-			(self.range, self.value) = ((0, 1), 0)
-			return
-
-		service_name = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '')
-		self.canal = [None] * 6
-		self.canal[0] = service_name
-		event = events[0]  # Get current event
-		self.canal[1] = event[1]  # Begin time
-		self.canal[2] = event[4]  # Event name
-		self.canal[3] = event[5]  # Extended description
-		self.canal[4] = event[6]  # Short description
-		self.canal[5] = event[4]  # Event name (again)
-
-	def _update_rating(self):
-		"""Update rating display based on current event"""
-		if not self.canal[5] or not isinstance(self.canal[5], str):
-			logger.warning("Invalid title in canal[5]")
-			(self.range, self.value) = ((0, 1), 0)
-			return
-
-		clean_title = clean_for_tvdb(self.canal[5])  # if self.canal[5] else None
-		title_hash = md5(clean_title.encode('utf-8')).hexdigest()
-
-		# Check quick cache first
-		if title_hash in self.quick_cache:
-			self._display_rating(self.quick_cache[title_hash])
-			return
-
-		# Check in persistent cache
-		info_file = join(POSTER_FOLDER, f"{clean_filename(clean_title)}.json")
-		if exists(info_file):
-			try:
-				with open(info_file, 'r') as f:
-					info_data = json.load(f)
-					rating = self._extract_rating(info_data)
-					self.quick_cache[title_hash] = rating
-					self._display_rating(rating)
+	def safe_download_info(self):
+		try:
+			with self.lock:
+				if not hasattr(self, 'pstcanal') or not self.pstcanal or len(self.pstcanal) < 3:
 					return
-			except Exception as e:
-				logger.error(f"Error loading rating file: {str(e)}")
 
-		# No cached rating available
-		(self.range, self.value) = ((0, 1), 0)
+				info_file = f"{POSTER_FOLDER}/{self.pstcanal}.json"
 
-	def _extract_rating(self, info_data):
-		"""Extract rating from TMDB/OMDB data based on configuration"""
-		if self.rating_source == "tmdb":
-			rating = info_data.get('vote_average', 0)
-			if rating:
-				return min(int(float(rating) * 10), 100)  # Convert 0-10 scale to 0-100
-		elif self.rating_source == "imdb":
-			rating = info_data.get('imdbRating', 0)
-			if rating and rating != 'N/A':
-				return min(int(float(rating) * 10), 100)  # Convert 0-10 scale to 0-100
+				# Attempting to read from existing file
+				if exists(info_file):
+					try:
+						with open(info_file, "r") as f:
+							data = json.load(f)
+						self.process_data(data)
+						return
+					except Exception as e:
+						logger.warning(f"File corrotto, elimino: {info_file} {e}")
+						remove(info_file)
 
-		return 0  # Default if no rating found
+				# Download API
+				self.api_key = api_key_manager.get_api_key('tmdb')
+				if not self.api_key or len(self.pstcanal) < 3:
+					return None
 
-	def _display_rating(self, rating):
-		"""Update the slider with the rating value"""
-		if self.display_mode == "percentage":
-			(self.range, self.value) = ((0, 100), rating)
-		elif self.display_mode == "stars5":
-			# Convert to 5-star scale (0-100 becomes 0-5 stars)
-			stars = min(5, max(0, round(rating / 20)))
-			(self.range, self.value) = ((0, 5), stars)
-		elif self.display_mode == "stars10":
-			# Convert to 10-star scale (0-100 becomes 0-10 stars)
-			stars = min(10, max(0, round(rating / 10)))
-			(self.range, self.value) = ((0, 10), stars)
-		else:  # Default to percentage
-			(self.range, self.value) = ((0, 100), rating)
+				try:
+					clean_query = quoteEventName(self.pstcanal.strip())
+					url = f"https://api.themoviedb.org/3/search/multi?api_key={self.api_key}&query={clean_query}"
 
-		self.instance.show()
+					with urlopen(url, timeout=10) as response:
+						if response.status != 200:
+							return
+						url_data = json.load(response)
+
+					# Cascade Validation
+					results = url_data.get('results', [])
+					valid_results = [r for r in results if r.get('media_type') in ['movie', 'tv']]
+
+					if not valid_results:
+						return
+
+					# Content type control (exclude TV shows)
+					best_result = valid_results[0]
+					content_type = best_result['media_type']
+					content_id = best_result['id']
+					details_url = f"https://api.themoviedb.org/3/{content_type}/{content_id}?api_key={self.api_key}"
+
+					with urlopen(details_url, timeout=15) as details_response:
+						if details_response.status != 200:
+							return
+						movie_data = json.load(details_response)
+
+					# Save data
+					with open(info_file, "w") as f:
+						json.dump(movie_data, f, indent=2)
+						# logger.debug(f"AgpStarX Data saved in: {info_file}")
+
+					self.process_data(movie_data)
+
+				except HTTPError as e:
+					if e.code == 404:
+						logger.debug("AgpStarX Resource not found")
+					return
+				except Exception as e:
+					logger.error(f"AgpStarX Error while downloading: {str(e)}")
+
+		except Exception as e:
+			logger.error(f"AgpStarX Critical error: {str(e)}", exc_info=True)
+
+	def _safe_download_impl(self, channel_hash: str):
+		"""Basic download implementation with correct parameters"""
+		try:
+			with self.lock:
+				channel_name = self.pstcanal
+
+				self.api_key = api_key_manager.get_api_key('tmdb')
+				if not self.api_key or len(self.pstcanal) < 3:
+					return None
+
+				clean_query = quoteEventName(channel_name)
+				search_url = f"https://api.themoviedb.org/3/search/multi?api_key={self.api_key}&query={clean_query}"
+
+				with urlopen(search_url, timeout=10) as res:
+					if res.status != 200:
+						return None
+					search_data = json.load(res)
+
+				# Processing results
+				valid_results = [r for r in search_data.get('results', []) if r.get('media_type') in ['movie', 'tv']]
+
+				if not valid_results:
+					return None
+
+				best_result = valid_results[0]
+				content_type = best_result['media_type']
+				content_id = best_result['id']
+
+				# Request details
+				details_url = f"https://api.themoviedb.org/3/{content_type}/{content_id}?api_key={self.api_key}"
+				with urlopen(details_url, timeout=15) as detail_res:
+					return json.load(detail_res)
+
+		except HTTPError as e:
+			if e.code == 404:
+				logger.debug("Resource not found")
+			return None
+		except Exception as e:
+			logger.error(f"Error download: {str(e)}")
+			return None
+
+	def process_data(self, data):
+		try:
+			# Delay UI update by 100ms to avoid flickering
+			Timer(0.10, self._delayed_ui_update, [data]).start()
+		except Exception as e:
+			logger.error(f"AgpStarX Process data error: {str(e)}")
+
+	def _delayed_ui_update(self, data):
+		try:
+			"""
+			# Checking for instance existence
+			if not self.instance or not hasattr(self.instance, 'show'):
+				return
+			"""
+
+			if not self.instance:
+				return
+
+			# Channel consistency check
+			current_event = self.source.event
+			if not current_event or current_event.getEventName() != self.last_channel:
+				return
+
+			# Data processing and UI update
+			rating = data.get('vote_average', 0)
+			rtng = min(int(rating * 10), 100) if rating else 0
+			with self.lock:
+				self.range = (0, 100)
+				self.value = rtng
+				self.instance.show()
+
+		except Exception as e:
+			logger.debug(f"AgpStarX UI update skipped: {str(e)}")
 
 	def postWidgetCreate(self, instance):
-		"""Initialize the slider widget"""
 		instance.setRange(self.__start, self.__end)
 
 	def setRange(self, range):
-		"""Set the slider range"""
 		(self.__start, self.__end) = range
-		if self.instance:
+		if self.instance is not None:
 			self.instance.setRange(self.__start, self.__end)
 
 	def getRange(self):
-		"""Get the current slider range"""
-		return (self.__start, self.__end)
-
-
-"""
-# def setupConfig():
-	# from Components.config import ConfigSubsection, ConfigSelection
-	# config.plugins.aglare = ConfigSubsection()
-	# config.plugins.AgpStarX.rating_source = ConfigSelection(
-		# choices=[("tmdb", "TMDB Rating"), ("imdb", "IMDB Rating")],
-		# default="tmdb"
-	# )
-	# config.plugins.AgpStarX.display_mode = ConfigSelection(
-		# choices=[
-			# ("percentage", "Percentage (0-100)"),
-			# ("stars5", "5-Star Rating"),
-			# ("stars10", "10-Star Rating")
-		# ],
-		# default="percentage"
-	# )
-
-
-# # Initialize configuration
-# try:
-	# setupConfig()
-# except Exception as e:
-	# logger.error(f"Config setup error: {str(e)}")
-"""
+		return self.__start, self.__end
