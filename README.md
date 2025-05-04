@@ -9,13 +9,14 @@
 
 ## Verified Integration
 **Tested components in Aglare FHD:**
-```python
+
 # Aglare-specific paths
 POSTER_FOLDER = "/YOUR_DEVICE/posters"
 BACKDROP_FOLDER = "/YOUR_DEVICE/backdrops"
+IMOVIE_FOLDER = "/YOUR_DEVICE/imovie"
 ```
-
-## Implementation Examples
+```
+# Implementation Examples
 ** Infobar (skin.xml)**
 ```xml
 <widget source="session.Event_Now" render="AglarePosterX" position="100,100" size="185,278" />
@@ -48,7 +49,6 @@ BACKDROP_FOLDER = "/YOUR_DEVICE/backdrops"
        path="/path/to/custom_folder"  <!-- Optional -->
 />
 ```
-
 
 ## EPG EVENT EVENTVIEW BACKDROP
 
@@ -95,10 +95,9 @@ self["poster"] = Renderer.AglarePosterX(
 )
 ```
 
-
 ## INFOEVENT DETAILS
 
- ```
+ ```xml
 <widget source="ServiceEvent" render="AgpInfoEvents"
     position="100,400"
     size="600,300"
@@ -108,7 +107,7 @@ self["poster"] = Renderer.AglarePosterX(
  ```
 
 ***Specific Setup On Plugin***
- ```
+ ```python
 config.plugins.Aglare.info_display_mode = ConfigSelection(default="auto", choices=[
     ("auto", _("Automatic")),
     ("tmdb", _("TMDB Only")),
@@ -118,7 +117,7 @@ config.plugins.Aglare.info_display_mode = ConfigSelection(default="auto", choice
 
 
 ## PARENTAL RATING
- ```
+ ```xml
 <widget render="AgpParentalX"
     source="session.Event_Now"
     position="637,730"
@@ -126,7 +125,7 @@ config.plugins.Aglare.info_display_mode = ConfigSelection(default="auto", choice
     zPosition="3"
     transparent="1"
     alphatest="blend"/>
-
+```
 
 ***Specific Icons***
  ```
@@ -140,13 +139,77 @@ config.plugins.Aglare.info_display_mode = ConfigSelection(default="auto", choice
  ```
 
 ***Specific Setup On Plugin***
- ```
+ ```python
 config.plugins.Aglare.info_parental_mode = ConfigSelection(default="auto", choices=[
   ("auto", _("Automatic")),
   ("tmdb", _("TMDB Only")),
   ("omdb", _("OMDB Only")),
   ("off", _("Off"))
 ]) ```
+
+## PARENTAL RATING
+ ```xml
+<widget render="AgpParentalX"
+    source="session.Event_Now"
+    position="637,730"
+    size="50,50"
+    zPosition="3"
+    transparent="1"
+    alphatest="blend"/>
+```
+
+***Specific Icons***
+ ```
+/usr/share/enigma2/<skin>/parental/
+├── FSK_0.png
+├── FSK_6.png
+├── FSK_12.png
+├── FSK_16.png
+├── FSK_18.png
+└── FSK_UN.png 
+ ```
+
+***Specific Setup On Plugin***
+ ```python
+config.plugins.Aglare.info_parental_mode = ConfigSelection(default="auto", choices=[
+  ("auto", _("Automatic")),
+  ("tmdb", _("TMDB Only")),
+  ("omdb", _("OMDB Only")),
+  ("off", _("Off"))
+]) ```
+
+
+## STAR RATING
+ ```xml
+<widget source="ServiceEvent" render="AgpStarX"
+	position="1011,50"
+	size="316,27"
+	pixmap="skin_default/starsbar_empty.png"
+	alphatest="blend"
+	transparent="1"
+	zPosition="20"/>
+
+<widget source="ServiceEvent" render="AgpStarX"
+	position="1011,50"
+	size="316,27"
+	pixmap="skin_default/starsbar_filled.png"
+	alphatest="blend"
+	transparent="1"
+	zPosition="22"/>
+```
+
+***Specific Icons***
+ ```
+/usr/share/enigma2/<skin>/skin_default/
+├── starsbar_empty.png  <--- Optional
+└── starsbar_filled.png 
+ ```
+
+***Specific Setup On Plugin***
+ ```python
+config.plugins.Aglare.rating_source = ConfigOnOff(default=False)
+ ```
+
 
 
 ## Aglare-Specific Setup
