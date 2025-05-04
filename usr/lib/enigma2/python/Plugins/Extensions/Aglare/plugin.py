@@ -186,14 +186,13 @@ config.plugins.Aglare.png = NoSave(ConfigYesNo(default=False))
 config.plugins.Aglare.rating_source = ConfigOnOff(default=False)
 
 # infoevents
-config.plugins.Aglare.info_display_mode = ConfigSelection(
-	choices=[("short", "Short info"), ("full", "Full info"), ("custom", "Custom format")],
-	default="short"
-)
-config.plugins.Aglare.info_format = ConfigText(
-	default="{title} ({year})\nRating: {rating}\nGenres: {genres}\n\n{overview}",
-	fixed_size=False
-)
+config.plugins.Aglare.info_display_mode = ConfigSelection(default="auto", choices=[
+    ("auto", _("Automatic")),
+    ("tmdb", _("TMDB Only")),
+    ("omdb", _("OMDB Only")),
+    ("off", _("Off"))
+])
+
 
 # skin style
 config.plugins.Aglare.colorSelector = ConfigSelection(default='color0', choices=[
@@ -605,7 +604,6 @@ class AglareSetup(ConfigListScreen, Screen):
 			list.append(getConfigListEntry(_('Enable Rating Star:'), config.plugins.Aglare.rating_source))
 
 			list.append(getConfigListEntry(_('Type Display Infoevents mode:'), config.plugins.Aglare.info_display_mode))
-			list.append(getConfigListEntry(_('Type Infoevents Style:'), config.plugins.Aglare.info_format))
 
 			list.append(getConfigListEntry("API KEY SETUP:", config.plugins.Aglare.actapi, _("Settings Apikey Server")))
 
