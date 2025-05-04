@@ -236,7 +236,7 @@ schedule_log_cleanup()
 #    72 (hours)                 259.200             3 Days
 
 logger = setup_logging()
-logger.info("AGP MediaUtils initialized")
+logger.info("AGP Utils initialized")
 
 
 # Initialize text converter debug mode
@@ -292,12 +292,12 @@ def verify_backdrop_integrity(self):
 	# Check each cache entry
 	for title, entry in list(self.cache.cache.items()):
 		if not exists(entry['path']):
-			logger.warning(f"Missing file: {entry['path']}")
+			logger.warning(f"verify_backdrop_integrity Missing file: {entry['path']}")
 			del self.cache.cache[title]
 			missing_files += 1
 
 	if missing_files:
-		logger.info(f"Cleaned {missing_files} invalid cache entries")
+		logger.info(f"verify_backdrop_integrity Cleaned {missing_files} invalid cache entries")
 		self.cache._async_save()
 # validate_backdrop_folder()
 
@@ -309,7 +309,7 @@ def verify_backdrop_integrity(self):
 try:
 	from .Agp_lib import convtext
 except ImportError:
-	logger.warning("convtext not found, using fallback")
+	logger.warning("AGP Utils ImportError convtext not found, using fallback")
 
 	def convtext(x):
 		"""Fallback text conversion function"""
@@ -401,7 +401,7 @@ def clean_for_tvdb_optimized(title):
 		try:
 			title = str(title)
 		except Exception as e:
-			logger.error(f"Title conversion error '{title!r}': {str(e)}")
+			logger.error(f"clean_for_tvdb_optimized Title conversion error '{title!r}': {str(e)}")
 			return ""
 
 	try:
@@ -441,7 +441,7 @@ def clean_for_tvdb_optimized(title):
 		return title
 
 	except Exception as e:
-		logger.error(f"Error cleaning title: {str(e)}")
+		logger.error(f"clean_for_tvdb_optimized Error cleaning title: {str(e)}")
 		return ""
 
 
@@ -488,7 +488,7 @@ def clean_for_tvdb(title):
 		try:
 			title = str(title)
 		except Exception as e:
-			logger.error(f"Title conversion error '{title!r}': {str(e)}")
+			logger.error(f"clean_for_tvdb Title conversion error '{title!r}': {str(e)}")
 			return ""
 
 	# Handle empty string after conversion
@@ -534,7 +534,7 @@ def clean_for_tvdb(title):
 		return final_title
 
 	except Exception as e:
-		logger.error(f"Error cleaning title '{str(original_title)}': {str(e)}")
+		logger.error(f"clean_for_tvdb Error cleaning title '{str(original_title)}': {str(e)}")
 		return ""
 
 
@@ -569,7 +569,7 @@ def check_disk_space(path, min_space_mb, media_type=None, purge_strategy="oldest
 		if free_mb >= min_space_mb:
 			return True
 
-		logger.warning(f"Low space in {path}: {free_mb:.1f}MB < {min_space_mb}MB")
+		logger.warning(f"check_disk_space Low space in {path}: {free_mb:.1f}MB < {min_space_mb}MB")
 
 		# If media_type is specified, activate purge
 		if media_type:
@@ -582,7 +582,7 @@ def check_disk_space(path, min_space_mb, media_type=None, purge_strategy="oldest
 		return False
 
 	except Exception as e:
-		logger.error(f"Space check failed: {str(e)}")
+		logger.error(f"check_disk_space Space check failed: {str(e)}")
 		return False
 
 
@@ -628,17 +628,17 @@ def free_up_space(path, min_space_mb, media_type, strategy="oldest_first"):
 				remove(file_info["path"])
 				freed_mb += file_mb
 				logger.info(
-					f"Purged {media_type}: {basename(file_info['path'])} "f"({file_mb:.1f}MB, {ctime(file_info['mtime'])})")
+					f"free_up_space Purged {media_type}: {basename(file_info['path'])} "f"({file_mb:.1f}MB, {ctime(file_info['mtime'])})")
 			except Exception as e:
-				logger.error(f"Purge failed for {file_info['path']}: {str(e)}")
+				logger.error(f"free_up_space Purge failed for {file_info['path']}: {str(e)}")
 
 		# 4. Final check
 		success = check_disk_space(path, min_space_mb, media_type=None)
-		logger.info(f"Freed {freed_mb:.1f}MB for {media_type}. Success: {success}")
+		logger.info(f"free_up_space Freed {freed_mb:.1f}MB for {media_type}. Success: {success}")
 		return success
 
 	except Exception as e:
-		logger.error(f"Space purge failed: {str(e)}")
+		logger.error(f"free_up_space Space purge failed: {str(e)}")
 		return False
 
 
@@ -671,7 +671,7 @@ def validate_media_path(path, media_type, min_space_mb=None):
 		return path
 
 	except Exception as e:
-		print(f"Validation failed: {str(e)}")
+		logger.error(f"validate_media_path Validation failed: {str(e)}")
 		# Fallback a /tmp
 		fallback = f"/tmp/{media_type}"
 		makedirs(fallback, exist_ok=True)
@@ -786,23 +786,23 @@ class MediaStorage:
 				if self._check_disk_space(base_path):
 					try:
 						makedirs(folder, exist_ok=True)
-						self.logger.info(f"Using {media_type} storage: {folder}")
+						self.logger.info(f"MediaStorage Using {media_type} storage: {folder}")
 						return folder
 					except OSError as e:
-						self.logger.warning(f"Create folder failed: {str(e)}")
+						self.logger.warning(f"MediaStorage Create folder failed: {str(e)}")
 
 		# Fallback
 		fallback = f"/tmp/{media_type}"
 		try:
 			makedirs(fallback, exist_ok=True)
-			self.logger.warning(f"Using fallback storage: {fallback}")
+			self.logger.warning(f"MediaStorage Using fallback storage: {fallback}")
 			return fallback
 		except OSError as e:
-			self.logger.critical(f"All storage options failed: {str(e)}")
-			raise RuntimeError(f"No valid {media_type} storage available")
+			self.logger.critical(f"MediaStorage All storage options failed: {str(e)}")
+			raise RuntimeError(f"MediaStorage No valid {media_type} storage available")
 
 
-# Nella sezione MediaStorage Configuration
+# MediaStorage Configuration
 try:
 	media_config = MediaStorage()
 	POSTER_FOLDER = media_config.poster_folder
@@ -813,41 +813,41 @@ except Exception as e:
 	raise
 
 
-def delete_old_files_if_low_disk_space(POSTER_FOLDER, min_free_space_mb=50, max_age_days=30):
+def delete_old_files_if_low_disk_space(MEDIA_FOLDER, min_free_space_mb=50, max_age_days=30):
 	"""
 	Delete old files if disk space is below threshold
 
 	Args:
-		POSTER_FOLDER: Folder to clean
+		MEDIA_FOLDER: Folder to clean
 		min_free_space_mb: Minimum required free space in MB
 		max_age_days: Maximum age of files to keep
 	"""
 	try:
 		from shutil import disk_usage
-		total, used, free = disk_usage(POSTER_FOLDER)
+		total, used, free = disk_usage(MEDIA_FOLDER)
 		free_space_mb = free / (1024 ** 2)  # Convert to MB
 
 		if free_space_mb < min_free_space_mb:
-			print(f"Low disk space: {free_space_mb:.2f} MB available. Deleting old files...")
+			logger.warning(f"{MEDIA_FOLDER}: Low disk space: {free_space_mb:.2f} MB available. Deleting old files...")
 
 			current_time = time()
 
 			age_limit = max_age_days * 86400  # Seconds in a day
 
-			for filename in listdir(POSTER_FOLDER):
-				file_path = join(POSTER_FOLDER, filename)
+			for filename in listdir(MEDIA_FOLDER):
+				file_path = join(MEDIA_FOLDER, filename)
 
 				if isfile(file_path):
 					file_age = current_time - getmtime(file_path)
 
 					if file_age > age_limit:
 						remove(file_path)
-						print(f"Deleted {filename}, it was {file_age / 86400:.2f} days old.")
+						logger.debug(f"{MEDIA_FOLDER}: Deleted {filename}, it was {file_age / 86400:.2f} days old.")
 		else:
-			print(f"Sufficient disk space: {free_space_mb:.2f} MB available. No files will be deleted.")
+			logger.info(f"{MEDIA_FOLDER}: Sufficient disk space: {free_space_mb:.2f} MB available. No files will be deleted.")
 
 	except Exception as e:
-		print(f"Error while checking disk space or deleting old files: {e}")
+		logger.critical(f"Error while checking disk space or deleting old files: {e}")
 
 
 delete_old_files_if_low_disk_space(POSTER_FOLDER, min_free_space_mb=50, max_age_days=30)
@@ -862,6 +862,7 @@ delete_old_files_if_low_disk_space(IMOVIE_FOLDER, min_free_space_mb=50, max_age_
 def MemClean():
 	"""Clear system memory caches"""
 	try:
+		logger.info("Clear system memory caches")
 		system('sync')  # Flush filesystem buffers
 		system('echo 1 > /proc/sys/vm/drop_caches')  # Clear pagecache
 		system('echo 2 > /proc/sys/vm/drop_caches')  # Clear dentries and inodes
@@ -895,6 +896,7 @@ API_KEYS = {
 def _load_api_keys():
 	"""Load API keys from skin configuration files"""
 	try:
+		logger.info("Load API keys from skin configuration files")
 		cur_skin = config.skin.primary_skin.value.replace('/skin.xml', '')
 		skin_path = Path(f"/usr/share/enigma2/{cur_skin}")
 
@@ -917,7 +919,7 @@ def _load_api_keys():
 		return True
 
 	except Exception as e:
-		print(f"[API Keys] Loading error: {str(e)}")
+		logger.warning(f"[API Keys] Loading error: {str(e)}")
 		return False
 
 

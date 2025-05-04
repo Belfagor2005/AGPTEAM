@@ -5,7 +5,7 @@ from __future__ import absolute_import, print_function
 #########################################################
 #                                                       #
 #  AGLARE SETUP UTILITY SKIN                            #
-#  Version: 5.4                                         #
+#  Version: 5.7                                         #
 #  Created by Lululla (https://github.com/Belfagor2005) #
 #  License: CC BY-NC-SA 4.0                             #
 #  https://creativecommons.org/licenses/by-nc-sa/4.0    #
@@ -187,14 +187,23 @@ config.plugins.Aglare.rating_source = ConfigOnOff(default=False)
 
 # infoevents
 config.plugins.Aglare.info_display_mode = ConfigSelection(default="auto", choices=[
-    ("auto", _("Automatic")),
-    ("tmdb", _("TMDB Only")),
-    ("omdb", _("OMDB Only")),
-    ("off", _("Off"))
+	("auto", _("Automatic")),
+	("tmdb", _("TMDB Only")),
+	("omdb", _("OMDB Only")),
+	("off", _("Off"))
 ])
 
+# parental
+config.plugins.Aglare.info_parental_mode = ConfigSelection(default="auto", choices=[
+	("auto", _("Automatic")),
+	("tmdb", _("TMDB Only")),
+	("omdb", _("OMDB Only")),
+	("off", _("Off"))
+])
 
-# skin style
+# genre
+
+# skin style management
 config.plugins.Aglare.colorSelector = ConfigSelection(default='color0', choices=[
 	('color0', _('Default')),
 	('color1', _('Black')),
@@ -600,10 +609,9 @@ class AglareSetup(ConfigListScreen, Screen):
 
 			section = '---------------------------( APIKEY SKIN SETUP )------------------------'
 			list.append(getConfigListEntry(section))
-
-			list.append(getConfigListEntry(_('Enable Rating Star:'), config.plugins.Aglare.rating_source))
-
-			list.append(getConfigListEntry(_('Type Display Infoevents mode:'), config.plugins.Aglare.info_display_mode))
+			list.append(getConfigListEntry(_('Enable Rating Star:'), config.plugins.Aglare.rating_source, _("This operation enable the display of rating stars for events, based on the selected rating source.")))
+			list.append(getConfigListEntry(_('Enable Parental Icons:'), config.plugins.Aglare.info_parental_mode, _("Show parental guidance icons on events to indicate content rating and age suitability.")))
+			list.append(getConfigListEntry(_('Enable Display InfoEvents mode:'), config.plugins.Aglare.info_display_mode, _("Enable the display of extended event information, including full cast, crew, plot details, and other metadata, in the info widget.")))
 
 			list.append(getConfigListEntry("API KEY SETUP:", config.plugins.Aglare.actapi, _("Settings Apikey Server")))
 
@@ -637,13 +645,13 @@ class AglareSetup(ConfigListScreen, Screen):
 				section = '------------------------------------------------------------------------'
 				list.append(getConfigListEntry(section))
 				if config.plugins.Aglare.actapi.value:
-					list.append(getConfigListEntry("Use Cache on download:", config.plugins.Aglare.cache, _("Activate/Deactivate Cache on Search")))
-					list.append(getConfigListEntry(_('Automatic download of poster'), config.plugins.Aglare.pstdown, _("Download favorite list posters with Epg automatically at startup")))
+					list.append(getConfigListEntry("Use Cache on download:", config.plugins.Aglare.cache, _("Enable or disable caching during event download to speed up repeated searches.")))
+					list.append(getConfigListEntry(_('Automatic download of poster'), config.plugins.Aglare.pstdown, _("Automatically fetch posters for favorite events based on EPG")))
 					if config.plugins.Aglare.pstdown.value is True:
-						list.append(getConfigListEntry(_('Set Time our - minute for Poster download'), config.plugins.Aglare.pscan_time, _("Configure time for downloading posters")))
-					list.append(getConfigListEntry(_('Automatic download of backdrop'), config.plugins.Aglare.bkddown, _("Download favorite list backdrop with Epg automatically at startup")))
+						list.append(getConfigListEntry(_('Set Time our - minute for Poster download'), config.plugins.Aglare.pscan_time, _("Configure the delay time (in minutes) before starting the automatic poster download")))
+					list.append(getConfigListEntry(_('Automatic download of backdrop'), config.plugins.Aglare.bkddown, _("Automatically fetch backdrop for favorite events based on EPG")))
 					if config.plugins.Aglare.bkddown.value is True:
-						list.append(getConfigListEntry(_('Set Time our - minute for Backdrop download'), config.plugins.Aglare.bscan_time, _("Configure time for downloading backdrop")))
+						list.append(getConfigListEntry(_('Set Time our - minute for Backdrop download'), config.plugins.Aglare.bscan_time, _("Configure the delay time (in minutes) before starting the automatic poster download")))
 
 			self["config"].list = list
 			self["config"].l.setList(list)
@@ -960,8 +968,6 @@ class AglareSetup(ConfigListScreen, Screen):
 
 	def checkforUpdate(self):
 		"""Fetch version file from GitHub and prompt the user if an update exists."""
-		global destr, fullurl, version
-
 		if not fullurl:
 			self.session.open(
 				MessageBox,

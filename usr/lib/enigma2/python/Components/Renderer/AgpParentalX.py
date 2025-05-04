@@ -14,6 +14,9 @@ from __future__ import absolute_import, print_function
 #                                                       #
 #  Credits:                                             #
 #  - Original concept by Lululla                        #
+#  - Advanced download management system                #
+#  - Atomic file operations                             #
+#  - Thread-safe resource locking                       #
 #  - TMDB API integration                               #
 #  - TVDB API integration                               #
 #  - OMDB API integration                               #
@@ -26,11 +29,6 @@ from __future__ import absolute_import, print_function
 #  - Advanced caching system                            #
 #  - Fully configurable via AGP Setup Plugin            #
 #                                                       #
-#  Features:                                            #
-#  - Displays age rating icons                          #
-#  - Supports multiple rating systems                   #
-#  - Integrates with Agp Setup metadata                 #
-#                                                       #
 #  Usage of this code without proper attribution        #
 #  is strictly prohibited.                              #
 #  For modifications and redistribution,                #
@@ -41,167 +39,85 @@ __author__ = "Lululla"
 __copyright__ = "AGP Team"
 
 # Standard library imports
-from os import makedirs
 from os.path import join, exists
-from re import search, I
-import json
+from re import findall
+from json import load as json_load, dump as json_dump
+from threading import Lock, Thread
 
-# Enigma2/Dreambox specific imports
+# Enigma2 imports
 from Components.Renderer.Renderer import Renderer
-from Components.config import config
+from enigma import ePixmap, loadPNG
+from urllib.error import HTTPError, URLError
+from urllib.request import urlopen
+import socket
+import gettext
 
-from enigma import ePixmap, eTimer, loadPNG
-
-from .Agp_Utils import get_valid_storage_path, clean_for_tvdb, logger  # , noposter
+# local import
+from Plugins.Extensions.Aglare.plugin import ApiKeyManager, config
+from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, logger
+from .Agp_lib import quoteEventName
 
 # Constants
+api_key_manager = ApiKeyManager()
+_ = gettext.gettext
 cur_skin = config.skin.primary_skin.value.replace('/skin.xml', '')
+
+path_folder = POSTER_FOLDER
 PARENTAL_ICON_PATH = f'/usr/share/enigma2/{cur_skin}/parental/'
+PARENT_SOURCE = config.plugins.Aglare.info_parental_mode.value
 DEFAULT_RATING = 'UN'
+DEFAULT_ICON = 'FSK_UN.png'
 
 
-# Rating system mappings
 RATING_MAP = {
-	# TV Ratings
-	"TV-Y": "6", "TV-Y7": "6", "TV-G": "0",
-	"TV-PG": "16", "TV-14": "14", "TV-MA": "18",
+    # TV Ratings
+    'TV-Y': '6', 'TV-Y7': '6', 'TV-G': '0', 'TV-PG': '16',
+    'TV-14': '14', 'TV-MA': '18',
 
-	# Movie Ratings
-	"G": "0", "PG": "16", "PG-13": "16",
-	"R": "18", "NC-17": "18",
+    # Movie Ratings
+    'G': '0', 'PG': '16', 'PG-13': '16', 'R': '18',
+    'NC-17': '18',
 
-	# Fallbacks
-	"": DEFAULT_RATING, "N/A": DEFAULT_RATING,
-	"Not Rated": DEFAULT_RATING, "Unrated": DEFAULT_RATING
+    # International
+    'PEGI-12': '12', 'PEGI-16': '16', 'PEGI-18': '18',
+
+    # Fallbacks
+    '': DEFAULT_RATING, 'UNKNOWN': DEFAULT_RATING,
+    'NOT RATED': DEFAULT_RATING, 'UNRATED': DEFAULT_RATING
 }
 
 
-class AgpParentalX(Renderer):
-	"""Parental rating indicator with AGP ecosystem integration"""
-
-	GUI_WIDGET = ePixmap
-
-	def __init__(self):
-		Renderer.__init__(self)
-		self.timer = eTimer()
-		self.storage_path = get_valid_storage_path()
-		self._verify_resources()
-
-	def _verify_resources(self):
-		"""Ensure required resources exist"""
-		if not exists(PARENTAL_ICON_PATH):
-			makedirs(PARENTAL_ICON_PATH)
-			logger.warning(f"Created parental rating directory: {PARENTAL_ICON_PATH}")
-
-		# Verify default icons exist
-		for rating in ['0', '6', '12', '16', '18', 'UN']:
-			if not exists(f"{PARENTAL_ICON_PATH}FSK_{rating}.png"):
-				logger.error(f"Missing parental icon: FSK_{rating}.png")
-
-	def changed(self, what):
-		"""Handle EPG changes"""
-		if not hasattr(self, 'instance') or not self.instance:
-			return
-
-		if what[0] not in (self.CHANGED_DEFAULT, self.CHANGED_ALL, self.CHANGED_SPECIFIC, self.CHANGED_CLEAR):
-			if self.instance:
-				self.instance.hide()
-			return
-
-		self._start_delay()
-
-	def _start_delay(self):
-		"""Delay processing to avoid UI lag"""
-		try:
-			if hasattr(self.timer, 'timeout'):
-				self.timer.timeout.connect(self._show_rating)
-			else:  # Fallback for older enigma
-				self.timer.callback.append(self._show_rating)
-			self.timer.start(10, True)  # 10ms delay
-		except Exception as e:
-			logger.error(f"Timer error: {str(e)}")
-			self._show_rating()
-
-	def _show_rating(self):
-		"""Main rating display logic"""
-		try:
-			event = self.source.event
-			if not event:
-				self.instance.hide()
-				return
-
-			# Try to extract rating from three sources
-			rating = (
-				self._extract_from_event_text(event) or
-				self._extract_from_metadata(event) or
-				DEFAULT_RATING
-			)
-
-			self._display_rating(rating)
-
-		except Exception as e:
-			logger.error(f"Rating error: {str(e)}")
-			self.instance.hide()
-
-	def _extract_from_event_text(self, event):
-		"""Check event description for age ratings"""
-		text = "\n".join([
-			event.getEventName() or "",
-			event.getShortDescription() or "",
-			event.getExtendedDescription() or ""
-		])
-
-		match = search(r"\b(\d{1,2})\+|\b(FSK|PEGI)\s*(\d{1,2})", text, I)
-		if match:
-			return match.group(1) or match.group(3)
-		return None
-
-	def _extract_from_metadata(self, event):
-		"""Check PosterX-generated JSON metadata"""
-		title = event.getEventName()
-		if not title:
-			return None
-
-		clean_title = clean_for_tvdb(title)
-		meta_file = join(self.storage_path, f"{clean_title}.json")
-
-		if exists(meta_file):
-			try:
-				with open(meta_file, 'r') as f:
-					rated = json.load(f).get('Rated', '')
-					return RATING_MAP.get(rated, DEFAULT_RATING)
-			except Exception as e:
-				logger.warning(f"Metadata read error: {str(e)}")
-		return None
-
-	def _display_rating(self, rating):
-		"""Load and display appropriate rating icon"""
-		rating = str(rating).upper()
-		icon_path = f"{PARENTAL_ICON_PATH}FSK_{rating}.png"
-
-		if not exists(icon_path):
-			icon_path = f"{PARENTAL_ICON_PATH}FSK_{DEFAULT_RATING}.png"
-			logger.debug(f"Using default icon for rating: {rating}")
-
-		if exists(icon_path):
-			self.instance.setPixmap(loadPNG(icon_path))
-			self.instance.show()
-		else:
-			logger.error(f"Missing icon: {icon_path}")
-			self.instance.hide()
+try:
+    lng = config.osd.language.value
+    lng = lng[:-3]
+except:
+    lng = 'en'
+    pass
 
 
-# Skin configuration example
-"""
+def intCheck():
+    try:
+        response = urlopen("http://google.com", None, 5)
+        response.close()
+    except HTTPError:
+        return False
+    except URLError:
+        return False
+    except socket.timeout:
+        return False
+    return True
+
+
+"""skin configuration
+
 <widget render="AgpParentalX"
-	source="session.Event_Now"
-	position="315,874"
-	size="50,50"
-	zPosition="3"
-	transparent="1"
-	alphatest="blend"/>
-"""
-"""
+    source="session.Event_Now"
+    position="637,730"
+    size="50,50"
+    zPosition="3"
+    transparent="1"
+    alphatest="blend"/>
+
 Icons
 /usr/share/enigma2/<skin>/parental/
 ├── FSK_0.png
@@ -210,4 +126,244 @@ Icons
 ├── FSK_16.png
 ├── FSK_18.png
 └── FSK_UN.png
+
+# config.plugins.Aglare.info_parental_mode = ConfigSelection(default="auto", choices=[
+    # ("auto", _("Automatic")),
+    # ("tmdb", _("TMDB Only")),
+    # ("omdb", _("OMDB Only")),
+    # ("off", _("Off"))
+# ])
 """
+
+
+class AgpParentalX(Renderer):
+    """Parental rating indicator with AGP ecosystem integration"""
+
+    GUI_WIDGET = ePixmap
+
+    def __init__(self):
+        Renderer.__init__(self)
+        self.adsl = intCheck()
+        if not self.adsl:
+            logger.warning("AgpParentalX No internet connection, offline mode activated")
+            return
+        else:
+            logger.info("AgpParentalX Internet connection verified")
+        self.current_request = None
+        self.lock = Lock()
+        self.last_event = None
+        self.icon_path = join(PARENTAL_ICON_PATH, DEFAULT_ICON)
+        # self.timer = eTimer()
+        # self.timer.callback.append(self.delayed_update)
+        logger.info("AgpParentalX Renderer initialized")
+
+    def changed(self, what):
+        if what is None or not self.adsl or PARENT_SOURCE == "off":
+            return
+
+        self.event = self.source.event
+        if self.event and self.event != 'None' or self.event is not None:
+            self.evnt = self.event.getEventName().replace('\xc2\x86', '').replace('\xc2\x87', '')
+            if not self.event:
+                # logger.debug("AgpParentalX No event available")
+                return
+
+        if self.event:
+            current_event_hash = f"{self.event.getEventName()}{self.event.getBeginTime()}"
+            if current_event_hash != self.last_event:
+                # logger.debug("AgpParentalX New event detected, starting data fetch")
+                self.last_event = current_event_hash
+                self.start_data_fetch()
+
+        # event_hash = self.event.getEventName() + str(self.event.getBeginTime())
+        # if event_hash != self.last_event:
+            # self.last_event = event_hash
+            # self.start_data_fetch()
+
+    def start_data_fetch(self):
+        if self.current_request and self.current_request.is_alive():
+            return
+
+        self.current_request = Thread(target=self.fetch_data)
+        self.current_request.start()
+
+    def fetch_data(self):
+        if PARENT_SOURCE == "off":
+            return
+
+        with self.lock:
+            try:
+                data = None
+                clean_title = clean_for_tvdb(self.event.getEventName().replace('\xc2\x86', '').replace('\xc2\x87', ''))
+                json_file = join(path_folder, f"{clean_title}.json")
+                year = self.extract_year(self.event)
+
+                if exists(json_file):
+                    # logger.debug(f"AgpParentalX  Using cached data for: {clean_title}")
+                    with open(json_file, "r") as f:
+                        data = json_load(f)
+                    self.process_data(data)
+                    return
+
+                # logger.info(f"Fetching fresh data for: {clean_title}")
+                if PARENT_SOURCE == "tmdb" or (PARENT_SOURCE == "auto" and api_key_manager.get_api_key('tmdb')):
+                    data = self.fetch_tmdb_data(clean_title, year)
+                else:
+                    data = self.fetch_omdb_data(clean_title, year)
+
+                if data:
+                    # logger.debug(f"AgpParentalX  Saving data to cache: {json_file}")
+                    with open(json_file, "w") as f:
+                        json_dump(data, f, indent=2)
+                    self.process_data(data)
+
+            except Exception as e:
+                logger.error(f"AgpParentalX Data fetch error: {str(e)}", exc_info=True)
+
+    def fetch_tmdb_data(self, title, year):
+        try:
+            api_key = api_key_manager.get_api_key('tmdb')
+
+            # Init Search
+            search_url = (
+                "https://api.themoviedb.org/3/search/multi?api_key=" + api_key +
+                "&language=" + lng +
+                "&query=" + quoteEventName(title) +
+                ("&year=" + year if year else "")
+            )
+
+            # logger.debug(f"AgpParentalX search_url Tmdb: {search_url}")
+            with urlopen(search_url) as response:
+                search_data = json_load(response)
+
+            if not search_data.get("results"):
+                return None
+
+            # Select the most relevant result
+            result = self.select_best_result(search_data["results"], title)
+            content_type = result["media_type"]
+            content_id = result["id"]
+
+            # Full details
+            details_url = (
+                "https://api.themoviedb.org/3/" + content_type + "/" + str(content_id) +
+                "?api_key=" + api_key +
+                "&language=" + lng +
+                "&append_to_response=credits"
+            )
+            # logger.debug(f"AgpParentalX url tmdb credits: {details_url}")
+
+            with urlopen(details_url) as response:
+                details = json_load(response)
+
+            if content_type == "movie":
+                release_url = (
+                    "https://api.themoviedb.org/3/movie/" + str(content_id) +
+                    "/release_dates?api_key=" + api_key
+                )
+
+                with urlopen(release_url) as response:
+                    release_data = json_load(response)
+
+                for entry in release_data.get("results", []):
+                    if entry.get("iso_3166_1") == "US":
+                        for rd in entry.get("release_dates", []):
+                            cert = rd.get("certification")
+                            if cert:
+                                details["Rated"] = cert
+                                # logger.debug("AgpParentalX TMDb Rated (movie): " + cert)
+                                break
+                        break
+
+            elif content_type == "tv":
+                rating_url = (
+                    "https://api.themoviedb.org/3/tv/" + str(content_id) +
+                    "/content_ratings?api_key=" + api_key
+                )
+                with urlopen(rating_url) as response:
+                    rating_data = json_load(response)
+
+                for entry in rating_data.get("results", []):
+                    if entry.get("iso_3166_1") == "US":
+                        cert = entry.get("rating")
+                        if cert:
+                            details["Rated"] = cert
+                            # logger.debug("AgpParentalX TMDb Rated (tv): " + cert)
+                            break
+
+            return details
+
+        except Exception as e:
+            logger.error(f"AgpParentalX TMDB API error: {str(e)}")
+            return None
+
+    def fetch_omdb_data(self, title, year):
+        try:
+            api_key = api_key_manager.get_api_key('omdb')
+            params = f"t={quoteEventName(title)}{f'&y={year}' if year else ''}&plot=full"
+            url = f"http://www.omdbapi.com/?apikey={api_key}&{params}"
+
+            # logger.debug(f"AgpParentalX url omdb: {url}")
+
+            with urlopen(url) as response:
+                return json_load(response)
+        except Exception as e:
+            logger.error(f"AgpParentalX OMDB API error: {str(e)}")
+            return None
+
+    def select_best_result(self, results, original_title):
+        # Best result selection logic
+        for result in results:
+            if result.get('media_type') == 'movie':
+                if result.get('title', "").lower() == original_title.lower():
+                    return result
+            elif result.get('media_type') == 'tv':
+                if result.get('name', "").lower() == original_title.lower():
+                    return result
+        return results[0]
+
+    def process_data(self, data):
+        """Process the fetched data and update the widget with the appropriate icon."""
+        try:
+            rated = data.get("Rated", "").strip().upper()
+            rating_code = RATING_MAP.get(rated, DEFAULT_RATING)
+            icon_file = "FSK_" + rating_code + ".png"
+            self.icon_path = join(PARENTAL_ICON_PATH, icon_file)
+
+            if not exists(self.icon_path):
+                logger.debug("AgpParentalX Rated icon not found for: " + rated + ", using default")
+                self.icon_path = join(PARENTAL_ICON_PATH, DEFAULT_ICON)
+
+            self.update_icon(self.icon_path)
+
+        except Exception as e:
+            logger.error("AgpParentalX Error processing data for event: " + str(e))
+            self.icon_path = join(PARENTAL_ICON_PATH, DEFAULT_ICON)
+            self.update_icon(self.icon_path)
+
+    def update_icon(self, icon):
+        """Update the widget's icon based on the fetched data."""
+        if self.instance:
+            self.instance.setPixmap(loadPNG(icon))
+            self.instance.show()
+        else:
+            logger.warning("AgpParentalX Instance is not available to update the icon.")
+
+    # def delayed_update(self):
+        # if self.instance and exists(self.icon_path):
+            # self.instance.setPixmapFromFile(self.icon_path)
+            # self.instance.show()
+
+    def extract_year(self, event):
+        try:
+            desc = f"{event.getEventName()}\n{event.getShortDescription()}\n{event.getExtendedDescription()}"
+            years = findall(r'\b\d{4}\b', desc)
+            if years:
+                valid_years = [y for y in years if 1900 <= int(y) <= 2100]
+                if valid_years:
+                    return max(valid_years)
+            # logger.debug("AgpParentalX No valid production year found in event details")
+            return None
+        except Exception as e:
+            logger.debug(f"AgpParentalX Year extraction failed: {str(e)}")
+            return None

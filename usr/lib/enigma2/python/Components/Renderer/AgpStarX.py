@@ -122,7 +122,7 @@ class AgpStarX(VariableValue, Renderer):
 			return
 
 		if what[0] != self.CHANGED_CLEAR:
-			logger.info('AgpStarX event B what[0] != self.CHANGED_CLEAR')
+			# logger.info('AgpStarX event B what[0] != self.CHANGED_CLEAR')
 			if self.instance:
 				self.instance.hide()
 
@@ -208,7 +208,7 @@ class AgpStarX(VariableValue, Renderer):
 					content_type = best_result['media_type']
 					content_id = best_result['id']
 					details_url = (
-						"https://api.themoviedb.org/3/" + content_type + "/" + content_id +
+						"https://api.themoviedb.org/3/" + content_type + "/" + str(content_id) +
 						"?api_key=" + self.api_key +
 						"&language=" + lng +
 						"&append_to_response=credits"
@@ -275,10 +275,10 @@ class AgpStarX(VariableValue, Renderer):
 
 		except HTTPError as e:
 			if e.code == 404:
-				logger.debug("Resource not found")
+				logger.debug("AgpStarX Resource not found")
 			return None
 		except Exception as e:
-			logger.error(f"Error download: {str(e)}")
+			logger.error(f"AgpStarX Error download: {str(e)}")
 			return None
 
 	def process_data(self, data):
@@ -323,10 +323,10 @@ class AgpStarX(VariableValue, Renderer):
 				valid_years = [y for y in years if 1900 <= int(y) <= 2100]
 				if valid_years:
 					return max(valid_years)
-			logger.debug("No valid production year found in event details")
+			logger.debug("AgpStarX No valid production year found in event details")
 			return None
 		except Exception as e:
-			logger.warning(f"Year extraction failed: {str(e)}")
+			logger.warning(f"AgpStarXYear extraction failed: {str(e)}")
 			return None
 
 	def postWidgetCreate(self, instance):
