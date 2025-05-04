@@ -72,19 +72,7 @@ api_lock = Lock()
 _ = gettext.gettext
 
 
-"""skin configuration"""
-"""
-<widget source="Event" render="AgpInfoEvents" position="x,y" size="width,height"
-    display_mode="full" />
-"""
-
-"""skin custom configuration"""
-"""
-<widget source="Event" render="AgpInfoEvents" position="x,y" size="width,height"
-    display_mode="custom"
-    info_format="{title} ({year}) - {rating}
-{genres}
-{overview}" />
+"""skin custom configuration
 
 
 <widget source="ServiceEvent" render="AgpInfoEvents"

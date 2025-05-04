@@ -70,7 +70,7 @@ extensions = ['.jpg']
 
 """
 # Use for emc plugin
-<widget source="Servicet" render="AglarePosterXEMC"
+<widget source="Servicet" render="AgpXEMC"
 	position="100,100"
 	size="185,278"
 	cornerRadius="20"
@@ -103,6 +103,7 @@ class AgpXEMC(Renderer):
 		self.pstcanal = None
 		self.timer = eTimer()
 		self.timer.callback.append(self.showPoster)
+		logger.info("AgpXEMC Renderer initialized")
 
 	def applySkin(self, desktop, parent):
 		attribs = []

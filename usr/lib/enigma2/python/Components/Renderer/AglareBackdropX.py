@@ -166,6 +166,7 @@ class AglareBackdropX(Renderer):
 		# Initialize helper classes with providers config
 		self.backdrop_db = BackdropDB(providers=self.providers)
 		self.backdrop_auto_db = BackdropAutoDB(providers=self.providers)
+		logger.info("AglareBackdropX Renderer initialized")
 
 	def applySkin(self, desktop, parent):
 		"""Apply skin configuration and settings"""

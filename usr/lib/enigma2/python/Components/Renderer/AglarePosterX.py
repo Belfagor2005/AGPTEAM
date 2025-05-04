@@ -171,6 +171,7 @@ class AglarePosterX(Renderer):
 		# Initialize helper classes with providers config
 		self.poster_db = PosterDB(providers=self.providers)
 		self.poster_auto_db = PosterAutoDB(providers=self.providers)
+		logger.info("AglarePosterX Renderer initialized")
 
 	def applySkin(self, desktop, parent):
 		"""Apply skin configuration and settings"""
