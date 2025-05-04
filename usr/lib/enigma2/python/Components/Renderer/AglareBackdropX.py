@@ -14,6 +14,14 @@ from __future__ import absolute_import, print_function
 #                                                       #
 #  Credits:                                             #
 #  - Original concept by Lululla                        #
+#  - Poster renderer                                    #
+#  - Backdrop renderer                                  #
+#  - Poster EMC renderer                                #
+#  - InfoEvents renderer                                #
+#  - Star rating renderer                               #
+#  - Parental control renderer                          #
+#  - Genre detection and renderer                       #
+#                                                       #
 #  - Advanced download management system                #
 #  - Atomic file operations                             #
 #  - Thread-safe resource locking                       #

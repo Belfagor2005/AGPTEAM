@@ -14,6 +14,14 @@ from __future__ import absolute_import, print_function
 #                                                       #
 #  Credits:                                             #
 #  - Original concept by Lululla                        #
+#  - Poster renderer                                    #
+#  - Backdrop renderer                                  #
+#  - Poster EMC renderer                                #
+#  - InfoEvents renderer                                #
+#  - Star rating renderer                               #
+#  - Parental control renderer                          #
+#  - Genre detection and renderer                       #
+#                                                       #
 #  - Advanced download management system                #
 #  - Atomic file operations                             #
 #  - Thread-safe resource locking                       #
@@ -175,6 +183,7 @@ class AgbanDownloadThread(Thread):
 			"culture", "infos", "feuilleton", "téléréalité", "société",
 			"clips", "concert", "santé", "éducation", "variété"
 		]
+
 		if agp_use_cache.value:
 			self.search_tmdb = lru_cache(maxsize=500)(self.search_tmdb)
 			self.search_tvdb = lru_cache(maxsize=250)(self.search_tvdb)
@@ -216,7 +225,7 @@ class AgbanDownloadThread(Thread):
 			if response.status_code == codes.ok:
 				try:
 					data = response.json()
-					return self.downloadData2(data, dwn_poster, shortdesc, fulldesc)
+					return self.downloadBannerData(data, dwn_poster, shortdesc, fulldesc)
 				except ValueError as e:
 					logger.error("TMDb response decode error: " + str(e))
 					return False, "Error parsing TMDb response"
@@ -238,7 +247,7 @@ class AgbanDownloadThread(Thread):
 			logger.error("TMDb search error: " + str(e))
 			return False, "Unexpected error during TMDb search"
 
-	def downloadData2(self, data, dwn_poster, shortdesc="", fulldesc=""):
+	def downloadBannerData(self, data, dwn_poster, shortdesc="", fulldesc=""):
 		if isinstance(data, bytes):
 			data = data.decode('utf-8')
 		data_json = data if isinstance(data, dict) else loads(data)

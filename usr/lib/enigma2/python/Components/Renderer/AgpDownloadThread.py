@@ -14,6 +14,14 @@ from __future__ import absolute_import, print_function
 #                                                       #
 #  Credits:                                             #
 #  - Original concept by Lululla                        #
+#  - Poster renderer                                    #
+#  - Backdrop renderer                                  #
+#  - Poster EMC renderer                                #
+#  - InfoEvents renderer                                #
+#  - Star rating renderer                               #
+#  - Parental control renderer                          #
+#  - Genre detection and renderer                       #
+#                                                       #
 #  - Advanced download management system                #
 #  - Atomic file operations                             #
 #  - Thread-safe resource locking                       #
@@ -41,7 +49,7 @@ __copyright__ = "AGP Team"
 # Standard library
 from os import remove, rename
 from os.path import exists, getsize
-from re import compile, findall, DOTALL, sub
+from re import compile, findall, DOTALL, sub  # , I, search
 from threading import Thread
 from json import loads
 from random import choice
@@ -175,16 +183,17 @@ class AgpDownloadThread(Thread):
 			"culture", "infos", "feuilleton", "téléréalité", "société",
 			"clips", "concert", "santé", "éducation", "variété"
 		]
+
 		if agp_use_cache.value:
-			self.search_tmdb = lru_cache(maxsize=500)(self.search_tmdb)
-			self.search_tvdb = lru_cache(maxsize=250)(self.search_tvdb)
+			self.search_tmdb = lru_cache(maxsize=100)(self.search_tmdb)
+			self.search_tvdb = lru_cache(maxsize=100)(self.search_tvdb)
 			self.search_fanart = lru_cache(maxsize=100)(self.search_fanart)
-			self.search_omdb = lru_cache(maxsize=250)(self.search_omdb)
-			self.search_imdb = lru_cache(maxsize=250)(self.search_imdb)
+			self.search_omdb = lru_cache(maxsize=100)(self.search_omdb)
+			self.search_imdb = lru_cache(maxsize=100)(self.search_imdb)
 			self.search_programmetv_google = lru_cache(maxsize=100)(self.search_programmetv_google)
 			self.search_molotov_google = lru_cache(maxsize=100)(self.search_molotov_google)
 			self.search_elcinema = lru_cache(maxsize=100)(self.search_elcinema)
-			self.search_google = lru_cache(maxsize=250)(self.search_google)
+			self.search_google = lru_cache(maxsize=100)(self.search_google)
 
 	def search_tmdb(self, dwn_poster, title, shortdesc, fulldesc, channel=None, api_key=None):
 		"""Download poster from TMDB with full verification pipeline"""

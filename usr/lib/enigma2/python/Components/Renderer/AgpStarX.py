@@ -9,12 +9,19 @@ from __future__ import absolute_import, print_function
 #  Created by Lululla (https://github.com/Belfagor2005) #
 #  License: CC BY-NC-SA 4.0                             #
 #  https://creativecommons.org/licenses/by-nc-sa/4.0    #
-#                                                       #
+#  from original code by @digiteng 2021                 #
 #  Last Modified: "15:14 - 20250401"                    #
 #                                                       #
 #  Credits:                                             #
-#   by base code from digiteng 2022                     #
 #  - Original concept by Lululla                        #
+#  - Poster renderer                                    #
+#  - Backdrop renderer                                  #
+#  - Poster EMC renderer                                #
+#  - InfoEvents renderer                                #
+#  - Star rating renderer                               #
+#  - Parental control renderer                          #
+#  - Genre detection and renderer                       #
+#                                                       #
 #  - Advanced download management system                #
 #  - Atomic file operations                             #
 #  - Thread-safe resource locking                       #
@@ -36,6 +43,8 @@ from __future__ import absolute_import, print_function
 #  please maintain this credit header.                  #
 #########################################################
 """
+__author__ = "Lululla"
+__copyright__ = "AGP Team"
 __author__ = "Lululla"
 __copyright__ = "AGP Team"
 

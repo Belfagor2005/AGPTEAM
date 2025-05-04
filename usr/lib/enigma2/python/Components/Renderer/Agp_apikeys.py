@@ -9,11 +9,19 @@ from __future__ import absolute_import, print_function
 #  Created by Lululla (https://github.com/Belfagor2005) #
 #  License: CC BY-NC-SA 4.0                             #
 #  https://creativecommons.org/licenses/by-nc-sa/4.0    #
-#                                                       #
+#														#
 #  Last Modified: "15:14 - 20250401"                    #
 #                                                       #
 #  Credits:                                             #
 #  - Original concept by Lululla                        #
+#  - Poster renderer                                    #
+#  - Backdrop renderer                                  #
+#  - Poster EMC renderer                                #
+#  - InfoEvents renderer                                #
+#  - Star rating renderer                               #
+#  - Parental control renderer                          #
+#  - Genre detection and renderer                       #
+#                                                       #
 #  - Advanced download management system                #
 #  - Atomic file operations                             #
 #  - Thread-safe resource locking                       #
@@ -142,12 +150,7 @@ def _load_api_keys():
 
 
 # Initialize API keys during module import
-def load_api_keys():
-	if not _load_api_keys():
-		print("[API Config] Using default API keys")
-
-
-load_api_keys()
-
+if not _load_api_keys():
+	print("[API Config] Using default API keys")
 
 # ================ END SERVICE API CONFIGURATION ================
