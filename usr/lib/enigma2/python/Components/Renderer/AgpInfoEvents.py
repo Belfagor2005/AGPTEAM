@@ -40,28 +40,36 @@ __copyright__ = "AGP Team"
 
 # Standard library imports
 from json import load as json_load, dump as json_dump
-from os import path
-from threading import Lock as threading_Lock
-from hashlib import md5
+from threading import Lock
+
+# from hashlib import md5
+# from functools import lru_cache
+from threading import Thread
+
+from os.path import exists, join
+from urllib.error import HTTPError, URLError
+from urllib.request import urlopen
+from re import findall
 
 # Enigma2 imports
 from Components.Renderer.Renderer import Renderer
 from Components.VariableText import VariableText
-from Components.Sources.CurrentService import CurrentService
-from Components.Sources.Event import Event
-from Components.Sources.EventInfo import EventInfo
-from Components.Sources.ServiceEvent import ServiceEvent
-from enigma import eLabel, eEPGCache
-import NavigationInstance
-from ServiceReference import ServiceReference
+import gettext
+from enigma import eLabel, eEPGCache, eTimer
+import socket
 
 # Local imports
-from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, clean_filename, logger  # , noposter
-from Plugins.Extensions.Aglare.plugin import config
+from Plugins.Extensions.Aglare.plugin import ApiKeyManager, config
+from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, logger
+from .Agp_lib import quoteEventName
 
 # Constants
+api_key_manager = ApiKeyManager()
+path_folder = POSTER_FOLDER
+DATA_SOURCE = config.plugins.Aglare.info_display_mode.value
 epgcache = eEPGCache.getInstance()
-api_lock = threading_Lock()
+api_lock = Lock()
+_ = gettext.gettext
 
 
 """skin configuration"""
@@ -77,224 +85,306 @@ api_lock = threading_Lock()
 	info_format="{title} ({year}) - {rating}
 {genres}
 {overview}" />
+
+
+<widget source="ServiceEvent" render="AgpInfoEvents"
+	position="100,400"
+	size="600,300"
+	font="Regular;18"
+	transparent="1"
+	zPosition="5"/>
+
+
+
 """
 
 
+try:
+	lng = config.osd.language.value
+	lng = lng[:-3]
+except:
+	lng = 'en'
+	pass
+
+
+def intCheck():
+	try:
+		response = urlopen("http://google.com", None, 5)
+		response.close()
+	except HTTPError:
+		return False
+	except URLError:
+		return False
+	except socket.timeout:
+		return False
+	return True
+
+
 class AgpInfoEvents(Renderer, VariableText):
-	"""Enhanced renderer for displaying detailed event information from TMDB"""
 
 	GUI_WIDGET = eLabel
 
 	def __init__(self):
 		Renderer.__init__(self)
 		VariableText.__init__(self)
+		self.adsl = intCheck()
+		if not self.adsl:
+			logger.warning("No internet connection, offline mode activated")
+			return
+		else:
+			logger.info("Internet connection verified")
+		self.current_request = None
+		self.lock = Lock()
+		self.last_event = None
 		self.text = ""
-		self.canal = [None] * 6
-		self.quick_cache = {}
-		if len(self.quick_cache) > 50:
-			self.quick_cache.clear()
-		self.last_service = None
-		self.display_mode = config.plugins.Aglare.info_display_mode.value
-		self.info_format = config.plugins.Aglare.info_format.value
-		logger.info("AgpInfoEvents Renderer initialized")
+		self.timer = eTimer()
+		self.timer.callback.append(self.delayed_update)
+		logger.info("AgpStarX Renderer initialized")
 
-	def applySkin(self, desktop, parent):
-		"""Handle skin attributes"""
-		attribs = []
-		for attrib, value in self.skinAttributes:
-			if attrib == "display_mode":
-				self.display_mode = str(value)
-			elif attrib == "info_format":
-				self.info_format = str(value)
-			attribs.append((attrib, value))
-		self.skinAttributes = attribs
-		return Renderer.applySkin(self, desktop, parent)
+	def get_labels(self):
+		return {
+			'title': _('Title'),
+			'year': _('Year'),
+			'rating': _('Rating'),
+			'genre': _('Genre'),
+			'director': _('Director'),
+			'writer': _('Writer'),
+			'cast': _('Cast'),
+			'country': _('Country'),
+			'awards': _('Awards'),
+			'runtime': _('Runtime'),
+			'plot': _('Plot'),
+			'offline': _('Offline mode')
+		}
 
 	def changed(self, what):
 		"""Handle content changes"""
-		if not hasattr(self, 'instance') or not self.instance:
+		# Handle None case first
+		if what is None:
 			return
 
-		if what[0] not in (self.CHANGED_DEFAULT, self.CHANGED_ALL, self.CHANGED_SPECIFIC, self.CHANGED_CLEAR):
+		if what[0] == self.CHANGED_CLEAR:
+			return self.text
+
+		# Check mode Off
+		if DATA_SOURCE == "off":
+			self.text = ""
 			if self.instance:
 				self.instance.hide()
 			return
 
-		try:
-			service = None
-			if isinstance(self.source, ServiceEvent):
-				service = self.source.getCurrentService()
-			elif isinstance(self.source, CurrentService):
-				service = self.source.getCurrentServiceRef()
-			elif isinstance(self.source, EventInfo):
-				service = NavigationInstance.instance.getCurrentlyPlayingServiceReference()
-			elif isinstance(self.source, Event):
-				self._fill_from_event()
-				self._update_info()
+		if not self.adsl:
+			self.text = self.get_labels.get('offline', _("Offline mode"))
+			logger.warning("Operating in offline mode")
+			return
+
+		self.event = self.source.event
+		if self.event and self.event != 'None' or self.event is not None:
+			self.evnt = self.event.getEventName().replace('\xc2\x86', '').replace('\xc2\x87', '')
+			if not self.event:
+				logger.debug("No event available")
 				return
 
-			if service:
-				self._fill_from_service(service)
-				self._update_info()
+		if self.event:
+			current_event_hash = f"{self.event.getEventName()}{self.event.getBeginTime()}"
+			if current_event_hash != self.last_event:
+				logger.debug("New event detected, starting data fetch")
+				self.last_event = current_event_hash
+				self.start_data_fetch()
 
-		except Exception as e:
-			logger.error(f"Changed error: {str(e)}")
-			self.text = ""
-
-	def _fill_from_event(self):
-		"""Extract event info from current event"""
-		event = self.source.event
-		self.canal[1] = event.getBeginTime()
-		event_name = event.getEventName().replace('\xc2\x86', '').replace('\xc2\x87', '')
-		self.canal[2] = event_name
-		self.canal[3] = event.getExtendedDescription()
-		self.canal[4] = event.getShortDescription()
-		self.canal[5] = event_name
-
-	def _fill_from_service(self, service):
-		"""Extract event info from service reference"""
-		service_str = service.toString()
-		events = epgcache.lookupEvent(['IBDCTESX', (service_str, 0, -1, -1)])
-		if not events:
-			self.text = ""
+	def start_data_fetch(self):
+		if self.current_request and self.current_request.is_alive():
 			return
+		self.current_request = Thread(target=self.fetch_event_data)
+		self.current_request.start()
 
-		service_name = ServiceReference(service).getServiceName().replace('\xc2\x86', '').replace('\xc2\x87', '')
-		self.canal = [None] * 6
-		self.canal[0] = service_name
-		event = events[0]  # Get current event
-		self.canal[1] = event[1]  # Begin time
-		self.canal[2] = event[4]  # Event name
-		self.canal[3] = event[5]  # Extended description
-		self.canal[4] = event[6]  # Short description
-		self.canal[5] = event[4]  # Event name (again)
-
-	def _update_info(self):
-		"""Update info text based on current event"""
-		if not self.canal[5] or not isinstance(self.canal[5], str):
-			logger.warning("Invalid title in canal[5]")
-			self.text = ""
+	def fetch_event_data(self):
+		if DATA_SOURCE == "off":
 			return
-
-		clean_title = clean_for_tvdb(self.canal[5]) if self.canal[5] else None
-		title_hash = md5(clean_title.encode('utf-8')).hexdigest()
-
-		# Check quick cache first
-		if title_hash in self.quick_cache:
-			self._display_info(self.quick_cache[title_hash])
-			return
-
-		# Check in persistent cache
-		info_file = path.join(POSTER_FOLDER, f"{clean_filename(clean_title)}.json")
-		if path.exists(info_file):
+		with self.lock:
 			try:
-				with open(info_file, 'r') as f:
-					info_data = json_load(f)
-					self.quick_cache[title_hash] = self._process_tmdb_data(info_data)
-					self._display_info(self.quick_cache[title_hash])
+				clean_title = clean_for_tvdb(self.event.getEventName().replace('\xc2\x86', '').replace('\xc2\x87', ''))
+				self.infos_file = join(path_folder, f"{clean_title}.json")
+				self.text = ''
+				year = self.extract_year(self.event)
+
+				if exists(self.infos_file):
+					logger.debug(f"Using cached data for: {clean_title}")
+					with open(self.infos_file, "r") as f:
+						data = json_load(f)
+					self.process_data(data)
 					return
+
+				logger.info(f"Fetching fresh data for: {clean_title}")
+				if DATA_SOURCE == "tmdb" or (DATA_SOURCE == "auto" and api_key_manager.get_api_key('tmdb')):
+					data = self.fetch_tmdb_data(clean_title, year)
+				else:
+					data = self.fetch_omdb_data(clean_title, year)
+
+				if data:
+					logger.debug(f"Saving data to cache: {self.infos_file}")
+					with open(self.infos_file, "w") as f:
+						# json_dump(data, f)
+						json_dump(data, f, indent=2)
+					self.process_data(data)
+
 			except Exception as e:
-				logger.error(f"Error loading info file: {str(e)}")
+				logger.error(f"Data fetch error: {str(e)}", exc_info=True)
 
-		# No cached info available
-		self.text = ""
-
-	def _process_tmdb_data(self, tmdb_data):
-		"""Convert raw TMDB data into display-friendly format"""
-		processed = {
-			'title': tmdb_data.get('title') or tmdb_data.get('original_title', 'N/A'),
-			'original_title': tmdb_data.get('original_title', 'N/A'),
-			'year': tmdb_data.get('release_date', '')[:4] if tmdb_data.get('release_date') else 'N/A',
-			'rating': str(tmdb_data.get('vote_average', 'N/A')) + '/10',
-			'votes': str(tmdb_data.get('vote_count', 'N/A')),
-			'popularity': str(round(tmdb_data.get('popularity', 0), 1)),
-			'overview': tmdb_data.get('overview', 'N/A'),
-			'media_type': tmdb_data.get('media_type', 'movie').capitalize(),
-			'language': tmdb_data.get('original_language', 'N/A').upper(),
-			'adult': 'Yes' if tmdb_data.get('adult') else 'No',
-			'genres': self._get_genres(tmdb_data.get('genre_ids', [])),
-			'backdrop_url': f"https://image.tmdb.org/t/p/original{tmdb_data.get('backdrop_path', '')}" if tmdb_data.get('backdrop_path') else 'N/A',
-			'poster_url': f"https://image.tmdb.org/t/p/original{tmdb_data.get('poster_path', '')}" if tmdb_data.get('poster_path') else 'N/A'
-		}
-
-		# Add additional processed fields
-		processed['short_info'] = f"{processed['title']} ({processed['year']}) - {processed['rating']}"
-		processed['full_info'] = (
-			f"{processed['title']} ({processed['year']})\n"
-			f"Original: {processed['original_title']}\n"
-			f"Rating: {processed['rating']} ({processed['votes']} votes)\n"
-			f"Type: {processed['media_type']}\n"
-			f"Genres: {processed['genres']}\n\n"
-			f"{processed['overview']}"
-		)
-
-		return processed
-
-	def _get_genres(self, genre_ids):
-		"""Convert genre IDs to names"""
-		genre_map = {
-			12: "Adventure", 14: "Fantasy", 16: "Animation", 18: "Drama", 27: "Horror",
-			28: "Action", 35: "Comedy", 36: "History", 37: "Western", 53: "Thriller",
-			80: "Crime", 99: "Documentary", 878: "Science Fiction", 9648: "Mystery",
-			10402: "Music", 10749: "Romance", 10751: "Family", 10752: "War",
-			10763: "News", 10764: "Reality", 10765: "Science", 10766: "Soap",
-			10767: "Talk", 10768: "War & Politics", 10769: "Game Show",
-			10770: "TV Movie", 10771: "Variety", 10772: "Family & Kids"
-		}
-		return ", ".join([genre_map.get(gid, "") for gid in genre_ids if gid in genre_map])
-
-	def _display_info(self, info_data):
-		"""Format and display the information according to settings"""
+	def fetch_tmdb_data(self, title, year):
 		try:
-			if self.display_mode == "short":
-				self.text = info_data.get('short_info', 'N/A')
-			elif self.display_mode == "full":
-				self.text = info_data.get('full_info', 'N/A')
-			elif self.display_mode == "custom":
-				try:
-					self.text = self.info_format.format(**info_data)
-				except KeyError as e:
-					logger.warning(f"Missing key in format: {str(e)}")
-					self.text = info_data.get('short_info', 'N/A')
+			api_key = api_key_manager.get_api_key('tmdb')
+
+			# Init Search
+			search_url = (
+				"https://api.themoviedb.org/3/search/multi?api_key=" + api_key +
+				"&language=" + lng +
+				"&query=" + quoteEventName(title) +
+				("&year=" + year if year else "")
+			)
+
+			# logger.debug(f"search_url Tmdb: {search_url}")
+
+			with urlopen(search_url) as response:
+				search_data = json_load(response)
+
+			if not search_data.get('results'):
+				return None
+
+			# Select the most relevant result
+			result = self.select_best_result(search_data['results'], title)
+			content_type = result['media_type']
+			content_id = result['id']
+
+			# Full details
+			details_url = (
+				"https://api.themoviedb.org/3/" + content_type + "/" + content_id +
+				"?api_key=" + api_key +
+				"&language=" + lng +
+				"&append_to_response=credits"
+			)
+
+			# logger.debug(f"details_url Tmdb: {details_url}")
+			with urlopen(details_url) as response:
+				return json_load(response)
+
+		except Exception as e:
+			logger.error(f"TMDB API error: {str(e)}")
+			return None
+
+	def fetch_omdb_data(self, title, year):
+		try:
+			api_key = api_key_manager.get_api_key('omdb')
+			params = f"t={quoteEventName(title)}{f'&y={year}' if year else ''}&plot=full"
+			url = f"http://www.omdbapi.com/?apikey={api_key}&{params}"
+
+			logger.debug(f"url omdb: {url}")
+
+			with urlopen(url) as response:
+				return json_load(response)
+		except Exception as e:
+			logger.error(f"OMDB API error: {str(e)}")
+			return None
+
+	def select_best_result(self, results, original_title):
+		# Best result selection logic
+		for result in results:
+			if result.get('media_type') == 'movie':
+				if result.get('title', "").lower() == original_title.lower():
+					return result
+			elif result.get('media_type') == 'tv':
+				if result.get('name', "").lower() == original_title.lower():
+					return result
+		return results[0]
+
+	def process_data(self, data):
+		info_lines = []
+
+		try:
+			# TMDB Data Management
+			if 'title' in data or 'name' in data:
+				info_lines.append(f"{_('Title')}: {data.get('title', data.get('name'))}")
+
+				if data.get('release_date'):
+					year = data['release_date'].split('-')[0]
+					info_lines.append(f"{_('Year')}: {year}")
+
+				if data.get('vote_average'):
+					info_lines.append(f"{_('Rating')}: {data['vote_average']}/10")
+
+				if data.get('genres'):
+					genres = ", ".join([g['name'] for g in data['genres']])
+					info_lines.append(f"{_('Genre')}: {genres}")
+
+				if data.get('credits'):
+					crew = data['credits'].get('crew', [])
+					directors = [m['name'] for m in crew if m['job'] == 'Director']
+					writers = [m['name'] for m in crew if m['department'] == 'Writing']
+
+					if directors:
+						info_lines.append(f"{_('Director')}: {', '.join(directors)}")
+					if writers:
+						info_lines.append(f"{_('Writer')}: {', '.join(writers)}")
+
+				if data.get('production_countries'):
+					countries = ", ".join([c['name'] for c in data['production_countries']])
+					info_lines.append(f"{_('Country')}: {countries}")
+
+			# OMDB Data Management
 			else:
-				self.text = info_data.get('short_info', 'N/A')
+				info_lines.append(f"{_('Title')}: {data.get('Title')}")
+				info_lines.append(f"{_('Year')}: {data.get('Year')}")
+				info_lines.append(f"{_('Rating')}: {data.get('imdbRating')}")
+				info_lines.append(f"{_('Genre')}: {data.get('Genre')}")
+				info_lines.append(f"{_('Director')}: {data.get('Director')}")
+				info_lines.append(f"{_('Writer')}: {data.get('Writer')}")
+				info_lines.append(f"{_('Cast')}: {data.get('Actors')}")
+				info_lines.append(f"{_('Country')}: {data.get('Country')}")
+
+			runtime = data.get('runtime') or data.get('Runtime')
+			if runtime:
+				info_lines.append(f"{_('Runtime')}: {runtime}")
+
+			plot = data.get('overview') or data.get('Plot')
+			if plot:
+				info_lines.append(f"\n{_('Plot')}: {plot}")
+
+			self.text = "\n".join(info_lines)
+			self.timer.start(100)
 
 		except Exception as e:
-			logger.error(f"Error displaying info: {str(e)}")
-			self.text = ""
+			logger.error(f"Data processing error: {str(e)}")
+			self.text = _("Error loading information")
 
-	def _save_info(self, title, info_data):
-		"""Save information to cache"""
+	def delayed_update(self):
+		if self.instance:
+			self.instance.setText(self.text)
+			self.instance.show()
+
+	def extract_year(self, event):
 		try:
-			clean_title = clean_for_tvdb(title)
-			title_hash = md5(clean_title.encode('utf-8')).hexdigest()
-			info_file = path.join(POSTER_FOLDER, f"{clean_filename(clean_title)}.json")
-
-			with open(info_file, 'w') as f:
-				json_dump(info_data, f)
-
-			self.quick_cache[title_hash] = self._process_tmdb_data(info_data)
-			logger.info(f"Saved info for: {clean_title}")
-
+			desc = f"{event.getEventName()}\n{event.getShortDescription()}\n{event.getExtendedDescription()}"
+			years = findall(r'\b\d{4}\b', desc)
+			if years:
+				valid_years = [y for y in years if 1900 <= int(y) <= 2100]
+				if valid_years:
+					return max(valid_years)
+			logger.debug("No valid production year found in event details")
+			return None
 		except Exception as e:
-			logger.error(f"Error saving info: {str(e)}")
+			logger.warning(f"Year extraction failed: {str(e)}")
+			return None
+
+	def onHide(self):
+		self.timer.stop()
+
+	def onShow(self):
+		self.changed(None)
 
 
-# def setupConfig():
-	# """Initialize configuration options"""
-	# config.plugins.AgpInfoEvents = ConfigSubsection()
-	# config.plugins.AgpInfoEvents.info_display_mode = ConfigSelection(
-		# choices=[("short", "Short info"), ("full", "Full info"), ("custom", "Custom format")],
-		# default="short"
-	# )
-	# config.plugins.AgpInfoEvents.info_format = ConfigText(
-		# default="{title} ({year})\nRating: {rating}\nGenres: {genres}\n\n{overview}",
-		# fixed_size=False
-	# )
-
-
-# # Initialize configuration
-# try:
-	# setupConfig()
-# except Exception as e:
-	# logger.error(f"Config setup error: {str(e)}")
+# config.plugins.Aglare.info_display_mode = ConfigSelection(default="auto", choices=[
+	# ("auto", _("Automatic")),
+	# ("tmdb", _("TMDB Only")),
+	# ("omdb", _("OMDB Only")),
+	# ("off", _("Off"))
+# ])

@@ -40,7 +40,7 @@ __author__ = "Lululla"
 __copyright__ = "AGP Team"
 
 # Standard library imports
-import json
+from json import load as json_load, dump as json_dump
 from functools import lru_cache
 from os import remove
 from os.path import exists  # , join
@@ -52,6 +52,7 @@ from urllib.request import urlopen
 from Components.Renderer.Renderer import Renderer
 from Components.VariableValue import VariableValue
 from enigma import eEPGCache, eSlider
+from re import findall
 
 # Local imports
 from Plugins.Extensions.Aglare.plugin import ApiKeyManager, agp_use_cache, config
@@ -174,7 +175,7 @@ class AgpStarX(VariableValue, Renderer):
 				if exists(info_file):
 					try:
 						with open(info_file, "r") as f:
-							data = json.load(f)
+							data = json_load(f)
 						self.process_data(data)
 						return
 					except Exception as e:
@@ -193,7 +194,7 @@ class AgpStarX(VariableValue, Renderer):
 					with urlopen(url, timeout=10) as response:
 						if response.status != 200:
 							return
-						url_data = json.load(response)
+						url_data = json_load(response)
 
 					# Cascade Validation
 					results = url_data.get('results', [])
@@ -206,16 +207,20 @@ class AgpStarX(VariableValue, Renderer):
 					best_result = valid_results[0]
 					content_type = best_result['media_type']
 					content_id = best_result['id']
-					details_url = f"https://api.themoviedb.org/3/{content_type}/{content_id}?api_key={self.api_key}"
-
+					details_url = (
+						"https://api.themoviedb.org/3/" + content_type + "/" + content_id +
+						"?api_key=" + self.api_key +
+						"&language=" + lng +
+						"&append_to_response=credits"
+					)
 					with urlopen(details_url, timeout=15) as details_response:
 						if details_response.status != 200:
 							return
-						movie_data = json.load(details_response)
+						movie_data = json_load(details_response)
 
 					# Save data
 					with open(info_file, "w") as f:
-						json.dump(movie_data, f, indent=2)
+						json_dump(movie_data, f, indent=2)
 						# logger.debug(f"AgpStarX Data saved in: {info_file}")
 
 					self.process_data(movie_data)
@@ -241,12 +246,17 @@ class AgpStarX(VariableValue, Renderer):
 					return None
 
 				clean_query = quoteEventName(channel_name)
-				search_url = f"https://api.themoviedb.org/3/search/multi?api_key={self.api_key}&query={clean_query}"
-
+				year = self.extract_year(clean_query)
+				search_url = (
+					"https://api.themoviedb.org/3/search/multi?api_key=" + self.api_key +
+					"&language=" + lng +
+					"&query=" + quoteEventName(clean_query) +
+					("&year=" + year if year else "")
+				)
 				with urlopen(search_url, timeout=10) as res:
 					if res.status != 200:
 						return None
-					search_data = json.load(res)
+					search_data = json_load(res)
 
 				# Processing results
 				valid_results = [r for r in search_data.get('results', []) if r.get('media_type') in ['movie', 'tv']]
@@ -261,7 +271,7 @@ class AgpStarX(VariableValue, Renderer):
 				# Request details
 				details_url = f"https://api.themoviedb.org/3/{content_type}/{content_id}?api_key={self.api_key}"
 				with urlopen(details_url, timeout=15) as detail_res:
-					return json.load(detail_res)
+					return json_load(detail_res)
 
 		except HTTPError as e:
 			if e.code == 404:
@@ -304,6 +314,20 @@ class AgpStarX(VariableValue, Renderer):
 
 		except Exception as e:
 			logger.debug(f"AgpStarX UI update skipped: {str(e)}")
+
+	def extract_year(self, event):
+		try:
+			desc = f"{event.getEventName()}\n{event.getShortDescription()}\n{event.getExtendedDescription()}"
+			years = findall(r'\b\d{4}\b', desc)
+			if years:
+				valid_years = [y for y in years if 1900 <= int(y) <= 2100]
+				if valid_years:
+					return max(valid_years)
+			logger.debug("No valid production year found in event details")
+			return None
+		except Exception as e:
+			logger.warning(f"Year extraction failed: {str(e)}")
+			return None
 
 	def postWidgetCreate(self, instance):
 		instance.setRange(self.__start, self.__end)
