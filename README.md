@@ -1,4 +1,4 @@
-# AGP (Advanced Graphics Renderer)
+## AGP (Advanced Graphics Renderer)
 ** Optimized for Aglare FHD Skin**
 
 [![Tested on Aglare FHD](https://img.shields.io/badge/Skin-Aglare_FHD-blueviolet)](https://github.com/Belfagor2005/enigma2-plugin-skins-aglare/main/usr/share/enigma2/Aglare-FHD-PLI)
@@ -24,20 +24,20 @@ BACKDROP_FOLDER = "/YOUR_DEVICE/backdrops"
 <widget source="session.CurrentService" render="AglarePosterX" position="100,100" size="185,278" nexts="3" />
 </screen>
 ```
-### CHANNELS
+## CHANNELS
 ```xml
 <widget source="ServiceEvent" render="AglarePosterX" position="100,100" size="185,278" />
 <widget source="ServiceEvent" render="AglarePosterX" position="100,100" size="185,278" nexts="2" />
 ```
 
-### EPG EVENT EVENTVIEW
+## EPG EVENT EVENTVIEW
 ```xml
 <widget source="Event" render="AglarePosterX" position="100,100" size="185,278" />
 <widget source="Event" render="AglarePosterX" position="100,100" size="185,278" nexts="2" />
 ```
 # or/and put tag -->  path="/media/hdd/poster"
 
-### ADVANCED CONFIGURATIONS (for poster and backdrop):
+## ADVANCED CONFIGURATIONS (for poster and backdrop):
 ```xml
 <widget source="ServiceEvent" render="AglarePosterX"
        nexts="1"
@@ -50,9 +50,9 @@ BACKDROP_FOLDER = "/YOUR_DEVICE/backdrops"
 ```
 
 
-### EPG EVENT EVENTVIEW BACKDROP
+## EPG EVENT EVENTVIEW BACKDROP
 
-### Infobar (skin.xml)
+## Infobar (skin.xml)
 ```xml
 <widget source="session.Event_Now" render="AglareBackdropX" position="100,100" size="680,1000" />
 <widget source="session.Event_Next" render="AglareBackdropX" position="100,100" size="680,1000" />
@@ -60,13 +60,13 @@ BACKDROP_FOLDER = "/YOUR_DEVICE/backdrops"
 <widget source="session.CurrentService" render="AglareBackdropX" position="100,100" size="680,1000" nexts="3" />
 ```
 
-### CHANNELS
+## CHANNELS
 ```xml
 <widget source="ServiceEvent" render="AglareBackdropX" position="100,100" size="680,1000" nexts="1" />
 <widget source="ServiceEvent" render="AglareBackdropX" position="100,100" size="185,278" nexts="2" />
 ```
 
-### EPG EVENT EVENTVIEW
+## EPG EVENT EVENTVIEW
 ```xml
 <widget source="Event" render="AglareBackdropX" position="100,100" size="680,1000" />
 <widget source="Event" render="AglareBackdropX" position="100,100" size="680,1000" nexts="2" />
@@ -85,7 +85,7 @@ BACKDROP_FOLDER = "/YOUR_DEVICE/backdrops"
 />
 ```
 
-### Channel Selection
+## Channel Selection
 ```python
 self["poster"] = Renderer.AglarePosterX(
     position=[15, 200],
@@ -94,6 +94,60 @@ self["poster"] = Renderer.AglarePosterX(
     nexts="1"  # Show next event
 )
 ```
+
+
+## INFOEVENT DETAILS
+
+ ```
+<widget source="ServiceEvent" render="AgpInfoEvents"
+    position="100,400"
+    size="600,300"
+    font="Regular;18"
+    transparent="1"
+    zPosition="5"/>
+ ```
+
+***Specific Setup On Plugin***
+ ```
+config.plugins.Aglare.info_display_mode = ConfigSelection(default="auto", choices=[
+    ("auto", _("Automatic")),
+    ("tmdb", _("TMDB Only")),
+    ("omdb", _("OMDB Only")),
+    ("off", _("Off"))
+]) ```
+
+
+## PARENTAL RATING
+ ```
+<widget render="AgpParentalX"
+    source="session.Event_Now"
+    position="637,730"
+    size="50,50"
+    zPosition="3"
+    transparent="1"
+    alphatest="blend"/>
+
+
+***Specific Icons***
+ ```
+/usr/share/enigma2/<skin>/parental/
+├── FSK_0.png
+├── FSK_6.png
+├── FSK_12.png
+├── FSK_16.png
+├── FSK_18.png
+└── FSK_UN.png 
+ ```
+
+***Specific Setup On Plugin***
+ ```
+config.plugins.Aglare.info_parental_mode = ConfigSelection(default="auto", choices=[
+  ("auto", _("Automatic")),
+  ("tmdb", _("TMDB Only")),
+  ("omdb", _("OMDB Only")),
+  ("off", _("Off"))
+]) ```
+
 
 ## Aglare-Specific Setup
 1. **API Keys**:  
@@ -134,7 +188,6 @@ Open Plugin Setup and remove all png
 ## Scheduled
 ## ⏰ Scheduled Downloads Configuration
 USE PLUGIN SETUP FOR THIS  (UPDATED)
-
 
 
 ## Key Features:
