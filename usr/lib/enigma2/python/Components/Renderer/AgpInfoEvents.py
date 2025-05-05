@@ -54,7 +54,7 @@ from threading import Lock
 # from functools import lru_cache
 from threading import Thread
 
-from os.path import exists, join
+from os.path import exists, join, getsize
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 from re import findall
@@ -205,11 +205,14 @@ class AgpInfoEvents(Renderer, VariableText):
 				year = self.extract_year(self.event)
 
 				if exists(json_file):
-					# logger.debug(f"AgpInfoEvents Using cached data for: {clean_title}")
-					with open(json_file, "r") as f:
-						data = json_load(f)
-					self.process_data(data)
-					return
+					if getsize(json_file) > 0:
+						# logger.debug(f"AgpInfoEvents Using cached data for: {clean_title}")
+						with open(json_file, "r") as f:
+							data = json_load(f)
+						self.process_data(data)
+						return
+					else:
+						logger.info("AgpInfoEvents JSON file is empty (0 bytes): %s", json_file)
 
 				# logger.info(f"AgpInfoEvents Fetching fresh data for: {clean_title}")
 				if DATA_SOURCE == "tmdb" or (DATA_SOURCE == "auto" and api_key_manager.get_api_key('tmdb')):

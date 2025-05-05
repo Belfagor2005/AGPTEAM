@@ -39,7 +39,7 @@ __author__ = "Lululla"
 __copyright__ = "AGP Team"
 
 # Standard library imports
-from os.path import join, exists
+from os.path import join, exists, getsize
 from re import findall
 from json import load as json_load, dump as json_dump
 from threading import Lock, Thread
@@ -200,12 +200,14 @@ class AgpParentalX(Renderer):
 				year = self.extract_year(self.event)
 
 				if exists(json_file):
-					# logger.debug(f"AgpParentalX  Using cached data for: {clean_title}")
-					with open(json_file, "r") as f:
-						data = json_load(f)
-					self.process_data(data)
-					return
-
+					if getsize(json_file) > 0:
+						# logger.debug(f"AgpParentalX  Using cached data for: {clean_title}")
+						with open(json_file, "r") as f:
+							data = json_load(f)
+						self.process_data(data)
+						return
+					else:
+						logger.info("GenreX JSON file is empty (0 bytes): %s", json_file)
 				# logger.info(f"Fetching fresh data for: {clean_title}")
 				if PARENT_SOURCE == "tmdb" or (PARENT_SOURCE == "auto" and api_key_manager.get_api_key('tmdb')):
 					data = self.fetch_tmdb_data(clean_title, year)

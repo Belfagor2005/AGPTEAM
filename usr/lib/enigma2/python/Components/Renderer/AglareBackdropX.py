@@ -85,6 +85,9 @@ from .Agp_Utils import (
 	logger
 )
 
+if not BACKDROP_FOLDER.endswith("/"):
+	BACKDROP_FOLDER += "/"
+
 # Constants and global variables
 epgcache = eEPGCache.getInstance()
 epgcache.load()

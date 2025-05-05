@@ -85,6 +85,11 @@ from .Agp_Utils import (
 	logger
 )
 
+
+if not POSTER_FOLDER.endswith("/"):
+    POSTER_FOLDER += "/"
+
+
 # Constants and global variables
 epgcache = eEPGCache.getInstance()
 epgcache.load()
@@ -95,11 +100,11 @@ autobouquet_file = None
 apdb = dict()
 SCAN_TIME = "00:00"
 
-
 global global_agp_auto_db
 AgpDB = None
 db_lock = Lock()
 global_agp_auto_db = None
+
 
 
 """

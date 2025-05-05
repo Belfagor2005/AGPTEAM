@@ -63,8 +63,9 @@ from requests.exceptions import RequestException
 
 # Local imports
 from .Agp_Utils import logger
+
 # ========================
-# SECURITY CONFIGURATION
+# DISABLE URLLIB3 DEBUG LOGS
 # ========================
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -188,7 +189,7 @@ class RequestAgent:
 			response.raise_for_status()
 			return response
 		except RequestException as e:
-			logging.error(f"Request failed: {str(e)}")
+			logger.error(f"Request failed: {str(e)}")
 			raise
 
 	def atomic_download(self, url, dst_path):
@@ -275,7 +276,7 @@ class RequestAgent:
 					img.save(image_path, optimize=True, quality=85)
 					return True
 			except Exception as e:
-				logging.error(f"Resize failed: {str(e)}")
+				logger.error(f"Resize failed: {str(e)}")
 				return False
 
 

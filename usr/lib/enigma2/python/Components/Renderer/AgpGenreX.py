@@ -47,9 +47,9 @@ __author__ = "Lululla"
 __copyright__ = "AGP Team"
 
 # Standard library imports
-from os.path import join, exists
+from os.path import join, exists, getsize
 from re import sub
-from json import load as json_load
+from json import loads as json_loads
 
 # Enigma2 imports
 from Components.Renderer.Renderer import Renderer
@@ -330,18 +330,18 @@ class AgpGenreX(Renderer):
 
 		# Try JSON metadata
 		infos_file = join(self.storage_path, eventNm + ".json")
-		# logger.info("GenreX checking for infos_file: %s", infos_file)
 		if exists(infos_file):
 			try:
-				with open(infos_file, "r") as f:
-					json_data = json_load(f)
-					# logger.info("GenreX from JSON → id=%s name=%s", json_data["genres"][0]["id"], json_data["genres"][0]["name"])
-					genre_id = json_data["genres"][0]["id"]
-					genreTxt = GENRE_MAP.get(genre_id, {"default": "general"}).get("default", "general")
+				if getsize(infos_file) > 0:
+					with open(infos_file, "r") as f:
+						content = f.read()
+						json_data = json_loads(content)
+						genre_id = json_data["genres"][0]["id"]
+						genreTxt = GENRE_MAP.get(genre_id, {"default": "general"}).get("default", "general")
+				else:
+					logger.info("GenreX JSON file is empty (0 bytes): %s", infos_file)
 			except Exception as e:
-				logger.error("GenreX JSON error: %s", str(e))
-		else:
-			logger.debug("GenreX JSON file does not exist: %s", infos_file)
+				logger.warning("GenreX invalid JSON: %s", str(e))
 
 		# Fallback to EPG if needed
 		if not genreTxt:
@@ -359,6 +359,8 @@ class AgpGenreX(Renderer):
 					if isinstance(subgenres, tuple) and 0 <= lvl2 < len(subgenres):
 						genreTxt = subgenres[lvl2]
 						logger.info(f"GenreX mapped genreTxt after EPG → '{genreTxt}'")
+					if genreTxt is None:
+						logger.info(f"GenreX is None → '{genreTxt}'")
 				else:
 					genreTxt = 'general'
 					logger.info("GenreX fallback to 'general'")

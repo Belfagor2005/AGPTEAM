@@ -49,7 +49,7 @@ __copyright__ = "AGP Team"
 # ========================
 # SYSTEM IMPORTS
 # ========================
-from sys import version_info, version, stdout
+from sys import version_info, stdout, stderr
 from os import (
 	makedirs,
 	statvfs,
@@ -57,7 +57,8 @@ from os import (
 	remove,
 	access,
 	W_OK,
-	system
+	system,
+	stat
 )
 from os.path import (
 	join,
@@ -76,7 +77,8 @@ import glob
 # ========================
 # IMPORTS FOR LOGGING
 # ========================
-
+from logging.handlers import RotatingFileHandler
+import logging
 from logging import (
 	getLogger,
 	DEBUG,
@@ -84,12 +86,11 @@ from logging import (
 	Formatter,
 	StreamHandler,
 )
-from logging.handlers import RotatingFileHandler
 
 # ========================
 # IMPORTS FOR TIME/DATE
 # ========================
-from time import ctime
+from time import ctime, mktime
 from datetime import datetime, timedelta
 import time
 # ========================
@@ -112,147 +113,116 @@ from threading import Timer, Lock as threading_Lock
 PY3 = version_info[0] >= 3
 
 
-# Initialize logging
-class ColorLogger:
-	"""Enhanced logger with colored output for better visibility"""
+class AdvancedColorFormatter(Formatter):
+	"""Advanced formatter with ANSI colors and timestamp management"""
 	COLORS = {
-		'DEBUG': '\033[94m',     # Blue
-		'INFO': '\033[92m',      # Green
-		'WARNING': '\033[93m',   # Yellow
-		'ERROR': '\033[91m',     # Red
-		'CRITICAL': '\033[91m',  # Red
-		'RESET': '\033[0m'       # Reset color
+		'DEBUG': '\033[36m',     # Cyan
+		'INFO': '\033[32m',      # Green
+		'WARNING': '\033[33m',   # Yellow
+		'ERROR': '\033[31m',     # Red
+		'CRITICAL': '\033[41m',  # Red on background
+		'RESET': '\033[0m'
 	}
 
-	@classmethod
-	def log(cls, level, message):
-		"""Log message with colored output"""
-		color = cls.COLORS.get(level, '')
-		print(f"{color}[{level}] {message}{cls.COLORS['RESET']}")
+	def format(self, record):
+		"""Format the record with colors and timestamps"""
+		level_color = self.COLORS.get(record.levelname, self.COLORS['RESET'])
+		timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+		return f"{timestamp} {level_color}[{record.levelname}]{self.COLORS['RESET']} {record.getMessage()}"
 
 
-# Initialize enhanced logger
-def setup_logging(log_file='/tmp/agplog/agp_utils.log', max_log_size=2, backup_count=2):
+def setup_logging(log_file='/tmp/agplog/agp_full.log', max_log_size=10, backup_count=3):
 	"""
-	Configure comprehensive logging for AGP application with:
-	- Console output with colors
-	- Rotating file handler
-	- Error handling
-	- System information
-
-	Args:
-		log_file (str): Path to log file
-		max_log_size (int): Max log size in MB
-		backup_count (int): Number of backup logs to keep
+	Advanced logging configuration with:
+	- Colored console output
+	- File rotation
+	- Robust error handling
 	"""
 
-	class ColoredFormatter(Formatter):
-		"""Custom formatter with colored output"""
-		COLORS = {
-			'DEBUG': '\033[36m',     # Cyan
-			'INFO': '\033[32m',      # Green
-			'WARNING': '\033[33m',   # Yellow
-			'ERROR': '\033[31m',     # Red
-			'CRITICAL': '\033[41m',  # Red background
-			'RESET': '\033[0m'       # Reset color
-		}
-
-		def format(self, record):
-			"""Format log record with color"""
-			levelname = record.levelname
-			if levelname in self.COLORS:
-				record.levelname = (f"{self.COLORS[levelname]}{levelname}" f"{self.COLORS['RESET']}")
-			return super().format(record)
+	# Create log folder if it does not exist
+	log_dir = dirname(log_file)
+	makedirs(log_dir, exist_ok=True)
 
 	# Create main logger
 	logger = getLogger('AGP')
 	logger.setLevel(DEBUG)
 
-	# Clear existing handlers to avoid duplication
+	# Remove existing handlers
 	for handler in logger.handlers[:]:
 		logger.removeHandler(handler)
 
 	try:
-		# Console handler with colors
+		# Console Handler
 		console_handler = StreamHandler(stdout)
-		console_handler.setFormatter(ColoredFormatter(
-			'%(levelname)s: %(message)s'
-		))
+		console_handler.setFormatter(AdvancedColorFormatter())
 		console_handler.setLevel(INFO)
-		logger.addHandler(console_handler)
 
-		# File handler with rotation
-		makedirs(dirname(log_file), exist_ok=True)
+		# File Handler with Rotation
 		file_handler = RotatingFileHandler(
 			log_file,
 			maxBytes=max_log_size * 1024 * 1024,
 			backupCount=backup_count,
 			encoding='utf-8'
 		)
-		file_handler.setFormatter(Formatter(
-			'%(asctime)s [%(process)d] %(name)s %(levelname)s: %(message)s',
+		file_formatter = Formatter(
+			'%(asctime)s [%(process)d] %(levelname)s: %(message)s',
 			datefmt='%Y-%m-%d %H:%M:%S'
-		))
+		)
+		file_handler.setFormatter(file_formatter)
 		file_handler.setLevel(DEBUG)
+
+		# Add handler
+		logger.addHandler(console_handler)
 		logger.addHandler(file_handler)
 
-		# Log system info at startup
+		# Init Log
 		logger.info("=" * 50)
-		logger.info(f"AGP Logger initialized (Python {version.split()[0]}")
-		# logger.info(f"System: {platform.system()} {platform.release()}")
-		logger.info(f"Log file: {log_file} (Max {max_log_size}MB)")
+		logger.info("AGP Logger initialized")
+		logger.info(f"Log file: {log_file}")
 		logger.info("=" * 50)
 
 	except Exception as e:
-		print(f"Failed to configure logging: {str(e)}")
+		stderr.write(f"CRITICAL LOGGING ERROR: {str(e)}\n")
 		raise
 
 	return logger
 
 
-""" cleanup_old_logs('/tmp/agplog/agp_utils.log', max_days=7) """
-
-
 def cleanup_old_logs(log_file, max_days=7):
-	"""Delete log files older than max_days"""
-	cutoff = datetime.now() - timedelta(days=max_days)
+	"""Pulizia log obsoleti con controllo errori"""
+	try:
+		cutoff = datetime.now() - timedelta(days=max_days)
+		cutoff_timestamp = mktime(cutoff.timetuple())
 
-	for f in glob.glob(f"{log_file}*"):  # Also captures rotated files (e.g. agp_utils.log.1)
-		if isfile(f):
-			file_time = datetime.fromtimestamp(getmtime(f))
-			if file_time < cutoff:
+		for f in glob.glob(f"{log_file}*"):
+			if isfile(f) and stat(f).st_mtime < cutoff_timestamp:
 				try:
 					remove(f)
 				except Exception as e:
-					print(f"Errore cancellazione {f}: {str(e)}")
+					logging.error(f"Errore cancellazione {f}: {str(e)}")
+
+	except Exception as e:
+		logging.error(f"Log cleanup failed: {str(e)}")
 
 
 def schedule_log_cleanup(interval_hours=6):
-	"""Auto-schedule log cleanup every X hours"""
-	def wrapper():
-		cleanup_old_logs('/tmp/agp/agp_utils.log')
-		Timer(interval_hours * 3600, wrapper).start()
+	"""Scheduler affidabile per pulizia log"""
+	def _wrapper():
+		try:
+			cleanup_old_logs('/tmp/agplog/agp_full.log')
+		finally:
+			Timer(interval_hours * 3600, _wrapper).start()
 
-	wrapper()
+	_wrapper()
 
-
-schedule_log_cleanup()
-# interval_hours            Total Seconds       Equivalent
-#    1 (hour)                    3.600               1h
-#    12 (hours)                 43.200               12h
-#    24 (hours)                 86.400              1 Day
-#    72 (hours)                 259.200             3 Days
 
 logger = setup_logging()
-logger.info("AGP Utils initialized")
-
+schedule_log_cleanup()
 
 # Initialize text converter debug mode
 # convtext.DEBUG = False  # Set to True for debugging
 
 # ================ END LOGGING CONFIGURATION ===============
-
-
 # ================ START GUI CONFIGURATION ===============
 
 # Initialize skin paths
@@ -310,9 +280,8 @@ def verify_backdrop_integrity(self):
 # validate_backdrop_folder()
 
 # ================ END GUI CONFIGURATION ===============
-
-
 # ================ START TEXT MANAGER ===============
+
 
 try:
 	from .Agp_lib import convtext
@@ -547,8 +516,6 @@ def clean_for_tvdb(title):
 
 
 # ================ END TEXT MANAGER ===============
-
-
 # ================ START MEDIASTORAGE CONFIGURATION ===============
 
 
@@ -863,9 +830,8 @@ delete_old_files_if_low_disk_space(BACKDROP_FOLDER, min_free_space_mb=50, max_ag
 delete_old_files_if_low_disk_space(IMOVIE_FOLDER, min_free_space_mb=50, max_age_days=30)
 
 # ================ END MEDIASTORAGE CONFIGURATION ===============
-
-
 # ================ START MEMORY CONFIGURATION ================
+
 
 def MemClean():
 	"""Clear system memory caches"""
@@ -879,7 +845,6 @@ def MemClean():
 		pass
 
 # ================ END MEMORY CONFIGURATION ================
-
 # ================ START SERVICE API CONFIGURATION ===============
 
 
@@ -936,3 +901,15 @@ _load_api_keys()
 
 
 # ================ END SERVICE API CONFIGURATION ================
+if __name__ == "__main__":
+	# Test locale del logger
+	test_logger = setup_logging()
+	test_logger.debug("Test debug")
+	test_logger.info("Test info")
+	test_logger.warning("Test warn")
+	test_logger.error("Test error")
+	test_logger.critical("Test critical")
+else:
+	# Inizializzazione per Enigma2
+	logger = setup_logging()
+	logger.info("AGP Utils initialized")

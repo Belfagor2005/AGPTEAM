@@ -52,7 +52,7 @@ __copyright__ = "AGP Team"
 from json import load as json_load, dump as json_dump
 from functools import lru_cache
 from os import remove
-from os.path import exists  # , join
+from os.path import exists getsize  # , join
 from threading import Lock, Thread, Timer
 from urllib.error import HTTPError
 from urllib.request import urlopen
@@ -183,10 +183,13 @@ class AgpStarX(VariableValue, Renderer):
 				# Attempting to read from existing file
 				if exists(info_file):
 					try:
-						with open(info_file, "r") as f:
-							data = json_load(f)
-						self.process_data(data)
-						return
+						if getsize(info_file) > 0:
+							with open(info_file, "r") as f:
+								data = json_load(f)
+							self.process_data(data)
+							return
+						else:
+							logger.info("AgpStarX JSON file is empty (0 bytes): %s", info_file)
 					except Exception as e:
 						logger.warning(f"File corrotto, elimino: {info_file} {e}")
 						remove(info_file)

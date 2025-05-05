@@ -51,10 +51,12 @@ from os import remove, rename
 from os.path import exists, getsize
 from re import findall, sub
 from threading import Thread
-from json import loads
+from json import loads as json_loads
 from random import choice
 from unicodedata import normalize
 from time import sleep
+import urllib3
+import logging
 
 # Third-party libraries
 from PIL import Image
@@ -74,11 +76,10 @@ from .Agp_apikeys import tmdb_api, thetvdb_api, fanart_api  # , omdb_api
 from .Agp_Utils import logger
 from Plugins.Extensions.Aglare.plugin import agp_use_cache
 
+
 # ========================
 # DISABLE URLLIB3 DEBUG LOGS
 # ========================
-import logging
-import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -250,7 +251,7 @@ class AgbanDownloadThread(Thread):
 	def downloadBannerData(self, data, dwn_poster, shortdesc="", fulldesc=""):
 		if isinstance(data, bytes):
 			data = data.decode('utf-8')
-		data_json = data if isinstance(data, dict) else loads(data)
+		data_json = data if isinstance(data, dict) else json_loads(data)
 
 		if 'results' in data_json:
 			for each in data_json['results']:
