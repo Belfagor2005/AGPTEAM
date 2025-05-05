@@ -192,6 +192,8 @@ genre_mapping = {
 	11: ('Original Language', 'Black & White', 'Unpublished', 'Live Broadcast'),
 }
 
+
+# Genre mapping compatible with last EPG levels
 GENRE_MAP = {
 	1: {
 		'default': 'general',
@@ -302,10 +304,12 @@ class AgpGenreX(Renderer):
 	def changed(self, what):
 		"""Handle EPG changes"""
 		if what is None or not config.plugins.Aglare.genre_source.value:
-			logger.debug(f"AgpGenreX.changed skipped (what={what}, genre_source={config.plugins.Aglare.genre_source.value})")
+			# logger.debug(f"AgpGenreX.changed skipped (what={what}, genre_source={config.plugins.Aglare.genre_source.value})")
+			if self.instance:
+				self.instance.hide()
 			return
 
-		logger.info(f"AgpGenreX.changed running (what={what})")
+		# logger.info(f"AgpGenreX.changed running (what={what})")
 		self.delay()
 
 	def delay(self):
@@ -316,7 +320,7 @@ class AgpGenreX(Renderer):
 
 		# Fetch event
 		self.event = self.source.event
-		if not (self.event and self.event != 'None'):
+		if not self.event:
 			return
 
 		# Clean event name
@@ -337,7 +341,7 @@ class AgpGenreX(Renderer):
 			except Exception as e:
 				logger.error("GenreX JSON error: %s", str(e))
 		else:
-			logger.warning("GenreX JSON file does not exist: %s", infos_file)
+			logger.debug("GenreX JSON file does not exist: %s", infos_file)
 
 		# Fallback to EPG if needed
 		if not genreTxt:
@@ -347,7 +351,7 @@ class AgpGenreX(Renderer):
 				if gData:
 					lvl1 = gData.getLevel1()
 					lvl2 = gData.getLevel2()
-					logger.info(f"GenreX EPG levels → level1={lvl1}, level2={lvl2}")
+					# logger.info(f"GenreX EPG levels → level1={lvl1}, level2={lvl2}")
 
 					# Map using genre_mapping tuple by index
 					genreTxt = None
@@ -356,16 +360,15 @@ class AgpGenreX(Renderer):
 						genreTxt = subgenres[lvl2]
 						logger.info(f"GenreX mapped genreTxt after EPG → '{genreTxt}'")
 				else:
+					genreTxt = 'general'
+					logger.info("GenreX fallback to 'general'")
 					logger.warning("GenreX getGenreData() returned None")
+
 			except Exception as e:
 				logger.error(f"GenreX error reading EPG: {e}")
 
 		# Build PNG path
 		# logger.info(f"GenreTxt value before generating PNG path: {genreTxt}")
-		if not genreTxt:
-			genreTxt = 'general'
-			logger.info("GenreX fallback to 'general'")
-
 		png_name = sub(r"[^0-9a-z]+", "_", genreTxt.lower()).strip("_") + ".png"
 		png_path = join(GENRE_PIC_PATH, png_name)
 
