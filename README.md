@@ -115,15 +115,124 @@ config.plugins.Aglare.info_display_mode = ConfigSelection(default="auto", choice
 ├── FSK_18.png
 └── FSK_UN.png
 ```
-
 **Plugin Setup**  
 ```python
 config.plugins.Aglare.info_parental_mode = ConfigSelection(default="auto", choices=[
-  ("auto", _("Automatic")),
-  ("tmdb", _("TMDB Only")),
-  ("omdb", _("OMDB Only")),
-  ("off", _("Off"))
+	("auto", _("Automatic")),
+	("tmdb", _("TMDB Only")),
+	("omdb", _("OMDB Only")),
+	("off", _("Off"))
 ])
+```
+
+## GENRE MOVIE  
+```xml
+<widget render="AgpGenreX"
+    source="session.Event_Now"
+    position="44,370"
+    size="160,45"
+    zPosition="22"
+    transparent="1" />
+```
+
+**File Structure**  
+```
+Icons
+/usr/share/enigma2/<skin>/genre_pic/
+
+├── 3d.png
+├── action.png
+├── adult.png
+├── adventure.png
+├── animation.png
+├── arts.png
+├── athletics.png
+├── ballet.png
+├── black-white.png
+├── cartoon.png
+├── children.png
+├── childrens.png
+├── cinema.png
+├── classic music.png
+├── comedy.png
+├── cooking.png
+├── culture.png
+├── detective.png
+├── disc.png
+├── docu.png
+├── documentary.png
+├── drama.png
+├── economics.png
+├── education.png
+├── entertainment (10-16).png
+├── entertainment (6-14).png
+├── equestrian.png
+├── expeditions.png
+├── expfilm.png
+├── fashion.png
+├── fine arts.png
+├── fitness.png
+├── folk.png
+├── football.png
+├── further education.png
+├── gardening.png
+├── handicraft.png
+├── hobbies.png
+├── information.png
+├── jazz.png
+├── languages.png
+├── literature.png
+├── live broadcast.png
+├── magazine.png
+├── magazines.png
+├── martial sports.png
+├── medicine.png
+├── mistery.png
+├── motor sport.png
+├── motoring.png
+├── movie.png
+├── music.png
+├── musical-opera.png
+├── n/a.png
+├── nature-animals.png
+├── new media.png
+├── news.png
+├── news.png
+├── original language.png
+├── performing arts.png
+├── popculture.png
+├── press.png
+├── quiz.png
+├── religion.png
+├── remarkable people.png
+├── rock-pop.png
+├── romance.png
+├── science.png
+├── serie.png
+├── serious.png
+├── shopping.png
+├── show.png
+├── social.png
+├── social.png
+├── special.png
+├── sports magazine.png
+├── sports.png
+├── talk.png
+├── team sports.png
+├── technology.png
+├── tennis.png
+├── thriller.png
+├── travel.png
+├── unpublished.png
+├── variety.png
+├── water sport.png
+├── weather.png
+├── western.png
+└── winter sport.png
+```
+**Plugin Setup**  
+```python
+config.plugins.Aglare.genre_source = ConfigOnOff(default=False)
 ```
 
 ## STAR RATING  
@@ -160,8 +269,8 @@ config.plugins.Aglare.rating_source = ConfigOnOff(default=False)
 ## Aglare-Specific Setup  
 1. **API Keys**  
    ```bash
-   echo "your_api_key" > tmdb_api
-   chmod 644 tmdb_api
+   echo "your_api_key" > /usr/share/enigma2/<your_skin>/tmdb_api
+   chmod 644 /usr/share/enigma2/<your_skin>/tmdb_api
    ```
    
 **Required API Files**  
