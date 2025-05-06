@@ -140,96 +140,32 @@ config.plugins.Aglare.info_parental_mode = ConfigSelection(default="auto", choic
 Icons
 /usr/share/enigma2/<skin>/genre_pic/
 
-├── 3d.png
 ├── action.png
-├── adult.png
 ├── adventure.png
 ├── animation.png
-├── arts.png
-├── athletics.png
-├── ballet.png
-├── black-white.png
-├── cartoon.png
-├── children.png
-├── childrens.png
-├── cinema.png
-├── classic music.png
 ├── comedy.png
-├── cooking.png
-├── culture.png
-├── detective.png
-├── disc.png
-├── docu.png
+├── crime.png
 ├── documentary.png
 ├── drama.png
-├── economics.png
-├── education.png
-├── entertainment (10-16).png
-├── entertainment (6-14).png
-├── equestrian.png
-├── expeditions.png
-├── expfilm.png
-├── fashion.png
-├── fine arts.png
-├── fitness.png
-├── folk.png
-├── football.png
-├── further education.png
-├── gardening.png
-├── handicraft.png
+├── fantasy.png
+├── general.png
+├── history.png
 ├── hobbies.png
-├── information.png
-├── jazz.png
-├── languages.png
-├── literature.png
-├── live broadcast.png
-├── magazine.png
-├── magazines.png
-├── martial sports.png
-├── medicine.png
-├── mistery.png
-├── motor sport.png
-├── motoring.png
-├── movie.png
+├── horror.png
+├── kids.png
 ├── music.png
-├── musical-opera.png
-├── n/a.png
-├── nature-animals.png
-├── new media.png
+├── mystery.png
 ├── news.png
-├── news.png
-├── original language.png
-├── performing arts.png
-├── popculture.png
-├── press.png
-├── quiz.png
-├── religion.png
-├── remarkable people.png
-├── rock-pop.png
 ├── romance.png
 ├── science.png
-├── serie.png
-├── serious.png
-├── shopping.png
-├── show.png
-├── social.png
-├── social.png
-├── special.png
-├── sports magazine.png
 ├── sports.png
 ├── talk.png
-├── team sports.png
-├── technology.png
-├── tennis.png
 ├── thriller.png
-├── travel.png
-├── unpublished.png
-├── variety.png
-├── water sport.png
-├── weather.png
-├── western.png
-└── winter sport.png
+├── tvmovie.png
+├── war.png
+└── western.png
 ```
+
 **Plugin Setup**  
 ```python
 config.plugins.Aglare.genre_source = ConfigOnOff(default=False)
@@ -265,6 +201,23 @@ config.plugins.Aglare.genre_source = ConfigOnOff(default=False)
 ```python
 config.plugins.Aglare.rating_source = ConfigOnOff(default=False)
 ```
+
+
+## EMC*X POSTER (poster local movie)
+```xml
+<widget source="Service" render="AgpXEMC"
+	position="1703,583"
+	size="200,300"
+	cornerRadius="20"
+	zPosition="22"
+/>
+```
+
+**Plugin Setup**  
+```python
+config.plugins.Aglare.xemc_poster = ConfigOnOff(default=False)
+```
+
 
 ## Aglare-Specific Setup  
 1. **API Keys**  
