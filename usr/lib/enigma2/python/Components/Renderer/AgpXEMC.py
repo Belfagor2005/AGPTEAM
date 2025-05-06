@@ -9,7 +9,6 @@ from __future__ import absolute_import, print_function
 #  Created by Lululla (https://github.com/Belfagor2005) #
 #  License: CC BY-NC-SA 4.0                             #
 #  https://creativecommons.org/licenses/by-nc-sa/4.0    #
-#  from original code by @digiteng 2021                 #
 #  Last Modified: "15:14 - 20250401"                    #
 #                                                       #
 #  Credits:                                             #
@@ -46,46 +45,39 @@ from __future__ import absolute_import, print_function
 __author__ = "Lululla"
 __copyright__ = "AGP Team"
 
-# Standard library imports
+# Standard library
+from datetime import datetime
 from os import remove, makedirs
-from os.path import exists, join, getsize, basename, splitext
+from os.path import join, exists, getsize, basename, splitext
+from re import sub
 from threading import Lock
 from queue import LifoQueue
-from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
-import sys
-from re import sub
 
 # Enigma2 specific imports
 from enigma import ePixmap, loadJPG, eTimer
 from Components.Renderer.Renderer import Renderer
-from Components.Sources.ServiceEvent import ServiceEvent
 from Components.Sources.EventInfo import EventInfo
 from Components.Sources.CurrentService import CurrentService
+from Components.Sources.ServiceEvent import ServiceEvent
 import NavigationInstance
 
 # Local imports
 from Components.Renderer.AgpDownloadThread import AgpDownloadThread
 from Plugins.Extensions.Aglare.plugin import ApiKeyManager, config
+from .Agp_Utils import IMOVIE_FOLDER, clean_for_tvdb, logger
 
-from .Agp_Utils import (
-	IMOVIE_FOLDER,
-	clean_for_tvdb,
-	logger
-)
-
-
-sys.stderr = open('/tmp/agplog/AgpXEMC_errors.log', 'w')
 if not IMOVIE_FOLDER.endswith("/"):
 	IMOVIE_FOLDER += "/"
 
 
-# Constants and global variables
+# Constants
 pdbemc = LifoQueue()
+# Create an API Key Manager instance
 api_key_manager = ApiKeyManager()
 extensions = ['.jpg']
 PARENT_SOURCE = config.plugins.Aglare.xemc_poster.value
-
+# sys.stderr = open('/tmp/agplog/AgpXEMC_errors.log', 'w')
 
 """
 # Use for emc plugin
@@ -98,16 +90,18 @@ PARENT_SOURCE = config.plugins.Aglare.xemc_poster.value
 """
 
 
-try:
-	lng = config.osd.language.value
-	lng = lng[:-3]
-except:
-	lng = 'en'
-	pass
-
-
 class AgpXEMC(Renderer):
+	"""
+	Main XEMC Poster renderer class for Enigma2
+	Handles Poster display and refresh logic
 
+	Features:
+	- Dynamic XEMC poster loading based on current program
+	- Automatic refresh when channel/program changes
+	- Multiple image format support
+	- Skin-configurable providers
+	- Asynchronous XEMC poster loading
+	"""
 	GUI_WIDGET = ePixmap
 
 	def __init__(self):
@@ -115,7 +109,7 @@ class AgpXEMC(Renderer):
 		if not config.plugins.Aglare.xemc_poster.value:
 			logger.debug("Movie renderer disabled in configuration")
 			return
-		self.path = IMOVIE_FOLDER
+		self.storage_path = IMOVIE_FOLDER
 		# self.timer = eTimer()
 		# self.timer.callback.append(self.waitPoster)
 		self._poster_timer = eTimer()
@@ -131,7 +125,7 @@ class AgpXEMC(Renderer):
 		attribs = []
 		for (attrib, value) in self.skinAttributes:
 			if attrib == "path":
-				self.path = str(value)
+				self.storage_path = str(value)
 			attribs.append((attrib, value))
 		self.skinAttributes = attribs
 		return Renderer.applySkin(self, desktop, parent)
@@ -187,7 +181,7 @@ class AgpXEMC(Renderer):
 
 	def _process_movie_path(self, movie_path):
 		clean_title = self._sanitize_title(basename(movie_path))
-		poster_path = join(self.path, f"{clean_title}.jpg")
+		poster_path = join(self.storage_path, f"{clean_title}.jpg")
 
 		if _validate_poster(poster_path):
 			self.waitPoster(poster_path)

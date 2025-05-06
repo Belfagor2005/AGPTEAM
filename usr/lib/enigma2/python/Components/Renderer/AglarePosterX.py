@@ -61,9 +61,8 @@ from queue import LifoQueue
 # from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor
 
-# Enigma2/Dreambox specific imports
+# Enigma2 specific imports
 from enigma import ePixmap, loadJPG, eEPGCache, eTimer
-# from Components.config import config
 from Components.Renderer.Renderer import Renderer
 from Components.Sources.Event import Event
 from Components.Sources.EventInfo import EventInfo
@@ -85,16 +84,15 @@ from .Agp_Utils import (
 	logger
 )
 
-
 if not POSTER_FOLDER.endswith("/"):
 	POSTER_FOLDER += "/"
-
 
 # Constants and global variables
 epgcache = eEPGCache.getInstance()
 epgcache.load()
 pdb = LifoQueue()
-# extensions = ['.jpg', '.jpeg', '.png']
+# Create an API Key Manager instance
+api_key_manager = ApiKeyManager()
 extensions = ['.jpg']
 autobouquet_file = None
 apdb = dict()
@@ -155,7 +153,7 @@ class AglarePosterX(Renderer):
 		"""Initialize the poster renderer"""
 		super().__init__()
 		self.nxts = 0
-		self.path = POSTER_FOLDER
+		self.storage_path = POSTER_FOLDER
 		self.extensions = extensions
 		self.canal = [None] * 6
 		self.pstrNm = None
@@ -192,7 +190,7 @@ class AglarePosterX(Renderer):
 			if attrib == "nexts":
 				self.nxts = int(value)
 			if attrib == "path":
-				self.path = str(value)
+				self.storage_path = str(value)
 
 			attribs.append((attrib, value))
 
@@ -295,7 +293,7 @@ class AglarePosterX(Renderer):
 					return
 
 			# Try to display existing poster
-			poster_path = join(self.path, f"{self.pstcanal}.jpg")
+			poster_path = join(self.storage_path, f"{self.pstcanal}.jpg")
 			if checkPosterExistence(poster_path):
 				self.showPoster(poster_path)
 			else:
@@ -313,7 +311,7 @@ class AglarePosterX(Renderer):
 		"""Generate filesystem path for current program's poster"""
 		if len(self.canal) > 5 and self.canal[5]:
 			self.pstcanal = clean_for_tvdb(self.canal[5])
-			return join(self.path, str(self.pstcanal) + ".jpg")
+			return join(self.storage_path, str(self.pstcanal) + ".jpg")
 		return None
 
 	def runPosterThread(self):
@@ -389,7 +387,7 @@ class AglarePosterX(Renderer):
 
 		self.backrNm = None
 		pstcanal = clean_for_tvdb(self.canal[5])
-		poster_path = join(self.path, f"{pstcanal}.jpg")
+		poster_path = join(self.storage_path, f"{pstcanal}.jpg")
 
 		for attempt in range(5):
 			if checkPosterExistence(poster_path):
@@ -578,13 +576,13 @@ class PosterDB(AgpDownloadThread):
 			logger.error(f"Poster validation error: {str(e)}")
 			return False
 
-	def update_poster_cache(self, poster_name, path):
-		"""Force update cache entry"""
-		self.poster_cache[poster_name] = path
-		# Limit cache size
-		if len(self.poster_cache) > 50:
-			oldest = next(iter(self.poster_cache))
-			del self.poster_cache[oldest]
+	# def update_poster_cache(self, poster_name, path):
+		# """Force update cache entry"""
+		# self.poster_cache[poster_name] = path
+		# # Limit cache size
+		# if len(self.poster_cache) > 50:
+			# oldest = next(iter(self.poster_cache))
+			# del self.poster_cache[oldest]
 
 	def mark_failed_attempt(self, canal_name):
 		"""Track failed download attempts"""
@@ -1040,9 +1038,6 @@ def clear_all_log():
 		except Exception as e:
 			logger.error(f"log_files cleanup failed: {e}")
 
-
-# Create an API Key Manager instance
-api_key_manager = ApiKeyManager()
 
 # download on requests
 if any(api_key_manager.get_active_providers().values()):

@@ -154,7 +154,7 @@ class AglareBackdropX(Renderer):
 		"""Initialize the backdrop renderer"""
 		super().__init__()
 		self.nxts = 0
-		self.path = BACKDROP_FOLDER
+		self.storage_path = BACKDROP_FOLDER
 		self.extensions = extensions
 		self.canal = [None] * 6
 		self.pstrNm = None
@@ -186,7 +186,7 @@ class AglareBackdropX(Renderer):
 			if attrib == "nexts":
 				self.nxts = int(value)
 			if attrib == "path":
-				self.path = str(value)
+				self.storage_path = str(value)
 
 			attribs.append((attrib, value))
 
@@ -289,7 +289,7 @@ class AglareBackdropX(Renderer):
 					return
 
 			# Try to display existing backdrop
-			backdrop_path = join(self.path, f"{self.pstcanal}.jpg")
+			backdrop_path = join(self.storage_path, f"{self.pstcanal}.jpg")
 			if checkBackdropExistence(backdrop_path):
 				self.showBackdrop(backdrop_path)
 			else:
@@ -307,7 +307,7 @@ class AglareBackdropX(Renderer):
 		"""Generate filesystem path for current program's backdrop"""
 		if len(self.canal) > 5 and self.canal[5]:
 			self.pstcanal = clean_for_tvdb(self.canal[5])
-			return join(self.path, str(self.pstcanal) + ".jpg")
+			return join(self.storage_path, str(self.pstcanal) + ".jpg")
 		return None
 
 	def runBackdropThread(self):
@@ -382,7 +382,7 @@ class AglareBackdropX(Renderer):
 
 		self.backrNm = None
 		pstcanal = clean_for_tvdb(self.canal[5])
-		backdrop_path = join(self.path, f"{pstcanal}.jpg")
+		backdrop_path = join(self.storage_path, f"{pstcanal}.jpg")
 
 		for attempt in range(5):
 			if checkBackdropExistence(backdrop_path):
@@ -439,7 +439,6 @@ class BackdropDB(AgbDownloadThread):
 
 		self.queued_backdrops = set()
 		# self.backdrop_cache = {}
-
 		self.executor = ThreadPoolExecutor(max_workers=4)
 		self.extensions = extensions
 		self.logdbg = None
@@ -571,13 +570,13 @@ class BackdropDB(AgbDownloadThread):
 			logger.error(f"backdrop validation error: {str(e)}")
 			return False
 
-	def update_backdrop_cache(self, backdrop_name, path):
-		"""Force update cache entry"""
-		self.backdrop_cache[backdrop_name] = path
-		# Limit cache size
-		if len(self.backdrop_cache) > 20:
-			oldest = next(iter(self.backdrop_cache))
-			del self.backdrop_cache[oldest]
+	# def update_backdrop_cache(self, backdrop_name, path):
+		# """Force update cache entry"""
+		# self.backdrop_cache[backdrop_name] = path
+		# # Limit cache size
+		# if len(self.backdrop_cache) > 20:
+			# oldest = next(iter(self.backdrop_cache))
+			# del self.backdrop_cache[oldest]
 
 	def mark_failed_attempt(self, canal_name):
 		"""Track failed download attempts"""

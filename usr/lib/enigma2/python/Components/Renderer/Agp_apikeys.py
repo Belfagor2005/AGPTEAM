@@ -9,7 +9,7 @@ from __future__ import absolute_import, print_function
 #  Created by Lululla (https://github.com/Belfagor2005) #
 #  License: CC BY-NC-SA 4.0                             #
 #  https://creativecommons.org/licenses/by-nc-sa/4.0    #
-#														#
+#                                                       #
 #  Last Modified: "15:14 - 20250401"                    #
 #                                                       #
 #  Credits:                                             #
@@ -86,6 +86,7 @@ def setup_api_keys():
 def _load_api_keys():
 	"""
 	Internal function that loads API keys from plugin config, skin files, or defaults.
+	Also saves the keys to the plugin configuration.
 	"""
 	try:
 		cur_skin = config.skin.primary_skin.value.replace("/skin.xml", "")
@@ -132,9 +133,23 @@ def _load_api_keys():
 				if file_path.exists():
 					try:
 						with open(file_path, "r") as f:
-							API_KEYS[key_name] = f.read().strip()
+							key_value = f.read().strip()
+							API_KEYS[key_name] = key_value
 						print(f"[API Config] Loaded {key_name} from {file_path}")
 						keys_loaded = True
+
+						# Save the key to the plugin config if successfully loaded from file
+						if key_name == "tmdb_api":
+							plugin_cfg.tmdb_api.value = key_value
+						elif key_name == "omdb_api":
+							plugin_cfg.omdb_api.value = key_value
+						elif key_name == "thetvdb_api":
+							plugin_cfg.thetvdb_api.value = key_value
+						elif key_name == "fanart_api":
+							plugin_cfg.fanart_api.value = key_value
+
+						# Commit changes to the plugin configuration
+						plugin_cfg.save()
 					except Exception as e:
 						print(f"[API Config] Error reading {file_path}: {str(e)}")
 				else:

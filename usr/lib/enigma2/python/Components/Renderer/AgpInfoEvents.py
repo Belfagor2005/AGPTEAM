@@ -71,9 +71,11 @@ from Plugins.Extensions.Aglare.plugin import ApiKeyManager, config
 from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, logger
 from .Agp_lib import quoteEventName
 
+if not POSTER_FOLDER.endswith("/"):
+	POSTER_FOLDER += "/"
+
 # Constants
 api_key_manager = ApiKeyManager()
-path_folder = POSTER_FOLDER
 DATA_SOURCE = config.plugins.Aglare.info_display_mode.value
 epgcache = eEPGCache.getInstance()
 api_lock = Lock()
@@ -122,7 +124,17 @@ def intCheck():
 
 
 class AgpInfoEvents(Renderer, VariableText):
-	"""Info Events Details indicator with AGP ecosystem integration"""
+	"""
+	Main InfoEvents Details indicator renderer class for Enigma2
+	Handles InfoEvents display and refresh logic
+
+	Features:
+	- Dynamic InfoEvents loading based on current program
+	- Automatic refresh when channel/program changes
+	- Multiple image format support
+	- Skin-configurable providers
+	- Asynchronous InfoEvents poster loading
+	"""
 
 	GUI_WIDGET = eLabel
 
@@ -135,6 +147,7 @@ class AgpInfoEvents(Renderer, VariableText):
 			return
 		else:
 			logger.info("AgpInfoEvents Internet connection verified")
+		self.storage_path = POSTER_FOLDER
 		self.current_request = None
 		self.lock = Lock()
 		self.last_event = None
@@ -200,7 +213,7 @@ class AgpInfoEvents(Renderer, VariableText):
 			try:
 				data = None
 				clean_title = clean_for_tvdb(self.event.getEventName().replace('\xc2\x86', '').replace('\xc2\x87', ''))
-				json_file = join(path_folder, f"{clean_title}.json")
+				json_file = join(self.storage_path, f"{clean_title}.json")
 				self.text = ''
 				year = self.extract_year(self.event)
 

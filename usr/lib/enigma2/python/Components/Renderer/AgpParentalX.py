@@ -57,12 +57,14 @@ from Plugins.Extensions.Aglare.plugin import ApiKeyManager, config
 from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, logger
 from .Agp_lib import quoteEventName
 
+if not POSTER_FOLDER.endswith("/"):
+	POSTER_FOLDER += "/"
+
 # Constants
 api_key_manager = ApiKeyManager()
 _ = gettext.gettext
 cur_skin = config.skin.primary_skin.value.replace('/skin.xml', '')
 
-path_folder = POSTER_FOLDER
 PARENTAL_ICON_PATH = f'/usr/share/enigma2/{cur_skin}/parental/'
 PARENT_SOURCE = config.plugins.Aglare.info_parental_mode.value
 DEFAULT_RATING = 'UN'
@@ -138,7 +140,17 @@ config.plugins.Aglare.info_parental_mode = ConfigSelection(default="auto", choic
 
 
 class AgpParentalX(Renderer):
-	"""Parental rating indicator with AGP ecosystem integration"""
+	"""
+	Main Parental renderer rating indicator class for Enigma2
+	Handles Parental display and refresh logic
+
+	Features:
+	- Dynamic Parental loading based on current program
+	- Automatic refresh when channel/program changes
+	- Multiple image format support
+	- Skin-configurable providers
+	- Asynchronous Parental loading
+	"""
 
 	GUI_WIDGET = ePixmap
 
@@ -154,8 +166,7 @@ class AgpParentalX(Renderer):
 		self.lock = Lock()
 		self.last_event = None
 		self.icon_path = join(PARENTAL_ICON_PATH, DEFAULT_ICON)
-		# self.timer = eTimer()
-		# self.timer.callback.append(self.delayed_update)
+		self.storage_path = POSTER_FOLDER
 		logger.info("AgpParentalX Renderer initialized")
 
 	def changed(self, what):
@@ -176,11 +187,6 @@ class AgpParentalX(Renderer):
 				self.last_event = current_event_hash
 				self.start_data_fetch()
 
-		# event_hash = self.event.getEventName() + str(self.event.getBeginTime())
-		# if event_hash != self.last_event:
-			# self.last_event = event_hash
-			# self.start_data_fetch()
-
 	def start_data_fetch(self):
 		if self.current_request and self.current_request.is_alive():
 			return
@@ -196,7 +202,7 @@ class AgpParentalX(Renderer):
 			try:
 				data = None
 				clean_title = clean_for_tvdb(self.event.getEventName().replace('\xc2\x86', '').replace('\xc2\x87', ''))
-				json_file = join(path_folder, f"{clean_title}.json")
+				json_file = join(self.storage_path, f"{clean_title}.json")
 				year = self.extract_year(self.event)
 
 				if exists(json_file):
@@ -351,11 +357,6 @@ class AgpParentalX(Renderer):
 			self.instance.show()
 		else:
 			logger.warning("AgpParentalX Instance is not available to update the icon.")
-
-	# def delayed_update(self):
-		# if self.instance and exists(self.icon_path):
-			# self.instance.setPixmapFromFile(self.icon_path)
-			# self.instance.show()
 
 	def extract_year(self, event):
 		try:

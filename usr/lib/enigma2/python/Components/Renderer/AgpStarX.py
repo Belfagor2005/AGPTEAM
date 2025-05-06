@@ -45,8 +45,6 @@ from __future__ import absolute_import, print_function
 """
 __author__ = "Lululla"
 __copyright__ = "AGP Team"
-__author__ = "Lululla"
-__copyright__ = "AGP Team"
 
 # Standard library imports
 from json import load as json_load, dump as json_dump
@@ -68,7 +66,11 @@ from Plugins.Extensions.Aglare.plugin import ApiKeyManager, agp_use_cache, confi
 from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, logger
 from .Agp_lib import quoteEventName
 
+if not POSTER_FOLDER.endswith("/"):
+	POSTER_FOLDER += "/"
+
 # Constants
+# Create an API Key Manager instance
 api_key_manager = ApiKeyManager()
 epgcache = eEPGCache.getInstance()
 epgcache.load()
@@ -104,7 +106,16 @@ except:
 
 
 class AgpStarX(VariableValue, Renderer):
+	"""
+	Main Stars rating renderer class for Enigma2
+	Handles Star display and refresh logic
 
+	Features:
+	- Dynamic star rating loading based on current program
+	- Automatic refresh when channel/program changes
+	- Skin-configurable providers
+	- Asynchronous star loading
+	"""
 	GUI_WIDGET = eSlider
 
 	def __init__(self):

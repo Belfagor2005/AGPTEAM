@@ -163,6 +163,18 @@ Logo (SVG)  500×1 → Vector graphic  Variable
 
 
 class AgpDownloadThread(Thread):
+	"""
+	Main Poster renderer class for Enigma2
+	Handles Poster display and refresh logic
+
+	Features:
+	- Dynamic Poster loading based on current program
+	- Automatic refresh when channel/program changes
+	- Multiple image format support
+	- Skin-configurable providers
+	- Asynchronous Poster loading
+	"""
+
 	def __init__(self):
 		Thread.__init__(self)
 		self.checkMovie = [
@@ -185,10 +197,10 @@ class AgpDownloadThread(Thread):
 		]
 
 		if agp_use_cache.value:
-			self.search_tmdb = lru_cache(maxsize=100)(self.search_tmdb)
+			self.search_tmdb = lru_cache(maxsize=250)(self.search_tmdb)
 			self.search_tvdb = lru_cache(maxsize=100)(self.search_tvdb)
 			self.search_fanart = lru_cache(maxsize=100)(self.search_fanart)
-			self.search_omdb = lru_cache(maxsize=100)(self.search_omdb)
+			self.search_omdb = lru_cache(maxsize=250)(self.search_omdb)
 			self.search_imdb = lru_cache(maxsize=100)(self.search_imdb)
 			self.search_programmetv_google = lru_cache(maxsize=100)(self.search_programmetv_google)
 			self.search_molotov_google = lru_cache(maxsize=100)(self.search_molotov_google)

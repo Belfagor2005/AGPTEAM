@@ -60,14 +60,16 @@ import gettext
 from Plugins.Extensions.Aglare.plugin import ApiKeyManager, config
 from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, logger
 
+if not POSTER_FOLDER.endswith("/"):
+	POSTER_FOLDER += "/"
+
 # Constants
 api_key_manager = ApiKeyManager()
 _ = gettext.gettext
 cur_skin = config.skin.primary_skin.value.replace('/skin.xml', '')
 GENRE_PIC_PATH = f'/usr/share/enigma2/{cur_skin}/genre_pic/'
 GENRE_SOURCE = config.plugins.Aglare.genre_source.value
-if not POSTER_FOLDER.endswith("/"):
-	POSTER_FOLDER += "/"
+
 
 """skin configuration
 
@@ -85,100 +87,36 @@ config.plugins.Aglare.genre_source = ConfigOnOff(default=False)
 Icons
 /usr/share/enigma2/<skin>/genre_pic/
 
-├── 3d.png
 ├── action.png
-├── adult.png
 ├── adventure.png
 ├── animation.png
-├── arts.png
-├── athletics.png
-├── ballet.png
-├── black-white.png
-├── cartoon.png
-├── children.png
-├── childrens.png
-├── cinema.png
-├── classic music.png
 ├── comedy.png
-├── cooking.png
-├── culture.png
-├── detective.png
-├── disc.png
-├── docu.png
+├── crime.png
 ├── documentary.png
 ├── drama.png
-├── economics.png
-├── education.png
-├── entertainment (10-16).png
-├── entertainment (6-14).png
-├── equestrian.png
-├── expeditions.png
-├── expfilm.png
-├── fashion.png
-├── fine arts.png
-├── fitness.png
-├── folk.png
-├── football.png
-├── further education.png
-├── gardening.png
-├── handicraft.png
+├── fantasy.png
+├── general.png
+├── history.png
 ├── hobbies.png
-├── information.png
-├── jazz.png
-├── languages.png
-├── literature.png
-├── live broadcast.png
-├── magazine.png
-├── magazines.png
-├── martial sports.png
-├── medicine.png
-├── mistery.png
-├── motor sport.png
-├── motoring.png
-├── movie.png
+├── horror.png
+├── kids.png
 ├── music.png
-├── musical-opera.png
-├── n/a.png
-├── nature-animals.png
-├── new media.png
+├── mystery.png
 ├── news.png
-├── news.png
-├── original language.png
-├── performing arts.png
-├── popculture.png
-├── press.png
-├── quiz.png
-├── religion.png
-├── remarkable people.png
-├── rock-pop.png
 ├── romance.png
 ├── science.png
-├── serie.png
-├── serious.png
-├── shopping.png
-├── show.png
-├── social.png
-├── social.png
-├── special.png
-├── sports magazine.png
 ├── sports.png
 ├── talk.png
-├── team sports.png
-├── technology.png
-├── tennis.png
 ├── thriller.png
-├── travel.png
-├── unpublished.png
-├── variety.png
-├── water sport.png
-├── weather.png
-├── western.png
-└── winter sport.png
+├── tvmovie.png
+├── war.png
+└── western.png
 
 """
 
 # EPG DVB genre mapping (level1 → tuple of subgenres)
-genre_mapping = {
+# full map
+genre_mapping_full = {
 	1: ('N/A', 'News', 'Western', 'Action', 'Thriller', 'Drama', 'Movie', 'Detective', 'Mistery', 'Adventure', 'Science', 'Animation', 'Comedy', 'Serie', 'Romance', 'Serious', 'Adult'),
 	2: ('News', 'Weather', 'Magazine', 'Docu', 'Disc', 'Documentary'),
 	3: ('Show', 'Quiz', 'Variety', 'Talk'),
@@ -192,107 +130,159 @@ genre_mapping = {
 	11: ('Original Language', 'Black & White', 'Unpublished', 'Live Broadcast'),
 }
 
+# reduced mapping 
+genre_mapping = {
+	1: ('action', 'thriller', 'drama', 'movie', 'crime', 'mystery', 'adventure', 'science', 'animation', 'comedy', 'series', 'romance', 'adult'),
+	2: ('news', 'weather', 'magazine', 'documentary'),
+	3: ('show', 'quiz', 'variety', 'talk'),
+	4: ('sports', 'football', 'tennis', 'motor', 'winter sport', 'martial'),
+	5: ('kids', 'cartoon'),
+	6: ('music', 'pop', 'classic', 'folk', 'opera', 'ballet'),
+	7: ('arts', 'culture', 'cinema', 'religion'),
+	8: ('economics', 'society'),
+	9: ('education', 'nature', 'technology', 'medicine', 'language'),
+	10: ('hobbies', 'travel', 'fitness', 'cooking', 'shopping'),
+	11: ('original', 'live'),
+}
+
 
 # Genre mapping compatible with last EPG levels
+# reduce mapping tmdb
+SIMPLIFIED_GENRES = {
+	"action": "action",
+	"adventure": "adventure",
+	"animation": "animation",
+	"ballet": "music",
+	"cartoon": "kids",
+	"cinema": "culture",
+	"classic": "music",
+	"comedy": "comedy",
+	"cooking": "hobbies",
+	"crime": "crime",
+	"culture": "culture",
+	"documentary": "documentary",
+	"drama": "drama",
+	"economics": "general",
+	"education": "general",
+	"fantasy": "fantasy",
+	"fitness": "hobbies",
+	"football": "sports",
+	"general": "general",
+	"history": "history",
+	"horror": "horror",
+	"kids": "kids",
+	"language": "general",
+	"magazine": "news",
+	"martial": "sports",
+	"medicine": "science",
+	"motor": "sports",
+	"music": "music",
+	"mystery": "mystery",
+	"nature": "science",
+	"news": "news",
+	"opera": "music",
+	"pop": "music",
+	"quiz": "talk",
+	"religion": "culture",
+	"romance": "romance",
+	"science": "science",
+	"series": "drama",
+	"shopping": "hobbies",
+	"soap": "drama",
+	"society": "general",
+	"talk": "talk",
+	"talk": "talk",
+	"technology": "science",
+	"tennis": "sports",
+	"thriller": "thriller",
+	"travel": "hobbies",
+	"variety": "talk",
+	"war": "war",
+	"weather": "news",
+	"western": "western",
+	"winter sport": "sports",
+}
+
+
 GENRE_MAP = {
-	1: {
-		'default': 'general',
-		1: 'action', 2: 'thriller', 3: 'drama', 4: 'movie',
-		16: 'animation', 35: 'comedy'
-	},
-	5: {
-		'default': 'kids',
-		1: 'cartoon'
-	},
-	12: {
-		'default': 'adventure'
-	},
-	14: {
-		'default': 'fantasy'
-	},
-	16: {
-		'default': 'animation'
-	},
-	18: {
-		'default': 'drama'
-	},
-	27: {
-		'default': 'horror'
-	},
-	28: {
-		'default': 'action'
-	},
-	35: {
-		'default': 'comedy'
-	},
-	36: {
-		'default': 'history'
-	},
-	37: {
-		'default': 'western'
-	},
-	53: {
-		'default': 'thriller'
-	},
-	80: {
-		'default': 'crime'
-	},
-	99: {
-		'default': 'documentary'
-	},
-	878: {
-		'default': 'sciencefiction'
-	},
-	9648: {
-		'default': 'mystery'
-	},
-	10402: {
-		'default': 'music'
-	},
-	10749: {
-		'default': 'romance'
-	},
-	10751: {
-		'default': 'family'
-	},
-	10752: {
-		'default': 'war'
-	},
-	10763: {
-		'default': 'news'
-	},
-	10764: {
-		'default': 'reality'
-	},
-	10765: {
-		'default': 'science'
-	},
-	10766: {
-		'default': 'soap'
-	},
-	10767: {
-		'default': 'talk'
-	},
-	10768: {
-		'default': 'warpolitics'
-	},
-	10769: {
-		'default': 'gameshow'
-	},
-	10770: {
-		'default': 'tvmovie'
-	},
-	10771: {
-		'default': 'variety'
-	},
-	10772: {
-		'default': 'familykids'
-	}
+	1: {"default": "action"},
+	5: {"default": "kids"},
+	12: {"default": "adventure"},
+	14: {"default": "fantasy"},
+	16: {"default": "animation"},
+	18: {"default": "drama"},
+	27: {"default": "horror"},
+	28: {"default": "action"},
+	35: {"default": "comedy"},
+	36: {"default": "history"},
+	37: {"default": "western"},
+	53: {"default": "thriller"},
+	80: {"default": "crime"},
+	99: {"default": "documentary"},
+	878: {"default": "science"},
+	9648: {"default": "mystery"},
+	10402: {"default": "music"},
+	10749: {"default": "romance"},
+	10751: {"default": "family"},
+	10752: {"default": "war"},
+	10763: {"default": "news"},
+	10764: {"default": "reality"},
+	10765: {"default": "science"},
+	10766: {"default": "drama"},
+	10767: {"default": "talk"},
+	10768: {"default": "war"},
+	10769: {"default": "gameshow"},
+	10770: {"default": "tvmovie"},
+	10771: {"default": "variety"},
+	10772: {"default": "kids"},
+}
+
+# full map tmdb
+GENRE_MAPFULL = {
+	1: {'default': 'general', 1: 'action', 2: 'thriller', 3: 'drama', 4: 'movie', 16: 'animation', 35: 'comedy'},
+	5: {'default': 'kids', 1: 'cartoon'},
+	12: {'default': 'adventure'},
+	14: {'default': 'fantasy'},
+	16: {'default': 'animation'},
+	18: {'default': 'drama'},
+	27: {'default': 'horror'},
+	28: {'default': 'action'},
+	35: {'default': 'comedy'},
+	36: {'default': 'history'},
+	37: {'default': 'western'},
+	53: {'default': 'thriller'},
+	80: {'default': 'crime'},
+	99: {'default': 'documentary'},
+	878: {'default': 'sciencefiction'},
+	9648: {'default': 'mystery'},
+	10402: {'default': 'music'},
+	10749: {'default': 'romance'},
+	10751: {'default': 'family'},
+	10752: {'default': 'war'},
+	10763: {'default': 'news'},
+	10764: {'default': 'reality'},
+	10765: {'default': 'science'},
+	10766: {'default': 'soap'},
+	10767: {'default': 'talk'},
+	10768: {'default': 'warpolitics'},
+	10769: {'default': 'gameshow'},
+	10770: {'default': 'tvmovie'},
+	10771: {'default': 'variety'},
+	10772: {'default': 'familykids'}
 }
 
 
 class AgpGenreX(Renderer):
-	"""Advanced genre icon renderer with AGP ecosystem integration"""
+	"""
+	Main Genre icon renderer class for Enigma2
+	Handles Genre display and refresh logic
+
+	Features:
+	- Dynamic Genre loading based on current program
+	- Automatic refresh when channel/program changes
+	- Skin-configurable providers
+	- Asynchronous Genre loading
+	"""
 
 	GUI_WIDGET = ePixmap
 
@@ -338,6 +328,8 @@ class AgpGenreX(Renderer):
 						json_data = json_loads(content)
 						genre_id = json_data["genres"][0]["id"]
 						genreTxt = GENRE_MAP.get(genre_id, {"default": "general"}).get("default", "general")
+						genreTxt = SIMPLIFIED_GENRES.get(genreTxt.lower(), genreTxt.lower())
+
 				else:
 					logger.info("GenreX JSON file is empty (0 bytes): %s", infos_file)
 			except Exception as e:
@@ -359,6 +351,7 @@ class AgpGenreX(Renderer):
 					if isinstance(subgenres, tuple) and 0 <= lvl2 < len(subgenres):
 						genreTxt = subgenres[lvl2]
 						logger.info(f"GenreX mapped genreTxt after EPG → '{genreTxt}'")
+						genreTxt = SIMPLIFIED_GENRES.get(genreTxt.lower(), genreTxt.lower())
 					if genreTxt is None:
 						logger.info(f"GenreX is None → '{genreTxt}'")
 				else:

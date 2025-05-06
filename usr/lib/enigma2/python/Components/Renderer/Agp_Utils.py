@@ -423,9 +423,24 @@ def clean_for_tvdb_optimized(title):
 
 
 def cleanText(text):
-	cutlist = ['x264', '720p', '1080p', '1080i', 'PAL', 'GERMAN', 'ENGLiSH', 'WS', 'DVDRiP', 'UNRATED', 'RETAIL', 'Web-DL', 'DL', 'LD', 'MiC', 'MD', 'DVDR', 'BDRiP', 'BLURAY', 'DTS', 'UNCUT', 'ANiME',
-			   'AC3MD', 'AC3', 'AC3D', 'TS', 'DVDSCR', 'COMPLETE', 'INTERNAL', 'DTSD', 'XViD', 'DIVX', 'DUBBED', 'LINE.DUBBED', 'DD51', 'DVDR9', 'DVDR5', 'h264', 'AVC',
-			   'WEBHDTVRiP', 'WEBHDRiP', 'WEBRiP', 'WEBHDTV', 'WebHD', 'HDTVRiP', 'HDRiP', 'HDTV', 'ITUNESHD', 'REPACK', 'SYNC']
+	cutlist = [
+		# Video Resolutions and Formats
+		'720p', '1080p', '1080i', 'PAL', 'HDTV', 'HDTVRiP', 'HDRiP', 'Web-DL', 'WEBHDTV', 'WebHD', 'WEBHDTVRiP',
+		'WEBHDRiP', 'WEBRiP', 'ITUNESHD', 'DVDR', 'DVDR5', 'DVDR9', 'DVDRiP', 'BDRiP', 'BLURAY',
+
+		# Codecs and audio
+		'x264', 'h264', 'AVC', 'AC3', 'AC3D', 'AC3MD', 'DTS', 'DTSD', 'DD51', 'XViD', 'DIVX',
+
+		# Release type
+		'UNRATED', 'RETAIL', 'COMPLETE', 'INTERNAL', 'REPACK', 'SYNC',
+
+		# Language and dubbing
+		'GERMAN', 'ENGLiSH', 'DUBBED', 'LINE.DUBBED',
+
+		# Various
+		'WS', 'LD', 'MiC', 'MD', 'TS', 'DVDSCR', 'UNCUT', 'ANiME', 'DL'
+	]
+
 	text = text.replace('.wmv', '').replace('.flv', '').replace('.ts', '').replace('.m2ts', '').replace('.mkv', '').replace('.avi', '').replace('.mpeg', '').replace('.mpg', '').replace('.iso', '').replace('.mp4', '')
 
 	for word in cutlist:

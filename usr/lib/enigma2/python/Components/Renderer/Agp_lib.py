@@ -46,7 +46,7 @@ from __future__ import absolute_import, print_function
 __author__ = "Lululla"
 __copyright__ = "AGP Team"
 
-from re import compile, DOTALL, sub, IGNORECASE
+from re import compile, sub, DOTALL, IGNORECASE
 from unicodedata import normalize, category
 import sys
 from Components.config import config
@@ -72,7 +72,6 @@ def quoteEventName(eventName, safe="+"):
 	"""
 	Quote and clean event names for URL encoding
 	Handles special characters and encoding issues
-
 	:param eventName: Stringa da codificare
 	:param safe: Caratteri da mantenere non codificati (default: "+")
 	:return: Stringa codificata URL-safe
@@ -249,7 +248,7 @@ def sanitize_filename(name):
 convtext_cache = {}
 
 
-# @lru_cache(maxsize=2500)
+# @lru_cache(maxsize=2500)  # not tested 
 def convtext(text):
 	try:
 		if text is None:

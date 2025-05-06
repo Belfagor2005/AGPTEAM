@@ -164,6 +164,18 @@ Logo (SVG)  500×1 → Vector graphic  Variable
 
 
 class AgbanDownloadThread(Thread):
+	"""
+	Main Banner renderer class for Enigma2
+	Handles Banner display and refresh logic
+
+	Features:
+	- Dynamic Banner loading based on current program
+	- Automatic refresh when channel/program changes
+	- Multiple image format support
+	- Skin-configurable providers
+	- Asynchronous Banner loading
+	"""
+
 	def __init__(self):
 		Thread.__init__(self)
 		self.checkMovie = [
@@ -186,15 +198,15 @@ class AgbanDownloadThread(Thread):
 		]
 
 		if agp_use_cache.value:
-			self.search_tmdb = lru_cache(maxsize=500)(self.search_tmdb)
-			self.search_tvdb = lru_cache(maxsize=250)(self.search_tvdb)
+			self.search_tmdb = lru_cache(maxsize=100)(self.search_tmdb)
+			self.search_tvdb = lru_cache(maxsize=100)(self.search_tvdb)
 			self.search_fanart = lru_cache(maxsize=100)(self.search_fanart)
-			self.search_omdb = lru_cache(maxsize=250)(self.search_omdb)
-			self.search_imdb = lru_cache(maxsize=250)(self.search_imdb)
+			self.search_omdb = lru_cache(maxsize=100)(self.search_omdb)
+			self.search_imdb = lru_cache(maxsize=100)(self.search_imdb)
 			self.search_programmetv_google = lru_cache(maxsize=100)(self.search_programmetv_google)
 			self.search_molotov_google = lru_cache(maxsize=100)(self.search_molotov_google)
 			self.search_elcinema = lru_cache(maxsize=100)(self.search_elcinema)
-			self.search_google = lru_cache(maxsize=250)(self.search_google)
+			self.search_google = lru_cache(maxsize=100)(self.search_google)
 
 	def search_tmdb(self, dwn_poster, title, shortdesc, fulldesc, channel=None, api_key=None):
 		"""Download banner from TMDB with full verification pipeline"""
