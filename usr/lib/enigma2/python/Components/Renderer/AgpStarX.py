@@ -52,7 +52,7 @@ __copyright__ = "AGP Team"
 from json import load as json_load, dump as json_dump
 from functools import lru_cache
 from os import remove
-from os.path import exists getsize  # , join
+from os.path import exists, getsize  # , join
 from threading import Lock, Thread, Timer
 from urllib.error import HTTPError
 from urllib.request import urlopen

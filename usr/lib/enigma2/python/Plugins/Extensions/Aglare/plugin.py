@@ -179,9 +179,6 @@ config.plugins.Aglare.bkddown = ConfigOnOff(default=False)
 config.plugins.Aglare.pscan_time = ConfigClock(calcTime(0, 0))  # 00:00
 config.plugins.Aglare.bscan_time = ConfigClock(calcTime(2, 0))  # 02:00
 
-# remove png
-config.plugins.Aglare.png = NoSave(ConfigYesNo(default=False))
-
 # stars
 config.plugins.Aglare.rating_source = ConfigOnOff(default=False)
 
@@ -202,6 +199,13 @@ config.plugins.Aglare.info_parental_mode = ConfigSelection(default="auto", choic
 ])
 
 # genre
+config.plugins.Aglare.genre_source = ConfigOnOff(default=False)
+
+# Enhanced Movie Center
+config.plugins.Aglare.xemc_poster = ConfigOnOff(default=False)
+
+# remove png
+config.plugins.Aglare.png = NoSave(ConfigYesNo(default=False))
 
 # skin style management
 config.plugins.Aglare.colorSelector = ConfigSelection(default='color0', choices=[
@@ -611,7 +615,9 @@ class AglareSetup(ConfigListScreen, Screen):
 			list.append(getConfigListEntry(section))
 			list.append(getConfigListEntry(_('Enable Rating Star:'), config.plugins.Aglare.rating_source, _("This operation enable the display of rating stars for events, based on the selected rating source.")))
 			list.append(getConfigListEntry(_('Enable Parental Icons:'), config.plugins.Aglare.info_parental_mode, _("Show parental guidance icons on events to indicate content rating and age suitability.")))
-			list.append(getConfigListEntry(_('Enable Display InfoEvents mode:'), config.plugins.Aglare.info_display_mode, _("Enable the display of extended event information, including full cast, crew, plot details, and other metadata, in the info widget.")))
+			list.append(getConfigListEntry(_('Enable Display InfoEvents:'), config.plugins.Aglare.info_display_mode, _("Enable the display of extended event information, including full cast, crew, plot details, and other metadata, in the info widget.")))
+			list.append(getConfigListEntry(_('Enable Display Genre icons:'), config.plugins.Aglare.genre_source, _("Show icons representing the genre of each event (e.g., action, comedy, drama)")))
+			list.append(getConfigListEntry(_('Enable Display XMC Poster:'), config.plugins.Aglare.xemc_poster, _("Show poster from movie in local folder")))
 
 			list.append(getConfigListEntry("API KEY SETUP:", config.plugins.Aglare.actapi, _("Settings Apikey Server")))
 
