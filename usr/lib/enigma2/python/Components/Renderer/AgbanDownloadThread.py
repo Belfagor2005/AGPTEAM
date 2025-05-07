@@ -584,6 +584,29 @@ class AgbanDownloadThread(Thread):
 
 		return best_match if highest_score > 50 else None
 
+	def _calculate_match_score(self, result, target_year, original_title, aka):
+		"""Calculate score based on title similarity and year proximity"""
+		score = 0
+		result_title = result.get("title", "").lower()
+		result_year = result.get("year")
+
+		# Normalize original title (no year, lowercase)
+		clean_title = sub(r"\b\d{4}\b", "", original_title.lower()).strip()
+
+		if clean_title in result_title:
+			score += 50
+
+		if aka and aka.lower() in result_title:
+			score += 30
+
+		if target_year and result_year:
+			if str(result_year) == str(target_year):
+				score += 20
+			elif abs(int(result_year) - int(target_year)) <= 1:
+				score += 10
+
+		return score
+
 	def _format_url_poster(self, url):
 		"""Ensure poster URL is correctly formatted"""
 		if not url:

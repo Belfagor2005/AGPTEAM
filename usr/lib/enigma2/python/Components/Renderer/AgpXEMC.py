@@ -49,7 +49,7 @@ __copyright__ = "AGP Team"
 from datetime import datetime
 from os import remove, makedirs
 from os.path import join, exists, getsize, basename, splitext
-from re import sub
+from re import sub, IGNORECASE, VERBOSE
 from threading import Lock
 from queue import LifoQueue
 from concurrent.futures import ThreadPoolExecutor
@@ -192,11 +192,7 @@ class AgpXEMC(Renderer):
 	def _sanitize_title(self, filename):
 		name = filename.rsplit('.', 1)[0]
 		logger.info(f"_sanitize_title poster name: {name}")
-		cleaned = sub(
-			r'\.(?=\D)|\(\d{4}\)|\d{4}|[._](?:720|1080)[pi]|\b(?:HD|DVD|BRRip)\b',
-			' ',
-			name
-		)
+		cleaned = sanitize_filename(name)
 		cleaned = clean_for_tvdb(cleaned)
 		logger.info(f"_sanitize_title poster cleaned name: {cleaned}")
 		return cleaned.strip()
@@ -403,6 +399,61 @@ def _is_video_file(path):
 	return path and splitext(path)[1].lower() in (
 		'.mkv', '.avi', '.mp4', '.ts', '.mov', '.iso', '.m2ts', '.flv', '.webm'
 	)
+
+
+def sanitize_filename(name):
+	"""
+	Sanitize strings to be safe for filenames.
+	Removes release-tag noise (quality tags, codecs, season/episode, etc.),
+	strips invalid filesystem characters, collapses whitespace, and truncates.
+	"""
+	# 1. Collapse multiple spaces
+	while "  " in name:
+		name = name.replace("  ", " ")
+
+	# 2. Remove common release tags (case-insensitive, verbose)
+	name = sub(
+		r'''
+		\.(?=\D)                                                  |   # dot before letter → space
+		\(\d{4}\)                                                 |   # (2025)
+		\b(?:720p|1080p|2160p)\b                                  |   # video quality
+		\b(?:HDTV|WEB[Rr]ip|WEB\-DL|HDRip|HDTC|HDTS|DVDScr|DVDRip|
+		   BRRip|BDRip|BDMV|CAMRip|Cam|TS|TC|SCR|R5)\b              |   # source
+		\b(?:PROPER|REPACK|SUBBED|UNRATED|EXTENDED|INTERNAL|
+		   LIMITED|READNFO)\b                                      |   # release flags
+		\b(?:AAC[\d\.]*|AC3[\d\.]*|DTS[\d\.]*|DD5\.1|TRUEHD|ATMOS)\b|   # audio codec
+		\b(?:XviD|DivX|x264|H\.264|x265|HEVC|AVC|10bits)\b             # video codec
+		''',
+		" ",
+		name,
+		flags=IGNORECASE | VERBOSE
+	)
+
+	# 2.5 Remove standalone 4-digit year
+	name = sub(r"\b(19|20)\d{2}\b", "", name)
+
+	# 3. Remove SxxExx patterns (season/episode)
+	name = sub(r"(?i)\bs\d+e\d+\b", "", name)
+
+	# 4. Remove invalid filename characters
+	for char in '*?"<>|,':
+		name = name.replace(char, "")
+
+	# 5. Strip leading "live:" prefix if present
+	if name.lower().startswith("live:"):
+		name = name.partition(":")[2]
+
+	# 6. Replace any remaining non-word (except space, underscore, dash) with space
+	name = sub(r"[^\w\s\-_]", " ", name)
+
+	# 7. Collapse any leftover whitespace and trim
+	name = sub(r"\s+", " ", name).strip()
+
+	# 8. Truncate to 50 characters
+	if len(name) > 50:
+		name = name[:50].rstrip()
+
+	return name
 
 
 def clear_all_log():

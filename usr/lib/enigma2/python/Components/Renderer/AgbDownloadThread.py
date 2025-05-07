@@ -56,6 +56,7 @@ from random import choice
 from unicodedata import normalize
 from time import sleep
 import urllib3
+import logging
 
 # Third-party libraries
 from PIL import Image
@@ -64,7 +65,6 @@ from requests.adapters import HTTPAdapter, Retry
 from requests.exceptions import HTTPError, RequestException
 from twisted.internet.reactor import callInThread
 from functools import lru_cache
-import logging
 
 # Enigma2 specific
 from enigma import getDesktop
@@ -82,6 +82,7 @@ from Plugins.Extensions.Aglare.plugin import agp_use_cache
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 logging.getLogger("requests").setLevel(logging.WARNING)
+
 
 global my_cur_skin, srch
 
@@ -162,6 +163,18 @@ Logo (SVG)  500×1 → Vector graphic  Variable
 
 
 class AgbDownloadThread(Thread):
+	"""
+	Main Backdrop renderer class for Enigma2
+	Handles Backdrop display and refresh logic
+
+	Features:
+	- Dynamic Backdrop loading based on current program
+	- Automatic refresh when channel/program changes
+	- Multiple image format support
+	- Skin-configurable providers
+	- Asynchronous Backdrop loading
+	"""
+
 	def __init__(self):
 		Thread.__init__(self)
 		self.checkMovie = [
@@ -182,6 +195,7 @@ class AgbDownloadThread(Thread):
 			"culture", "infos", "feuilleton", "téléréalité", "société",
 			"clips", "concert", "santé", "éducation", "variété"
 		]
+
 		if agp_use_cache.value:
 			self.search_tmdb = lru_cache(maxsize=100)(self.search_tmdb)
 			self.search_tvdb = lru_cache(maxsize=100)(self.search_tvdb)
@@ -502,7 +516,6 @@ class AgbDownloadThread(Thread):
 	def search_programmetv_google(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
 		"""PROGRAMMETV backdrop Downloader not using API"""
 		self.title_safe = self.UNAC(title.replace("+", " ").strip())
-		# self.title_safe = title.replace("+", " ").strip()
 
 		if not exists(dwn_backdrop):
 			return (False, "[ERROR] File not created")
@@ -841,6 +854,29 @@ class AgbDownloadThread(Thread):
 				}
 
 		return best_match if highest_score > 50 else None
+
+	def _calculate_match_score(self, result, target_year, original_title, aka):
+		"""Calculate score based on title similarity and year proximity"""
+		score = 0
+		result_title = result.get("title", "").lower()
+		result_year = result.get("year")
+
+		# Normalize original title (no year, lowercase)
+		clean_title = sub(r"\b\d{4}\b", "", original_title.lower()).strip()
+
+		if clean_title in result_title:
+			score += 50
+
+		if aka and aka.lower() in result_title:
+			score += 30
+
+		if target_year and result_year:
+			if str(result_year) == str(target_year):
+				score += 20
+			elif abs(int(result_year) - int(target_year)) <= 1:
+				score += 10
+
+		return score
 
 	def _format_url_backdrop(self, url):
 		"""Ensure poster URL is correctly formatted"""
