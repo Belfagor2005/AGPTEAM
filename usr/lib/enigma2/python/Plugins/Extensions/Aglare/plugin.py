@@ -545,17 +545,18 @@ class AglareSetup(ConfigListScreen, Screen):
 			if is_style5_cd:
 				posterx_choices.append(('infobar_posters_posterx_cd', _('CD')))
 
-			# Safeguard: if user leaves Style5 CD, force a valid default
+			# ---------------- PosterX ----------------
 			current_value = config.plugins.Aglare.InfobarPosterx.value
-			default_value = current_value if any(k == current_value for k, _ in posterx_choices) \
+			default_value = (
+				current_value
+				if any(k == current_value for k, _ in posterx_choices)
 				else 'infobar_posters_posterx_off'
+			)
 
-			# Apply the dynamic choice list
-			# PosterX --------------------------------------------------------
+			# ✔ use the “safe” fallback
 			if config.plugins.Aglare.InfobarPosterx.value not in [v for v, _ in posterx_choices]:
-				config.plugins.Aglare.InfobarPosterx.value = posterx_choices[0][0]
+				config.plugins.Aglare.InfobarPosterx.value = default_value
 			config.plugins.Aglare.InfobarPosterx.setChoices(posterx_choices)
-			# ────────────────────────────────────────────────────────────────────
 			# ── NEW BLOCK: dynamic list for InfoBar Xtraevent ───────────────
 			style = config.plugins.Aglare.InfobarStyle.value  # current skin style
 
@@ -575,17 +576,17 @@ class AglareSetup(ConfigListScreen, Screen):
 					('infobar_posters_xtraevent_cd', _('CD'))
 				)
 
-			# Validate current value – fall back to OFF if it’s no longer valid
+			# ---------------- Xtraevent --------------
 			current = config.plugins.Aglare.InfobarXtraevent.value
 			safe_default = (
-				current if any(key == current for key, _ in xtraevent_choices)
+				current
+				if any(key == current for key, _ in xtraevent_choices)
 				else 'infobar_posters_xtraevent_off'
 			)
 
-			# Apply the new list
-			# Xtraevent ------------------------------------------------------
+			# ✔ use it here
 			if config.plugins.Aglare.InfobarXtraevent.value not in [v for v, _ in xtraevent_choices]:
-				config.plugins.Aglare.InfobarXtraevent.value = xtraevent_choices[0][0]
+				config.plugins.Aglare.InfobarXtraevent.value = safe_default
 			config.plugins.Aglare.InfobarXtraevent.setChoices(xtraevent_choices)
 			# ────────────────────────────────────────────────────────────────
 			list = []
