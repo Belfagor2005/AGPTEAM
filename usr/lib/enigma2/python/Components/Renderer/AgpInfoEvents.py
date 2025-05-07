@@ -182,21 +182,23 @@ class AgpInfoEvents(Renderer, VariableText):
 			return
 
 		if what[0] == self.CHANGED_CLEAR:
+			if self.instance:
+				self.instance.hide()
 			return self.text
 
 		self.event = self.source.event
-		if self.event and self.event != 'None' or self.event is not None:
+		if self.event is not None:
 			self.evnt = self.event.getEventName().replace('\xc2\x86', '').replace('\xc2\x87', '')
-			if not self.event:
-				# logger.debug("AgpInfoEvents No event available")
-				return
-
-		if self.event:
 			current_event_hash = f"{self.event.getEventName()}{self.event.getBeginTime()}"
 			if current_event_hash != self.last_event:
-				# logger.debug("AgpInfoEvents New event detected, starting data fetch")
 				self.last_event = current_event_hash
 				self.start_data_fetch()
+		else:
+			# Clear the text and hide when there's no event
+			self.text = ""
+			self.last_event = None
+			if self.instance:
+				self.instance.hide()
 
 	def start_data_fetch(self):
 		if self.current_request and self.current_request.is_alive():
