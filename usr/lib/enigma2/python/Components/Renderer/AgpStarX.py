@@ -51,7 +51,7 @@ from json import load as json_load, dump as json_dump
 from functools import lru_cache
 from os import remove
 from os.path import exists, getsize  # , join
-from threading import Lock, Thread, Timer
+from threading import Lock, Thread  # , Timer
 from urllib.error import HTTPError
 from urllib.request import urlopen
 
@@ -60,6 +60,7 @@ from Components.Renderer.Renderer import Renderer
 from Components.VariableValue import VariableValue
 from enigma import eEPGCache, eSlider
 from re import findall
+from enigma import eTimer
 
 # Local imports
 from Plugins.Extensions.Aglare.plugin import ApiKeyManager, agp_use_cache, config
@@ -306,10 +307,40 @@ class AgpStarX(VariableValue, Renderer):
 
 	def process_data(self, data):
 		try:
-			# Delay UI update by 100ms to avoid flickering
-			Timer(0.10, self._delayed_ui_update, [data]).start()
+			self.data_to_process = data
+			self.retry_count = 0
+			self._start_data_retry()
 		except Exception as e:
-			logger.error(f"AgpStarX Process data error: {str(e)}")
+			logger.error("AgpStarX Process data error: %s", str(e))
+
+	def _start_data_retry(self):
+		if hasattr(self, "_data_timer") and self._data_timer.isActive():
+			self._data_timer.stop()
+		else:
+			self._data_timer = eTimer()
+			self._data_timer.callback.append(self._retry_data)
+
+		self._data_timer.start(100, True)
+
+	def _retry_data(self):
+		try:
+			if not self.instance:
+				return
+
+			current_event = self.source.event
+			if current_event and current_event.getEventName() == self.last_channel:
+				self._delayed_ui_update(self.data_to_process)
+				return
+
+			self.retry_count += 1
+			if self.retry_count < 3:
+				delay = 100 + self.retry_count * 200
+				self._data_timer.start(delay, True)
+			else:
+				logger.warning("AgpStarX: Skipping data update after retries")
+
+		except Exception as e:
+			logger.debug("AgpStarX retry failed: %s", str(e))
 
 	def _delayed_ui_update(self, data):
 		try:

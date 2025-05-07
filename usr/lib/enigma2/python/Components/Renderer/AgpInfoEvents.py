@@ -241,6 +241,8 @@ class AgpInfoEvents(Renderer, VariableText):
 
 			except Exception as e:
 				logger.error(f"AgpInfoEvents Data fetch error: {str(e)}", exc_info=True)
+				if self.instance:
+					self.instance.hide()
 
 	def fetch_tmdb_data(self, title, year):
 		try:
@@ -364,7 +366,9 @@ class AgpInfoEvents(Renderer, VariableText):
 
 		except Exception as e:
 			logger.error(f"AgpInfoEvents Data processing error: {str(e)}")
-			self.text = ""  # _("Error loading information")
+			self.text = ""
+			if self.instance:
+				self.instance.hide()
 
 	def delayed_update(self):
 		if self.instance:
