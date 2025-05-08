@@ -9,7 +9,7 @@ from __future__ import absolute_import, print_function
 #  Created by Lululla (https://github.com/Belfagor2005) #
 #  License: CC BY-NC-SA 4.0                             #
 #  https://creativecommons.org/licenses/by-nc-sa/4.0    #
-#														#
+#                                                       #
 #  Last Modified: "15:14 - 20250401"                    #
 #                                                       #
 #  Credits:                                             #
@@ -46,7 +46,7 @@ from __future__ import absolute_import, print_function
 __author__ = "Lululla"
 __copyright__ = "AGP Team"
 
-from re import compile, sub, DOTALL, IGNORECASE
+from re import compile, sub, DOTALL, IGNORECASE, VERBOSE
 from unicodedata import normalize, category
 import sys
 from Components.config import config
@@ -215,40 +215,63 @@ CHAR_REPLACEMENTS = {
 
 def sanitize_filename(name):
 	"""
-	Sanitize strings to be safe for filenames
-	Replaces problematic characters and cleans up formatting
+	Sanitize strings to be safe for filenames.
+	Removes release-tag noise (quality tags, codecs, season/episode, etc.),
+	strips invalid filesystem characters, collapses whitespace, and truncates.
 	"""
+	# 1. Collapse multiple spaces
 	while "  " in name:
 		name = name.replace("  ", " ")
-	# name = name.replace(" ", "")
-	# name = sub(r'\s+', '_', name)
-	# name = sub(r"[^\w\-.]", "", name)
 
-	name = sub(r"s[0-9]e[0-9]", "", name)
+	# 2. Remove common release tags (case-insensitive, verbose)
+	name = sub(
+		r'''
+		\.(?=\D)                                                  |   # dot before letter → space
+		\(\d{4}\)                                                 |   # (2025)
+		\b(?:720p|1080p|2160p)\b                                  |   # video quality
+		\b(?:HDTV|WEB[Rr]ip|WEB\-DL|HDRip|HDTC|HDTS|DVDScr|DVDRip|
+		\b(?:BRRip|BDRip|BDMV|CAMRip|Cam|TS|TC|SCR|R5)\b            |   # source
+		\b(?:PROPER|REPACK|SUBBED|UNRATED|EXTENDED|INTERNAL|
+			LIMITED|READNFO)\b                                     |   # release flags
+		\b(?:AAC[\d\.]*|AC3[\d\.]*|DTS[\d\.]*|DD5\.1|TRUEHD|ATMOS)\b|   # audio codec
+		\b(?:XviD|DivX|x264|H\.264|x265|HEVC|AVC|10bits)\b            # video codec
+		''',
+		" ",
+		name,
+		flags=IGNORECASE | VERBOSE
+	)
 
-	# Remove invalid filename characters
-	invalid_chars = '*?"<>|,'
-	for char in invalid_chars:
-		name = name.replace(char, '')
+	# 2.5 Remove standalone 4-digit year
+	name = sub(r"\b(19|20)\d{2}\b", "", name)
 
-	# Clean common prefixes/suffixes
-	if name.lower().startswith('live:'):
-		name = name.partition(":")[1]
-	if name.endswith(',') or name.endswith(':'):
-		name = name.replace(",", "")
+	# 3. Remove SxxExx patterns (season/episode)
+	name = sub(r"(?i)\bs\d+e\d+\b", "", name)
 
-	name = sub(r'[^\w\s]', ' ', name)
+	# 4. Remove invalid filename characters
+	for char in '*?"<>|,':
+		name = name.replace(char, "")
 
-	# Truncate to 50 characters if needed
+	# 5. Strip leading "live:" prefix if present
+	if name.lower().startswith("live:"):
+		name = name.partition(":")[2]
+
+	# 6. Replace any remaining non-word (except space, underscore, dash) with space
+	name = sub(r"[^\w\s\-_]", " ", name)
+
+	# 7. Collapse any leftover whitespace and trim
+	name = sub(r"\s+", " ", name).strip()
+
+	# 8. Truncate to 50 characters
 	if len(name) > 50:
-		name = name[:50]
-	return name.strip()
+		name = name[:50].rstrip()
+
+	return name
 
 
 convtext_cache = {}
 
 
-# @lru_cache(maxsize=2500)  # not tested 
+# @lru_cache(maxsize=2500)  # not tested
 def convtext(text):
 	try:
 		if text is None:
