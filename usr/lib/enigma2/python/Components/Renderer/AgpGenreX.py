@@ -59,6 +59,7 @@ import gettext
 # Local imports
 from Plugins.Extensions.Aglare.plugin import ApiKeyManager, config
 from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, logger
+from .Agp_Requests import intCheck
 
 if not POSTER_FOLDER.endswith("/"):
 	POSTER_FOLDER += "/"
@@ -287,7 +288,13 @@ class AgpGenreX(Renderer):
 	GUI_WIDGET = ePixmap
 
 	def __init__(self):
-		Renderer.__init__(self)
+		super().__init__()
+		self.adsl = intCheck()
+		if not self.adsl:
+			logger.warning("AgpGenreX No internet connection, offline mode activated")
+			return
+		else:
+			logger.info("AgpGenreX Internet connection verified")
 		self.storage_path = POSTER_FOLDER
 		logger.info("AgpGenreX Renderer initialized")
 

@@ -92,6 +92,19 @@ USER_AGENTS_2025 = [
 WEBP_SUPPORTED = False  # Forza disabilitazione WEBP
 
 
+def intCheck():
+	try:
+		response = urlopen("http://google.com", None, 5)
+		response.close()
+	except HTTPError:
+		return False
+	except URLError:
+		return False
+	except socket.timeout:
+		return False
+	return True
+
+
 class RequestAgent:
 	"""Advanced request manager with atomic download operations"""
 

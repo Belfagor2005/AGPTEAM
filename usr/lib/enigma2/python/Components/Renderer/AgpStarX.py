@@ -65,6 +65,7 @@ from enigma import eTimer
 # Local imports
 from Plugins.Extensions.Aglare.plugin import ApiKeyManager, agp_use_cache, config
 from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, logger
+from .Agp_Requests import intCheck
 from .Agp_lib import quoteEventName
 
 if not POSTER_FOLDER.endswith("/"):
@@ -120,8 +121,13 @@ class AgpStarX(VariableValue, Renderer):
 	GUI_WIDGET = eSlider
 
 	def __init__(self):
-		Renderer.__init__(self)
-		VariableValue.__init__(self)
+		super().__init__()
+		self.adsl = intCheck()
+		if not self.adsl:
+			logger.warning("AgpStarX No internet connection, offline mode activated")
+			return
+		else:
+			logger.info("AgpStarX Internet connection verified")
 		self.__start = 0
 		self.__end = 100
 		self.text = ""

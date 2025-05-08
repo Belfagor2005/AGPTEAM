@@ -55,7 +55,6 @@ from threading import Lock
 from threading import Thread
 
 from os.path import exists, join, getsize
-from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 from re import findall
 
@@ -64,11 +63,11 @@ from Components.Renderer.Renderer import Renderer
 from Components.VariableText import VariableText
 import gettext
 from enigma import eLabel, eEPGCache, eTimer
-import socket
 
 # Local imports
 from Plugins.Extensions.Aglare.plugin import ApiKeyManager, config
 from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, logger
+from .Agp_Requests import intCheck
 from .Agp_lib import quoteEventName
 
 if not POSTER_FOLDER.endswith("/"):
@@ -109,18 +108,6 @@ except:
 	lng = 'en'
 	pass
 
-
-def intCheck():
-	try:
-		response = urlopen("http://google.com", None, 5)
-		response.close()
-	except HTTPError:
-		return False
-	except URLError:
-		return False
-	except socket.timeout:
-		return False
-	return True
 
 
 class AgpInfoEvents(Renderer, VariableText):

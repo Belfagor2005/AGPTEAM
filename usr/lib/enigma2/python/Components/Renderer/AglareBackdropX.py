@@ -75,6 +75,7 @@ import NavigationInstance
 # Local imports
 from Components.Renderer.AgbDownloadThread import AgbDownloadThread
 from Plugins.Extensions.Aglare.plugin import ApiKeyManager, config
+from .Agp_Requests import intCheck
 from .Agp_Utils import (
 	BACKDROP_FOLDER,
 	check_disk_space,
@@ -153,6 +154,12 @@ class AglareBackdropX(Renderer):
 	def __init__(self):
 		"""Initialize the backdrop renderer"""
 		super().__init__()
+		self.adsl = intCheck()
+		if not self.adsl:
+			logger.warning("AglareBackdropX No internet connection, offline mode activated")
+			return
+		else:
+			logger.info("AglareBackdropX Internet connection verified")
 		self.nxts = 0
 		self.storage_path = BACKDROP_FOLDER
 		self.extensions = extensions

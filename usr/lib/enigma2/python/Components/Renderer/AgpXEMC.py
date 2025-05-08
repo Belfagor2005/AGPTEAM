@@ -65,6 +65,7 @@ import NavigationInstance
 from Components.Renderer.AgpDownloadThread import AgpDownloadThread
 from Plugins.Extensions.Aglare.plugin import ApiKeyManager, config
 from .Agp_Utils import IMOVIE_FOLDER, clean_for_tvdb, logger
+from .Agp_Requests import intCheck
 from .Agp_lib import sanitize_filename
 
 if not IMOVIE_FOLDER.endswith("/"):
@@ -106,6 +107,12 @@ class AgpXEMC(Renderer):
 
 	def __init__(self):
 		super().__init__()
+		self.adsl = intCheck()
+		if not self.adsl:
+			logger.warning("AgpXEMC No internet connection, offline mode activated")
+			return
+		else:
+			logger.info("AgpXEMC Internet connection verified")
 		if not config.plugins.Aglare.xemc_poster.value:
 			logger.debug("Movie renderer disabled in configuration")
 			return

@@ -47,14 +47,13 @@ from threading import Lock, Thread
 # Enigma2 imports
 from Components.Renderer.Renderer import Renderer
 from enigma import ePixmap, loadPNG
-from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
-import socket
 import gettext
 
 # local import
 from Plugins.Extensions.Aglare.plugin import ApiKeyManager, config
 from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, logger
+from .Agp_Requests import intCheck
 from .Agp_lib import quoteEventName
 
 if not POSTER_FOLDER.endswith("/"):
@@ -96,19 +95,6 @@ try:
 except:
 	lng = 'en'
 	pass
-
-
-def intCheck():
-	try:
-		response = urlopen("http://google.com", None, 5)
-		response.close()
-	except HTTPError:
-		return False
-	except URLError:
-		return False
-	except socket.timeout:
-		return False
-	return True
 
 
 """skin configuration
@@ -155,7 +141,7 @@ class AgpParentalX(Renderer):
 	GUI_WIDGET = ePixmap
 
 	def __init__(self):
-		Renderer.__init__(self)
+		super().__init__()
 		self.adsl = intCheck()
 		if not self.adsl:
 			logger.warning("AgpParentalX No internet connection, offline mode activated")

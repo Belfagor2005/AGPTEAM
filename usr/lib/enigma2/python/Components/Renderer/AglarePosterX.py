@@ -74,6 +74,8 @@ import NavigationInstance
 # Local imports
 from Components.Renderer.AgpDownloadThread import AgpDownloadThread
 from Plugins.Extensions.Aglare.plugin import ApiKeyManager, config
+from .Agp_Requests import intCheck
+
 from .Agp_Utils import (
 	POSTER_FOLDER,
 	check_disk_space,
@@ -152,6 +154,12 @@ class AglarePosterX(Renderer):
 	def __init__(self):
 		"""Initialize the poster renderer"""
 		super().__init__()
+		self.adsl = intCheck()
+		if not self.adsl:
+			logger.warning("AglarePosterX No internet connection, offline mode activated")
+			return
+		else:
+			logger.info("AglarePosterX Internet connection verified")
 		self.nxts = 0
 		self.storage_path = POSTER_FOLDER
 		self.extensions = extensions
