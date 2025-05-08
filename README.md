@@ -274,6 +274,9 @@ if os.path.exists("/tmp/AGP"):
 **Developer**: Lululla  
 **License**: CC BY-NC-SA 4.0  
 **Based on**: digiteng (2021)  
+**Discussion on Forum**
+https://www.linuxsat-support.com/thread/160662-agp-renderers-now-available-for-all/
+
 
 > 📌 **Developer Note**:  
 > Maintain zPosition 2-5 for AGP components. Commercial use prohibited. Modifications must retain credits.
