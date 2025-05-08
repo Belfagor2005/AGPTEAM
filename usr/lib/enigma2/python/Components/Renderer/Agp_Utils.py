@@ -131,7 +131,7 @@ class AdvancedColorFormatter(Formatter):
 		return f"{timestamp} {level_color}[{record.levelname}]{self.COLORS['RESET']} {record.getMessage()}"
 
 
-def setup_logging(log_file='/tmp/agplog/agp_full.log', max_log_size=10, backup_count=3):
+def setup_logging(log_file='/tmp/agplog/agp_full.log', max_log_size=2, backup_count=3):
 	"""
 	Advanced logging configuration with:
 	- Colored console output
@@ -205,7 +205,7 @@ def cleanup_old_logs(log_file, max_days=7):
 		logging.error(f"Log cleanup failed: {str(e)}")
 
 
-def schedule_log_cleanup(interval_hours=6):
+def schedule_log_cleanup(interval_hours=12):
 	"""Scheduler affidabile per pulizia log"""
 	def _wrapper():
 		try:
