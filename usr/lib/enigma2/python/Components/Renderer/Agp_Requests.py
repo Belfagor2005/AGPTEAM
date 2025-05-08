@@ -55,10 +55,12 @@ from os import remove, makedirs  # rename
 from os.path import exists, getsize, splitext, dirname
 from collections import namedtuple
 from requests.adapters import HTTPAdapter
+from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 from requests import Session
 from requests.exceptions import RequestException
 from PIL import Image
+import socket
 
 # Local imports
 from .Agp_Utils import logger
