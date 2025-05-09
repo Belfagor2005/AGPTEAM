@@ -109,7 +109,6 @@ except:
 	pass
 
 
-
 class AgpInfoEvents(Renderer, VariableText):
 	"""
 	Main InfoEvents Details indicator renderer class for Enigma2

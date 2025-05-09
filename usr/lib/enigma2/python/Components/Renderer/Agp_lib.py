@@ -46,13 +46,13 @@ from __future__ import absolute_import, print_function
 __author__ = "Lululla"
 __copyright__ = "AGP Team"
 
-from re import compile, sub, DOTALL, IGNORECASE, VERBOSE
+from re import compile, sub, DOTALL, IGNORECASE
 from unicodedata import normalize, category
 import sys
 from Components.config import config
 # from functools import lru_cache
 
-
+convtext_cache = {}
 DEBUG = False  # active for show text cleaned in debug
 
 try:
@@ -225,35 +225,21 @@ def sanitize_filename(name):
 
 	# 2. Remove common release tags (case-insensitive, verbose)
 	name = sub(
-		r'''
-		\.(?=\D)                                                  |   # dot before letter → space
-		\(\d{4}\)                                                 |   # (2025)
-		\b(?:720p|1080p|2160p)\b                                  |   # video quality
-		\b(?:HDTV|WEB[Rr]ip|WEB\-DL|HDRip|HDTC|HDTS|DVDScr|DVDRip|
-		\b(?:BRRip|BDRip|BDMV|CAMRip|Cam|TS|TC|SCR|R5)\b            |   # source
-		\b(?:PROPER|REPACK|SUBBED|UNRATED|EXTENDED|INTERNAL|
-			LIMITED|READNFO)\b                                     |   # release flags
-		\b(?:AAC[\d\.]*|AC3[\d\.]*|DTS[\d\.]*|DD5\.1|TRUEHD|ATMOS)\b|   # audio codec
-		\b(?:XviD|DivX|x264|H\.264|x265|HEVC|AVC|10bits)\b            # video codec
-		''',
+		r"\.(?=\D)|\(\d{4}\)|\b(?:720p|1080p|2160p|4k)\b|\b(?:HDTV|WEB[Rr]ip|WEB\-DL|HDRip|HDTC|HDTS|DVDScr|DVDRip)\b|\b(?:BRRip|BDRip|BDMV|CAMRip|Cam|TS|TC|SCR|R5)\b|\b(?:PROPER|REPACK|SUBBED|UNRATED|EXTENDED|INTERNAL|LIMITED|READNFO)\b|\b(?:AAC[\d\.]*|AC3[\d\.]*|DTS[\d\.]*|DD5\.1|TRUEHD|ATMOS)\b|\b(?:XviD|DivX|x264|H\.264|x265|HEVC|AVC|10bits)\b",
 		" ",
 		name,
-		flags=IGNORECASE | VERBOSE
+		flags=IGNORECASE
 	)
 
-	# 2.5 Remove standalone 4-digit year
+	# 3. Remove standalone 4-digit year
 	name = sub(r"\b(19|20)\d{2}\b", "", name)
 
-	# 3. Remove SxxExx patterns (season/episode)
+	# 4. Remove SxxExx patterns (season/episode)
 	name = sub(r"(?i)\bs\d+e\d+\b", "", name)
 
-	# 4. Remove invalid filename characters
-	for char in '*?"<>|,':
+	# 5. Remove invalid filename characters
+	for char in '*?"<>|,':  # Add any other invalid characters for your filesystem
 		name = name.replace(char, "")
-
-	# 5. Strip leading "live:" prefix if present
-	if name.lower().startswith("live:"):
-		name = name.partition(":")[2]
 
 	# 6. Replace any remaining non-word (except space, underscore, dash) with space
 	name = sub(r"[^\w\s\-_]", " ", name)
@@ -266,9 +252,6 @@ def sanitize_filename(name):
 		name = name[:50].rstrip()
 
 	return name
-
-
-convtext_cache = {}
 
 
 # @lru_cache(maxsize=2500)  # not tested

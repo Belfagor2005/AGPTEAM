@@ -131,7 +131,7 @@ genre_mapping_full = {
 	11: ('Original Language', 'Black & White', 'Unpublished', 'Live Broadcast'),
 }
 
-# reduced mapping 
+# reduced mapping
 genre_mapping = {
 	1: ('action', 'thriller', 'drama', 'movie', 'crime', 'mystery', 'adventure', 'science', 'animation', 'comedy', 'series', 'romance', 'adult'),
 	2: ('news', 'weather', 'magazine', 'documentary'),

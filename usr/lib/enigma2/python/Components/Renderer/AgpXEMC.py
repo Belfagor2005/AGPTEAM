@@ -49,10 +49,10 @@ __copyright__ = "AGP Team"
 from datetime import datetime
 from os import remove, makedirs
 from os.path import join, exists, getsize, basename, splitext
-from threading import Lock
+from threading import Thread, Lock
 from queue import LifoQueue
 from concurrent.futures import ThreadPoolExecutor
-
+from re import findall
 # Enigma2 specific imports
 from enigma import ePixmap, loadJPG, eTimer
 from Components.Renderer.Renderer import Renderer
@@ -119,6 +119,7 @@ class AgpXEMC(Renderer):
 		self.storage_path = IMOVIE_FOLDER
 		# self.timer = eTimer()
 		# self.timer.callback.append(self.waitPoster)
+		self.release_year = None
 		self._poster_timer = eTimer()
 		self._poster_timer.callback.append(self._retryPoster)
 		logger.info("AGP Movie Renderer initialized")
@@ -193,24 +194,50 @@ class AgpXEMC(Renderer):
 		if _validate_poster(poster_path):
 			self.waitPoster(poster_path)
 		else:
-			search_title = basename(movie_path).rsplit('.', 1)[0]
+			search_title = self._sanitize_title(basename(movie_path))  # .rsplit('.', 1)[0]
 			self._queue_for_download(search_title, clean_title, poster_path)
 
 	def _sanitize_title(self, filename):
 		name = filename.rsplit('.', 1)[0]
-		logger.info(f"_sanitize_title poster name: {name}")
+		logger.info(f"Original name: {filename}")
 		cleaned = sanitize_filename(name)
 		cleaned = clean_for_tvdb(cleaned)
-		logger.info(f"_sanitize_title poster cleaned name: {cleaned}")
+		logger.info(f"Sanitized title: {cleaned}")
+
+		year_match = findall(r'\b(19|20)\d{2}\b', filename)
+		logger.info(f"Year found: {year_match}")
+
+		if year_match:
+			self.release_year = year_match[0]  # Prendi il primo anno trovato
+			logger.info(f"Year extract: {self.release_year}")
+		else:
+			self.release_year = None
+			logger.info("Year not found in file name.")
+
+		if self.release_year and len(self.release_year) == 2:
+			self.release_year = "2025"  # Correzione forzata dell'anno
+			logger.info(f"Anno corretto: {self.release_year}")
+		logger.info(f"Titolo di ricerca TMDB: {cleaned}")
 		return cleaned.strip()
 
-	def _queue_for_download(self, title, movie_path, poster_path):
-		logger.info("EMC put: clean_title='%s' movie_path='%s' poster_path='%s'", title, movie_path, poster_path)
-		pdbemc.put((title, movie_path, poster_path))
-		if not AgpDBemc.is_alive():
+	def _queue_for_download(self, search_title, clean_title, poster_path):
+		if not any([AgpDBemc.is_alive(), AgpDBemc.isDaemon()]):
+			logger.error("Thread downloader non attivo!")
 			AgpDBemc.start()
+		logger.info("EMC put: clean_title='%s' movie_path='%s' poster_path='%s'", search_title, clean_title, poster_path)
+		pdbemc.put((search_title, clean_title, poster_path, self.release_year))
+		self.runPosterThread(poster_path)
+		# self.waitPoster(poster_path)
 
-		self.waitPoster(poster_path)
+	def runPosterThread(self, poster_path):
+		"""Start background thread to wait for poster download"""
+		"""
+		# for provider in self.providers:
+			# if str(self.providers[provider]).lower() == "true":
+				# self._log_debug(f"Providers attivi: {provider}")
+		"""
+		# Thread(target=self.waitPoster).start()
+		Thread(target=self.waitPoster, args=(poster_path,), daemon=True).start()
 
 	def display_poster(self, poster_path=None):
 		"""Display the poster image"""
@@ -253,9 +280,9 @@ class AgpXEMC(Renderer):
 			self.display_poster(self.poster_path)
 			return
 
-		self.retry_count += 1
+		self.retry_count < 10
 		if self.retry_count < 5:
-			delay = 100 + self.retry_count * 200  # ritardo crescente
+			delay = 500 + self.retry_count * 200
 			self._poster_timer.start(delay, True)
 		else:
 			logger.warning("Poster not found after retries: %s", self.poster_path)
@@ -268,7 +295,6 @@ class PosterDBEMC(AgpDownloadThread):
 		self.executor = ThreadPoolExecutor(max_workers=2)
 		self.queued = set()
 		self.lock = Lock()
-		# self.api = ApiKeyManager()
 		self.api = api_key_manager
 		self.providers = api_key_manager.get_active_providers()
 		self.provider_engines = self.build_providers()
@@ -292,24 +318,8 @@ class PosterDBEMC(AgpDownloadThread):
 			if self.providers.get(name, False)
 		]
 
-	def _get_providers(self):
-		"""Provider priority list for movies"""
-		provider_config = {
-			"tmdb": (self.search_tmdb, 0),
-			"omdb": (self.search_omdb, 1),
-			"google": (self.search_google, 2)
-		}
-		return [
-			(name, func)
-			for name, (func, prio) in sorted(
-				provider_config.items(),
-				key=lambda item: item[1][1]
-			)
-			if self.api.is_provider_active(name)
-		]
-
 	def _process_item(self, item):
-		search_title, clean_title, poster_path = item
+		search_title, clean_title, poster_path, release_year = item
 		with self.lock:
 			if search_title in self.queued:
 				return
@@ -325,7 +335,6 @@ class PosterDBEMC(AgpDownloadThread):
 				self.provider_engines,
 				key=lambda x: x[2]  # sort by prio
 			)
-
 			for provider_name, provider_func, _ in sorted_providers:
 				try:
 					api_key = api_key_manager.get_api_key(provider_name)
@@ -334,12 +343,12 @@ class PosterDBEMC(AgpDownloadThread):
 						continue
 
 					logger.info("EMC processing: search_title='%s' clean_title='%s'", search_title, clean_title)
-
 					result = provider_func(
 						dwn_poster=poster_path,
 						title=search_title,
 						shortdesc=None,
 						fulldesc=None,
+						year=release_year,
 						channel=clean_title,
 						api_key=api_key
 					)
@@ -406,7 +415,6 @@ def _is_video_file(path):
 	return path and splitext(path)[1].lower() in (
 		'.mkv', '.avi', '.mp4', '.ts', '.mov', '.iso', '.m2ts', '.flv', '.webm'
 	)
-
 
 
 def clear_all_log():

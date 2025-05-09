@@ -207,7 +207,7 @@ class AgbDownloadThread(Thread):
 			self.search_elcinema = lru_cache(maxsize=100)(self.search_elcinema)
 			self.search_google = lru_cache(maxsize=100)(self.search_google)
 
-	def search_tmdb(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
+	def search_tmdb(self, dwn_backdrop, title, shortdesc, fulldesc, year=None, channel=None, api_key=None):
 		"""Download backdrop from TMDB with full verification pipeline"""
 		self.title_safe = self.UNAC(title.replace("+", " ").strip())
 		tmdb_api_key = api_key or tmdb_api
@@ -223,12 +223,15 @@ class AgbDownloadThread(Thread):
 				return (False, "Invalid title after cleaning")
 
 			srch, fd = self.checkType(shortdesc, fulldesc)
-			# year = self._extract_year(fd)
+			if not year:
+				year = self._extract_year(fd)
+
 			url = f"https://api.themoviedb.org/3/search/{srch}?api_key={tmdb_api_key}&language={lng}&query={self.title_safe}"  # &page=1&include_adult=false"
-			"""
-			# if year and srch == "movie":
-				# url += f"&year={year}"
-			"""
+
+			if year and srch == "movie":
+				url += f"&year={year}"
+
+			logger.debug(f"TMDB Search URL: {url}")
 			# Make API request with retries
 			retries = Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
 			adapter = HTTPAdapter(max_retries=retries)
@@ -264,6 +267,10 @@ class AgbDownloadThread(Thread):
 			return False, "Unexpected error during TMDb search"
 
 	def downloadData2(self, data, dwn_backdrop, shortdesc="", fulldesc=""):
+		# logger.debug(f"TMDB Response: {json_dumps(data, indent=2)}")
+		if not data.get('results'):
+			logger.warning("No results found on TMDB")
+
 		if isinstance(data, bytes):
 			data = data.decode("utf-8", errors="ignore")
 		data_json = data if isinstance(data, dict) else json_loads(data)
@@ -283,13 +290,23 @@ class AgbDownloadThread(Thread):
 					continue
 
 				backdrop = f"http://image.tmdb.org/t/p/original{backdrop_path}"
-				if backdrop.strip() and not backdrop.endswith("/original"):
-					callInThread(self.saveBackdrop, backdrop, dwn_backdrop)
+				if not backdrop.strip():
+					print(f'No backdrop with original size, try with w500 -> {backdrop}')
+					backdrop = f"http://image.tmdb.org/t/p/w500{backdrop_path}"
+
+				if backdrop.strip():  # and not backdrop.endswith("/original"):
+					print(f'backdrop with w500 size, try with w500 -> {backdrop} ')
+					callInThread(self.savePoster, backdrop, dwn_backdrop)
 					if exists(dwn_backdrop):
 						return True, f"[SUCCESS] backdrop math: {title}"
+
+				# if backdrop.strip() and not backdrop.endswith("/original"):
+					# callInThread(self.saveBackdrop, backdrop, dwn_backdrop)
+					# if exists(dwn_backdrop):
+						# return True, f"[SUCCESS] backdrop math: {title}"
 		return False, "[SKIP] No valid Result"
 
-	def search_tvdb(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
+	def search_tvdb(self, dwn_backdrop, title, shortdesc, fulldesc, year=None, channel=None, api_key=None):
 		"""Download backdrop from TVDB with full verification pipeline"""
 		self.title_safe = self.UNAC(title.replace("+", " ").strip())
 		thetvdb_api_key = api_key or thetvdb_api
@@ -303,7 +320,8 @@ class AgbDownloadThread(Thread):
 
 			series_nb = -1
 			chkType, fd = self.checkType(shortdesc, fulldesc)
-			year = self._extract_year(fd)
+			if not year:
+				year = self._extract_year(fd)
 			url_tvdbg = "https://thetvdb.com/api/GetSeries.php?seriesname={}".format(self.title_safe)
 			url_read = get(url_tvdbg).text
 			series_id = findall(r"<seriesid>(.*?)</seriesid>", url_read)
@@ -363,7 +381,7 @@ class AgbDownloadThread(Thread):
 			logger.error("tvdb search error: " + str(e))
 			return False, "[ERROR : tvdb] {} => {} ({})".format(self.title_safe, url_tvdbg, str(e))
 
-	def search_fanart(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
+	def search_fanart(self, dwn_backdrop, title, shortdesc, fulldesc, year=None, channel=None, api_key=None):
 		"""Download backdrop from FANART with full verification pipeline"""
 		self.title_safe = self.UNAC(title.replace("+", " ").strip())
 		fanart_api_key = api_key or fanart_api
@@ -377,7 +395,8 @@ class AgbDownloadThread(Thread):
 		url_fanart = ""
 		tvmaze_id = "-"
 		chkType, fd = self.checkType(shortdesc, fulldesc)
-		year = self._extract_year(fd)
+		if not year:
+			year = self._extract_year(fd)
 
 		try:
 			url_maze = "http://api.tvmaze.com/singlesearch/shows?q={}".format(self.title_safe)
@@ -422,20 +441,21 @@ class AgbDownloadThread(Thread):
 			logger.error("fanart search error: " + str(e))
 			return False, "[ERROR : fanart] {} [{}-{}] => {} ({})".format(self.title_safe, chkType, year, url_maze, str(e))
 
-	def search_omdb(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
+	def search_omdb(self, dwn_backdrop, title, shortdesc, fulldesc, year=None, channel=None, api_key=None):
 		"""OMDb NOT HAVE A backdrop Downloader using API: RETURN FALSE!!!"""
 		return False, "[SKIP : omdb] {} [OMDb NOT HAVE A backdrop Downloader using API: RETURN FALSE!!!] => OMDb does not support backdrops.".format(
 			title
 		)
 
-	def search_imdb(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
+	def search_imdb(self, dwn_backdrop, title, shortdesc, fulldesc, year=None, channel=None, api_key=None):
 		"""Download backdrop from IMDb media gallery using centralized request system"""
 		self.title_safe = self.UNAC(title.replace("+", " ").strip())
 		if not exists(dwn_backdrop):
 			return (False, "[ERROR] File not created")
 
 		chkType, fd = self.checkType(shortdesc, fulldesc)
-		year = self._extract_year(fd)
+		if not year:
+			year = self._extract_year(fd)
 		aka_info = self._extract_aka(fd)
 		url_backdrop = ""
 		try:
@@ -513,7 +533,7 @@ class AgbDownloadThread(Thread):
 			"aka": self._parse_aka_title(match[5])
 		} for match in pattern.findall(html_content)]
 
-	def search_programmetv_google(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
+	def search_programmetv_google(self, dwn_backdrop, title, shortdesc, fulldesc, year=None, channel=None, api_key=None):
 		"""PROGRAMMETV backdrop Downloader not using API"""
 		self.title_safe = self.UNAC(title.replace("+", " ").strip())
 
@@ -575,7 +595,7 @@ class AgbDownloadThread(Thread):
 				logger.error(f"programmetv-google HTTP error: {str(e)}")
 				return False, "HTTP error during programmetv-google search"
 
-	def search_molotov_google(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
+	def search_molotov_google(self, dwn_backdrop, title, shortdesc, fulldesc, year=None, channel=None, api_key=None):
 		"""MOLOTOV Backdrop Downloader not using API"""
 		self.title_safe = self.UNAC(title.replace("+", " ").strip())
 		if not exists(dwn_backdrop):
@@ -659,7 +679,7 @@ class AgbDownloadThread(Thread):
 						return True, f"[SUCCESS fallback] Found fallback backdrop for {title_safe} => {url_backdrop}"
 		return False, "[SKIP : fallback] No suitable fallback found."
 
-	def search_google(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
+	def search_google(self, dwn_backdrop, title, shortdesc, fulldesc, year=None, channel=None, api_key=None):
 		"""GOOGLE Backdrop Downloader not using API"""
 		self.title_safe = self.UNAC(title.replace("+", " ").strip())
 
@@ -668,7 +688,8 @@ class AgbDownloadThread(Thread):
 
 		try:
 			chkType, fd = self.checkType(shortdesc, fulldesc)
-			year = self._extract_year(fd)
+			if not year:
+				year = self._extract_year(fd)
 			url_google = f'"{self.title_safe}"'
 			if channel and self.title_safe.find(channel) < 0:
 				url_google += f"+{quoteEventName(channel)}"
@@ -710,7 +731,7 @@ class AgbDownloadThread(Thread):
 				logger.error("programmetv-google HTTP error: " + str(e))
 				return False, "HTTP error during google search"
 
-	def search_elcinema(self, dwn_backdrop, title, shortdesc, fulldesc, channel=None, api_key=None):
+	def search_elcinema(self, dwn_backdrop, title, shortdesc, fulldesc, year=None, channel=None, api_key=None):
 		"""ElCinema does not support backdrops, fallback function"""
 		return False, "[SKIP] No valid result"
 
