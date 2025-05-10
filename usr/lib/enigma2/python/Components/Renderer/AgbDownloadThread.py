@@ -296,7 +296,7 @@ class AgbDownloadThread(Thread):
 
 				if backdrop.strip():  # and not backdrop.endswith("/original"):
 					print(f'backdrop with w500 size, try with w500 -> {backdrop} ')
-					callInThread(self.savePoster, backdrop, dwn_backdrop)
+					callInThread(self.saveBackdrop, backdrop, dwn_backdrop)
 					if exists(dwn_backdrop):
 						return True, f"[SUCCESS] backdrop math: {title}"
 
@@ -900,7 +900,7 @@ class AgbDownloadThread(Thread):
 		return score
 
 	def _format_url_backdrop(self, url):
-		"""Ensure poster URL is correctly formatted"""
+		"""Ensure backdrop URL is correctly formatted"""
 		if not url:
 			return ""
 
