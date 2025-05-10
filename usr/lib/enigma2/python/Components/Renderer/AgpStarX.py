@@ -104,6 +104,16 @@ except:
 	transparent="1"
 	zPosition="22"/>
 
+
+<!-- ChannelList -->
+<widget source="ServiceEvent" render="AgpStarX"
+	position="1011,50"
+	size="316,27"
+	pixmap="skin_default/starsbar_filled.png"
+	alphatest="blend"
+	transparent="1"
+	zPosition="22"/>
+
 """
 
 
@@ -119,9 +129,12 @@ class AgpStarX(VariableValue, Renderer):
 	- Asynchronous star loading
 	"""
 	GUI_WIDGET = eSlider
+	sources = ["Service", "ServiceEvent"]
 
 	def __init__(self):
-		super().__init__()
+		# super().__init__()
+		Renderer.__init__(self)
+		VariableValue.__init__(self)
 		self.adsl = intCheck()
 		if not self.adsl:
 			logger.warning("AgpStarX No internet connection, offline mode activated")
@@ -136,6 +149,7 @@ class AgpStarX(VariableValue, Renderer):
 		self._setup_caching()
 		self.last_channel = None
 		self.rating_source = config.plugins.Aglare.rating_source.value
+		self.epgcache = eEPGCache.getInstance()
 		logger.info("AgpStarX Renderer initialized")
 
 	def changed(self, what):
@@ -156,9 +170,16 @@ class AgpStarX(VariableValue, Renderer):
 		self.infos()
 
 	def infos(self):
-		if not hasattr(self.source, 'event') or not self.source.event:
-			return
+		if hasattr(self.source, 'service') and not hasattr(self.source, 'event'):
+			service_ref = self.source.service.ref.toString()
+			events = self.epgcache.lookupEvent([service_ref])
+			if events:
+				self.source.event = events[0]
 
+		# if not hasattr(self.source, 'event') or not self.source.event:
+			# return
+
+		# logger.debug(f"AgpStarX - Source type: {type(self.source).__name__}")  # <--- QUESTA RIGA
 		if not self.rating_source:
 			return
 
@@ -386,7 +407,7 @@ class AgpStarX(VariableValue, Renderer):
 			logger.debug("AgpStarX No valid production year found in event details")
 			return None
 		except Exception as e:
-			logger.warning(f"AgpStarXYear extraction failed: {str(e)}")
+			logger.warning(f"AgpStarXYear Year extraction failed: {str(e)}")
 			return None
 
 	def postWidgetCreate(self, instance):

@@ -153,7 +153,7 @@ class AglarePosterX(Renderer):
 
 	def __init__(self):
 		"""Initialize the poster renderer"""
-		super().__init__()
+		Renderer.__init__(self)
 		self.adsl = intCheck()
 		if not self.adsl:
 			logger.warning("AglarePosterX No internet connection, offline mode activated")

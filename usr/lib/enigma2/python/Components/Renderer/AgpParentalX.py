@@ -141,7 +141,7 @@ class AgpParentalX(Renderer):
 	GUI_WIDGET = ePixmap
 
 	def __init__(self):
-		super().__init__()
+		Renderer.__init__(self)
 		self.adsl = intCheck()
 		if not self.adsl:
 			logger.warning("AgpParentalX No internet connection, offline mode activated")
