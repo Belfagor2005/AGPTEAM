@@ -50,6 +50,7 @@ from re import compile, sub, DOTALL, IGNORECASE
 from unicodedata import normalize, category
 import sys
 from Components.config import config
+from .Agp_Utils import logger
 # from functools import lru_cache
 
 convtext_cache = {}
@@ -148,71 +149,6 @@ def getCleanTitle(eventitle=""):
 	return eventitle.replace(' ^`^s', '').replace(' ^`^y', '')
 
 
-# Character replacement mapping for filename sanitization
-CHAR_REPLACEMENTS = {
-	"$": "s",
-	"&": "and",
-	"@": "at",
-	"€": "_",
-	"£": "_",
-	"¢": "_",
-	"¥": "_",
-	"©": "_",
-	"®": "_",
-	"™": "_",
-	"°": "_",
-	"¡": "_",
-	"¿": "_",
-	"§": "_",
-	"¶": "_",
-	"•": "_",
-	"–": "_",  # En dash
-	"—": "_",  # Em dash
-	"“": "_",  # Left double quote
-	"”": "_",  # Right double quote
-	"‘": "_",  # Left single quote
-	"’": "_",  # Right single quote
-	"«": "_",  # Left-pointing double angle quote
-	"»": "_",  # Right-pointing double angle quote
-	"/": "_",  # Slash
-	# ":": "-",  # Colon
-	"*": "_",  # Asterisk
-	"?": "_",  # Question mark
-	"!": "_",  # Exclamation mark
-	"#": "_",  # Hash
-	"~": "_",  # Tilde
-	"^": "_",  # Caret
-	"=": "_",  # Equals
-	"(": "_",  # Open parenthesis
-	")": "_",  # Close parenthesis
-	"[": "_",  # Open bracket
-	"]": "_",  # Close bracket
-	'"': "",
-	"live:": "",
-	"Х/Ф": "",
-	"М/Ф": "",
-	"Х/ф": "",
-	"18+": "",
-	"18+": "",
-	"16+": "",
-	"16+": "",
-	"12+": "",
-	"12+": "",
-	"7+": "",
-	"7+": "",
-	"6+": "",
-	"6+": "",
-	"0+": "",
-	"0+": "",
-	"+": "",
-	"المسلسل العربي": "",
-	"مسلسل": "",
-	"برنامج": "",
-	"فيلم وثائقى": "",
-	"حفل": ""
-}
-
-
 def sanitize_filename(name):
 	"""
 	Sanitize strings to be safe for filenames.
@@ -254,8 +190,84 @@ def sanitize_filename(name):
 	return name
 
 
+try:
+	# from .Agp_lib import convtext
+	from .Converlib import convtext
+except ImportError:
+	logger.warning("AGP Utils ImportError convtext not found, using fallback")
+
+	def convtext(x):
+		"""Fallback text conversion function"""
+		return x
+
+
+# Character replacement mapping for filename sanitization
+CHAR_REPLACEMENTS = {
+	"$": "s",
+	"@": "at",
+	"€": "",
+	"&": "",
+	"£": "",
+	"¢": "",
+	"¥": "",
+	"©": "",
+	"®": "",
+	"™": "",
+	"°": "",
+	"¡": "",
+	"¿": "",
+	"§": "",
+	"¶": "",
+	"•": "",
+	"–": "",  # En dash
+	"—": "",  # Em dash
+	"“": "",  # Left double quote
+	"”": "",  # Right double quote
+	"‘": "",  # Left single quote
+	"’": "",  # Right single quote
+	"«": "",  # Left-pointing double angle quote
+	"»": "",  # Right-pointing double angle quote
+	"/": "",  # Slash
+	":": " ",  # Colon
+	"*": "",  # Asterisk
+	"?": "",  # Question mark
+	"!": "",  # Exclamation mark
+	"#": "",  # Hash
+	"~": "",  # Tilde
+	"^": "",  # Caret
+	"=": "",  # Equals
+	"(": "",  # Open parenthesis
+	")": "",  # Close parenthesis
+	"[": "",  # Open bracket
+	"]": "",  # Close bracket
+	'"': "",
+	"live:": "",
+	"Х/Ф": "",
+	"М/Ф": "",
+	"Х/ф": "",
+	"18+": "",
+	"18+": "",
+	"16+": "",
+	"16+": "",
+	"12+": "",
+	"12+": "",
+	"7+": "",
+	"7+": "",
+	"6+": "",
+	"6+": "",
+	"0+": "",
+	"0+": "",
+	"+": "",
+	"المسلسل العربي": "",
+	"مسلسل": "",
+	"برنامج": "",
+	"فيلم وثائقى": "",
+	"حفل": ""
+}
+
+
 # @lru_cache(maxsize=2500)  # not tested
-def convtext(text):
+def convtextXXX(text):
 	try:
 		if text is None:
 			# print("return None original text:", type(text))
@@ -372,8 +384,8 @@ def convtext(text):
 				text = text.split(separator)[0].strip()
 
 		# Replace characters based on the custom map
-		for char, replacement in CHAR_REPLACEMENTS.items():
-			text = text.replace(char, replacement)
+		# for char, replacement in CHAR_REPLACEMENTS.items():
+			# text = text.replace(char, replacement)
 
 		# Remove unwanted strings
 		unwanted = [

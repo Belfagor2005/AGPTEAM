@@ -285,6 +285,7 @@ def verify_backdrop_integrity(self):
 
 try:
 	from .Agp_lib import convtext
+	# from .Converlib import convtext
 except ImportError:
 	logger.warning("AGP Utils ImportError convtext not found, using fallback")
 
@@ -355,6 +356,71 @@ def clean_filename(title):
 
 	except Exception:
 		return "no_title"
+
+
+# Character replacement mapping for filename sanitization
+CHAR_REPLACEMENTS = {
+	"$": "s",
+	"@": "at",
+	"€": "",
+	"&": "",
+	"£": "",
+	"¢": "",
+	"¥": "",
+	"©": "",
+	"®": "",
+	"™": "",
+	"°": "",
+	"¡": "",
+	"¿": "",
+	"§": "",
+	"¶": "",
+	"•": "",
+	"–": "",  # En dash
+	"—": "",  # Em dash
+	"“": "",  # Left double quote
+	"”": "",  # Right double quote
+	"‘": "",  # Left single quote
+	"’": "",  # Right single quote
+	"«": "",  # Left-pointing double angle quote
+	"»": "",  # Right-pointing double angle quote
+	"/": "",  # Slash
+	":": " ",  # Colon
+	"*": "",  # Asterisk
+	"?": "",  # Question mark
+	"!": "",  # Exclamation mark
+	"#": "",  # Hash
+	"~": "",  # Tilde
+	"^": "",  # Caret
+	"=": "",  # Equals
+	"(": "",  # Open parenthesis
+	")": "",  # Close parenthesis
+	"[": "",  # Open bracket
+	"]": "",  # Close bracket
+	'"': "",
+	"live:": "",
+	"Х/Ф": "",
+	"М/Ф": "",
+	"Х/ф": "",
+	"18+": "",
+	"18+": "",
+	"16+": "",
+	"16+": "",
+	"12+": "",
+	"12+": "",
+	"7+": "",
+	"7+": "",
+	"6+": "",
+	"6+": "",
+	"0+": "",
+	"0+": "",
+	"+": "",
+	"المسلسل العربي": "",
+	"مسلسل": "",
+	"برنامج": "",
+	"فيلم وثائقى": "",
+	"حفل": ""
+}
 
 
 def clean_for_tvdb_optimized(title):
@@ -499,6 +565,10 @@ def clean_for_tvdb(title):
 
 		# Preserve original for fallback
 		clean_title = title
+
+		# Replace characters based on the custom map
+		for char, replacement in CHAR_REPLACEMENTS.items():
+			title = title.replace(char, replacement)
 
 		# Try ASCII conversion but keep original if it fails
 		try:
