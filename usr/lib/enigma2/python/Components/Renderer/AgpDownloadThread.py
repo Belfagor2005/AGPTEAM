@@ -55,6 +55,7 @@ from json import loads as json_loads
 from random import choice
 from unicodedata import normalize
 from time import sleep
+import threading
 import urllib3
 import logging
 
@@ -175,8 +176,9 @@ class AgpDownloadThread(Thread):
 	- Asynchronous Poster loading
 	"""
 
-	def __init__(self):
+	def __init__(self, *args, **kwargs):
 		Thread.__init__(self)
+		self._stop_event = threading.Event()
 		self.checkMovie = [
 			"film", "movie", "фильм", "кино", "ταινία",
 			"película", "cinéma", "cine", "cinema", "filma"

@@ -75,7 +75,6 @@ import NavigationInstance
 from Components.Renderer.AgpDownloadThread import AgpDownloadThread
 from Plugins.Extensions.Aglare.plugin import ApiKeyManager, config
 from .Agp_Requests import intCheck
-
 from .Agp_Utils import (
 	POSTER_FOLDER,
 	check_disk_space,
@@ -400,7 +399,7 @@ class AglarePosterX(Renderer):
 		for attempt in range(5):
 			if checkPosterExistence(poster_path):
 				self.backrNm = poster_path
-				logger.debug(f"Poster found after {attempt} attempts")
+				# logger.debug(f"Poster found after {attempt} attempts")
 				self.showPoster(poster_path)
 				return
 
@@ -448,11 +447,9 @@ class AglarePosterX(Renderer):
 class PosterDB(AgpDownloadThread):
 	"""Handles Poster downloading and database management"""
 	def __init__(self, providers=None):
-		super().__init__()
+		AgpDownloadThread.__init__()
 
 		self.queued_posters = set()
-		self.poster_cache = {}
-
 		self.executor = ThreadPoolExecutor(max_workers=3)
 		self.extensions = extensions
 		self.logdbg = None
@@ -584,14 +581,6 @@ class PosterDB(AgpDownloadThread):
 			logger.error(f"Poster validation error: {str(e)}")
 			return False
 
-	# def update_poster_cache(self, poster_name, path):
-		# """Force update cache entry"""
-		# self.poster_cache[poster_name] = path
-		# # Limit cache size
-		# if len(self.poster_cache) > 50:
-			# oldest = next(iter(self.poster_cache))
-			# del self.poster_cache[oldest]
-
 	def mark_failed_attempt(self, canal_name):
 		"""Track failed download attempts"""
 		self._log_debug(f"Failed attempt for {canal_name}")
@@ -626,6 +615,7 @@ class PosterAutoDB(AgpDownloadThread):
 	Configuration:
 	- providers: Configured via plugin setup parameters
 	"""
+
 	_instance = None
 
 	def __init__(self, providers=None, max_posters=2000):
@@ -633,14 +623,14 @@ class PosterAutoDB(AgpDownloadThread):
 		if hasattr(self, '_initialized') and self._initialized:
 			return
 
-		super().__init__()
+		AgpDownloadThread.__init__(self)
+		self.daemon = True
+		self.force_immediate = False
 		self._initialized = True
-
 		self._stop_event = threading.Event()
 		self._active_event = threading.Event()
 		self._active_event.set()
 		self._scan_lock = Lock()
-		self.daemon = True
 
 		if not config.plugins.Aglare.pstdown.value:
 			logger.debug("PosterAutoDB: Automatic downloads DISABLED in configuration")
@@ -740,45 +730,61 @@ class PosterAutoDB(AgpDownloadThread):
 
 	def run(self):
 		logger.info("PosterAutoDB THREAD STARTED")
-		# logger.info("RUNNING IN TEST MODE - BYPASSING SCHEDULER")
-		# self._execute_scheduled_scan()  # Force immediate scan
-		# logger.info("TEST SCAN COMPLETED")
 		try:
-			while self.active:
+			while not self._stop_event.is_set():
+				if self.force_immediate:
+					logger.debug("FORCED IMMEDIATE SCAN!")
+					self._execute_scheduled_scan()
+					self.force_immediate = False
+					continue
+
 				now = datetime.now()
 				next_run = self._calculate_next_run(now)
 				logger.debug(f"Scheduled for: {next_run}")
 
-				# Wait until scheduled time
-				while True:
-					now = datetime.now()
-					remaining = (next_run - now).total_seconds()
-					if remaining <= 0:
+				while datetime.now() < next_run and not self._stop_event.is_set():
+					remaining = (next_run - datetime.now()).total_seconds()
+					logger.debug(f"Residual wait: {remaining:.1f}s")
+
+					for _ in range(int(min(remaining, 1))):
+						if self._stop_event.is_set() or self.force_immediate:
+							break
+						sleep(1)
+
+					if self.force_immediate:
+						logger.debug("Interrupt waiting for manual scan")
 						break
 
-					logger.debug(f"Waiting {remaining:.1f}s")
-					sleep(min(remaining, 60))  # Check every minute
-
-				logger.debug("=== SCANNING NOW ===")
-				self._execute_scheduled_scan()
+				if not self._stop_event.is_set():
+					logger.debug("=== SCHEDULED SCAN START ===")
+					self._execute_scheduled_scan()
 
 		except Exception as e:
-			logger.error(f"CRASH: {str(e)}")
+			logger.error(f"ERROR: {str(e)}", exc_info=True)
 		finally:
 			logger.info("PosterAutoDB STOPPED")
 
+	def force_immediate_download(self):
+		"""Forza lo scan bypassando l'attesa"""
+		logger.debug("Setting force_immediate flag and waking up threads")
+		self.force_immediate = True
+		self._stop_event.set()
+		self._stop_event.clear()
+
 	def _calculate_next_run(self, current_time):
+		if self.force_immediate:
+			return current_time - timedelta(seconds=1)
+
 		next_run = datetime(
 			year=current_time.year,
 			month=current_time.month,
 			day=current_time.day,
 			hour=self.scheduled_hour,
 			minute=self.scheduled_minute,
-			second=0  # Force seconds to 0
+			second=0
 		)
-		if next_run <= current_time:  # Use <= instead of <
+		if next_run <= current_time:
 			next_run += timedelta(days=1)
-
 		logger.debug(f"Next scan: {next_run.strftime('%Y-%m-%d %H:%M:%S')}")
 		return next_run
 

@@ -3,32 +3,32 @@
 from __future__ import absolute_import, print_function
 """
 #########################################################
-#                                                       #
-#  AGLARE SETUP UTILITY SKIN                            #
-#  Version: 5.7                                         #
+#														#
+#  AGLARE SETUP UTILITY SKIN							#
+#  Version: 5.7											#
 #  Created by Lululla (https://github.com/Belfagor2005) #
-#  License: CC BY-NC-SA 4.0                             #
-#  https://creativecommons.org/licenses/by-nc-sa/4.0    #
-#                                                       #
-#  Last Modified: "15:14 - 20250423"                    #
-#                                                       #
-#  Credits:                                             #
-#  - Original concept by Lululla                        #
-#  - TMDB API integration                               #
-#  - TVDB API integration                               #
-#  - OMDB API integration                               #
-#  - FANART API integration                             #
-#  - IMDB API integration                               #
-#  - ELCINEMA API integration                           #
-#  - GOOGLE API integration                             #
-#  - PROGRAMMETV integration                            #
-#  - MOLOTOV API integration                            #
-#  - Fully configurable via AGP Setup Plugin            #
-#                                                       #
-#  Usage of this code without proper attribution        #
-#  is strictly prohibited.                              #
-#  For modifications and redistribution,                #
-#  please maintain this credit header.                  #
+#  License: CC BY-NC-SA 4.0								#
+#  https://creativecommons.org/licenses/by-nc-sa/4.0	#
+#														#
+#  Last Modified: "15:14 - 20250423"					#
+#														#
+#  Credits:												#
+#  - Original concept by Lululla						#
+#  - TMDB API integration								#
+#  - TVDB API integration								#
+#  - OMDB API integration								#
+#  - FANART API integration								#
+#  - IMDB API integration								#
+#  - ELCINEMA API integration							#
+#  - GOOGLE API integration								#
+#  - PROGRAMMETV integration							#
+#  - MOLOTOV API integration							#
+#  - Fully configurable via AGP Setup Plugin			#
+#														#
+#  Usage of this code without proper attribution		#
+#  is strictly prohibited.								#
+#  For modifications and redistribution,				#
+#  please maintain this credit header.					#
 #########################################################
 """
 
@@ -51,6 +51,7 @@ from Components.Label import Label
 from Components.Pixmap import Pixmap
 from Components.Sources.Progress import Progress
 from Components.Sources.StaticText import StaticText
+from Plugins.Plugin import PluginDescriptor
 from time import localtime, mktime
 from Components.config import (
 	configfile,
@@ -73,13 +74,12 @@ from Screens.Standby import TryQuitMainloop
 # Enigma2 Tools
 from Tools.Directories import fileExists
 from Tools.Downloader import downloadWithProgress
+from urllib.request import Request,	 urlopen
 
 # Plugin-local imports
 from . import _
-from Plugins.Plugin import PluginDescriptor
+from Plugins.Extensions.Aglare.DownloadControl import startPosterAutoDB, startBackdropAutoDB
 
-
-from urllib.request import Request,  urlopen
 
 version = '5.7'
 
@@ -146,8 +146,11 @@ elif exists("/media/mmc") and isMountedInRW("/media/mmc"):
 """ end assign path """
 
 """ Config and setting maintenance """
-
 config.plugins.Aglare = ConfigSubsection()
+
+config.plugins.Aglare.download_now_poster = NoSave(ConfigYesNo(default=False))
+config.plugins.Aglare.download_now_backdrop = NoSave(ConfigYesNo(default=False))
+
 config.plugins.Aglare.actapi = ConfigOnOff(default=True)
 config.plugins.Aglare.tmdb = ConfigOnOff(default=True)
 config.plugins.Aglare.load_tmdb_api = ConfigYesNo(default=False)
@@ -176,8 +179,8 @@ agp_use_cache = config.plugins.Aglare.cache
 
 config.plugins.Aglare.pstdown = ConfigOnOff(default=False)
 config.plugins.Aglare.bkddown = ConfigOnOff(default=False)
-config.plugins.Aglare.pscan_time = ConfigClock(calcTime(0, 0))  # 00:00
-config.plugins.Aglare.bscan_time = ConfigClock(calcTime(2, 0))  # 02:00
+config.plugins.Aglare.pscan_time = ConfigClock(calcTime(0, 0))	# 00:00
+config.plugins.Aglare.bscan_time = ConfigClock(calcTime(2, 0))	# 02:00
 
 # stars
 config.plugins.Aglare.rating_source = ConfigOnOff(default=False)
@@ -311,7 +314,7 @@ config.plugins.Aglare.E2iplayerskins = ConfigSelection(default='OFF', choices=[
 	('e2iplayer_skin_on', _('ON'))
 ])
 
-configfile.load()      # pull the values that were written to /etc/enigma2/settings
+configfile.load()	   # pull the values that were written to /etc/enigma2/settings
 
 """ Config and setting maintenance """
 
@@ -329,12 +332,12 @@ fullurl = None
 'tmdb': self.search_tmdb,
 'fanart': self.search_fanart,
 'thetvdb': self.search_tvdb,
-'elcinema': self.search_elcinema,   # no apikey
-'google': self.search_google,   # no apikey
+'elcinema': self.search_elcinema,	# no apikey
+'google': self.search_google,	# no apikey
 'omdb': self.search_omdb,
-'imdb': self.search_imdb,   # no apikey
-'programmetv': self.search_programmetv_google,  # no apikey
-'molotov': self.search_molotov_google,  # no apikey
+'imdb': self.search_imdb,	# no apikey
+'programmetv': self.search_programmetv_google,	# no apikey
+'molotov': self.search_molotov_google,	# no apikey
 """
 
 
@@ -538,7 +541,7 @@ class AglareSetup(ConfigListScreen, Screen):
 			# Always‑available PosterX choices
 			posterx_choices = [
 				('infobar_posters_posterx_off', _('OFF')),
-				('infobar_posters_posterx_on',  _('ON')),
+				('infobar_posters_posterx_on',	_('ON')),
 			]
 
 			# Add “CD” only if Style5 CD is selected
@@ -567,11 +570,11 @@ class AglareSetup(ConfigListScreen, Screen):
 			]
 
 			# Style‑dependent extras
-			if style == 'infobar_base1':               # Default style
+			if style == 'infobar_base1':			   # Default style
 				xtraevent_choices.append(
 					('infobar_posters_xtraevent_info', _('Backdrop'))
 				)
-			elif style == 'infobar_base5':             # Style 5 CD
+			elif style == 'infobar_base5':			   # Style 5 CD
 				xtraevent_choices.append(
 					('infobar_posters_xtraevent_cd', _('CD'))
 				)
@@ -590,7 +593,7 @@ class AglareSetup(ConfigListScreen, Screen):
 			config.plugins.Aglare.InfobarXtraevent.setChoices(xtraevent_choices)
 			# ────────────────────────────────────────────────────────────────
 			list = []
-			section = '-------------------------( GENERAL SKIN  SETUP )------------------------'
+			section = '-------------------------( GENERAL SKIN	SETUP )------------------------'
 			list.append(getConfigListEntry(section))
 			list.append(getConfigListEntry(_('Color Style:'), config.plugins.Aglare.colorSelector))
 			list.append(getConfigListEntry(_('Select Your Font:'), config.plugins.Aglare.FontStyle))
@@ -653,9 +656,11 @@ class AglareSetup(ConfigListScreen, Screen):
 				list.append(getConfigListEntry(section))
 				if config.plugins.Aglare.actapi.value:
 					list.append(getConfigListEntry("Use Cache on download:", config.plugins.Aglare.cache, _("Enable or disable caching during event download to speed up repeated searches.")))
+					list.append(getConfigListEntry(_('Download now poster'), config.plugins.Aglare.download_now_poster, _("Start downloading poster immediately")))
 					list.append(getConfigListEntry(_('Automatic download of poster'), config.plugins.Aglare.pstdown, _("Automatically fetch posters for favorite events based on EPG")))
 					if config.plugins.Aglare.pstdown.value is True:
 						list.append(getConfigListEntry(_('Set Time our - minute for Poster download'), config.plugins.Aglare.pscan_time, _("Configure the delay time (in minutes) before starting the automatic poster download")))
+					list.append(getConfigListEntry(_('Download now backdrop'), config.plugins.Aglare.download_now_backdrop, _("Start downloading backdrop immediately")))
 					list.append(getConfigListEntry(_('Automatic download of backdrop'), config.plugins.Aglare.bkddown, _("Automatically fetch backdrop for favorite events based on EPG")))
 					if config.plugins.Aglare.bkddown.value is True:
 						list.append(getConfigListEntry(_('Set Time our - minute for Backdrop download'), config.plugins.Aglare.bscan_time, _("Configure the delay time (in minutes) before starting the automatic poster download")))
@@ -758,6 +763,40 @@ class AglareSetup(ConfigListScreen, Screen):
 		if not sel:
 			return
 
+		def handle_download_now_poster():
+			try:
+				""" debug inspect
+				import inspect
+				from Components.Renderer import AglarePosterX
+				print("Module path:", inspect.getfile(AglarePosterX))
+				print("Class members:", dir(AglarePosterX.PosterAutoDB))
+				"""
+				startPosterAutoDB()
+				config.plugins.Aglare.download_now_poster.value = False
+				config.plugins.Aglare.download_now_poster.save()
+				self.session.open(MessageBox, _("Poster download started."), MessageBox.TYPE_INFO)
+			except Exception as e:
+				print("FATAL ERROR DETAILS:", str(e))
+				import traceback
+				traceback.print_exc()
+
+		def handle_download_now_backdrop():
+			try:
+				""" debug inspect
+				import inspect
+				from Components.Renderer import AglareBackdropX
+				print("Module path:", inspect.getfile(AglareBackdropX))
+				print("Class members:", dir(AglareBackdropX.BackdropAutoDB))
+				"""
+				startBackdropAutoDB()
+				config.plugins.Aglare.download_now_backdrop.value = False
+				config.plugins.Aglare.download_now_backdrop.save()
+				self.session.open(MessageBox, _("Backdrop download started."), MessageBox.TYPE_INFO)
+			except Exception as e:
+				print("FATAL ERROR DETAILS:", str(e))
+				import traceback
+				traceback.print_exc()
+
 		action_map = {
 			config.plugins.Aglare.png: self.handle_png,
 			**{
@@ -768,7 +807,10 @@ class AglareSetup(ConfigListScreen, Screen):
 			**{
 				getattr(config.plugins.Aglare, f"{api}_api"): self.KeyText
 				for api in api_key_manager.API_CONFIG
-			}
+			},
+
+			config.plugins.Aglare.download_now_poster: handle_download_now_poster,
+			config.plugins.Aglare.download_now_backdrop: handle_download_now_backdrop,
 		}
 
 		handler = action_map.get(sel)
@@ -920,7 +962,7 @@ class AglareSetup(ConfigListScreen, Screen):
 
 		print("File exists, proceeding with saving...")
 		for x in self['config'].list:
-			if len(x) > 1:  # Check if x has at least two elements
+			if len(x) > 1:	# Check if x has at least two elements
 				print("Saving {}".format(x[1]))
 				x[1].save()
 

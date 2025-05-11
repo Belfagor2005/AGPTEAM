@@ -61,9 +61,8 @@ from queue import LifoQueue
 # from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor
 
-# Enigma2/Dreambox specific imports
+# Enigma2 specific imports
 from enigma import ePixmap, loadJPG, eEPGCache, eTimer
-# from Components.config import config
 from Components.Renderer.Renderer import Renderer
 from Components.Sources.Event import Event
 from Components.Sources.EventInfo import EventInfo
@@ -93,12 +92,12 @@ if not BACKDROP_FOLDER.endswith("/"):
 epgcache = eEPGCache.getInstance()
 epgcache.load()
 pdb = LifoQueue()
-# extensions = ['.jpg', '.jpeg', '.png']
+# Create an API Key Manager instance
+api_key_manager = ApiKeyManager()
 extensions = ['.jpg']
 autobouquet_file = None
 apdb = dict()
 SCAN_TIME = "02:00"
-
 
 global global_agb_auto_db
 AgbDB = None
@@ -176,6 +175,8 @@ class AglareBackdropX(Renderer):
 		self.providers = api_key_manager.get_active_providers()
 
 		clear_all_log()
+		self.queued_backdrops = set()
+		self.loaded_backdrops = set()
 		self.backdrop_cache = {}
 		if len(self.backdrop_cache) > 50:
 			self.backdrop_cache.clear()
@@ -234,12 +235,12 @@ class AglareBackdropX(Renderer):
 				else:
 					# Clean and store event data
 					# self.canal[0] = None
-					self.canal[1] = source.event.getBeginTime()
-					# event_name = source.event.getEventName().replace('\xc2\x86', '').replace('\xc2\x87', '')
+					self.canal[1] = self.source.event.getBeginTime()
+					# event_name = self.source.event.getEventName().replace('\xc2\x86', '').replace('\xc2\x87', '')
 					event_name = sub(r"[\u0000-\u001F\u007F-\u009F]", "", self.source.event.getEventName())
 					self.canal[2] = event_name
-					self.canal[3] = source.event.getExtendedDescription()
-					self.canal[4] = source.event.getShortDescription()
+					self.canal[3] = self.source.event.getExtendedDescription()
+					self.canal[4] = self.source.event.getShortDescription()
 					self.canal[5] = event_name
 					# self._log_debug(f"Event details set: {self.canal}")
 			else:
@@ -442,10 +443,9 @@ class AglareBackdropX(Renderer):
 class BackdropDB(AgbDownloadThread):
 	"""Handles Backdrop downloading and database management"""
 	def __init__(self, providers=None):
-		super().__init__()
+		AgbDownloadThread.__init__()
 
 		self.queued_backdrops = set()
-		# self.backdrop_cache = {}
 		self.executor = ThreadPoolExecutor(max_workers=4)
 		self.extensions = extensions
 		self.logdbg = None
@@ -577,14 +577,6 @@ class BackdropDB(AgbDownloadThread):
 			logger.error(f"backdrop validation error: {str(e)}")
 			return False
 
-	# def update_backdrop_cache(self, backdrop_name, path):
-		# """Force update cache entry"""
-		# self.backdrop_cache[backdrop_name] = path
-		# # Limit cache size
-		# if len(self.backdrop_cache) > 20:
-			# oldest = next(iter(self.backdrop_cache))
-			# del self.backdrop_cache[oldest]
-
 	def mark_failed_attempt(self, canal_name):
 		"""Track failed download attempts"""
 		self._log_debug(f"Failed attempt for {canal_name}")
@@ -619,6 +611,7 @@ class BackdropAutoDB(AgbDownloadThread):
 	Configuration:
 	- providers: Configured via plugin setup parameters
 	"""
+
 	_instance = None
 
 	def __init__(self, providers=None, max_backdrops=1000):
@@ -626,14 +619,14 @@ class BackdropAutoDB(AgbDownloadThread):
 		if hasattr(self, '_initialized') and self._initialized:
 			return
 
-		super().__init__()
+		AgbDownloadThread.__init__(self)
+		self.daemon = True
+		self.force_immediate = False
 		self._initialized = True
-
 		self._stop_event = threading.Event()
 		self._active_event = threading.Event()
 		self._active_event.set()
 		self._scan_lock = Lock()
-		self.daemon = True
 
 		if not config.plugins.Aglare.bkddown.value:
 			logger.debug("BackdropAutoDB: Automatic downloads DISABLED in configuration")
@@ -733,45 +726,61 @@ class BackdropAutoDB(AgbDownloadThread):
 
 	def run(self):
 		logger.info("BackdropAutoDB THREAD STARTED")
-		# logger.info("RUNNING IN TEST MODE - BYPASSING SCHEDULER")
-		# self._execute_scheduled_scan()  # Force immediate scan
-		# logger.info("TEST SCAN COMPLETED")
 		try:
-			while self.active:
+			while not self._stop_event.is_set():
+				if self.force_immediate:
+					logger.debug("FORCED IMMEDIATE SCAN!")
+					self._execute_scheduled_scan()
+					self.force_immediate = False
+					continue
+
 				now = datetime.now()
 				next_run = self._calculate_next_run(now)
 				logger.debug(f"Scheduled for: {next_run}")
 
-				# Wait until scheduled time
-				while True:
-					now = datetime.now()
-					remaining = (next_run - now).total_seconds()
-					if remaining <= 0:
+				while datetime.now() < next_run and not self._stop_event.is_set():
+					remaining = (next_run - datetime.now()).total_seconds()
+					logger.debug(f"Residual wait: {remaining:.1f}s")
+
+					for _ in range(int(min(remaining, 1))):
+						if self._stop_event.is_set() or self.force_immediate:
+							break
+						sleep(1)
+
+					if self.force_immediate:
+						logger.debug("Interrupt waiting for manual scan")
 						break
 
-					logger.debug(f"Waiting {remaining:.1f}s")
-					sleep(min(remaining, 60))  # Check every minute
-
-				logger.debug("=== SCANNING NOW ===")
-				self._execute_scheduled_scan()
+				if not self._stop_event.is_set():
+					logger.debug("=== SCHEDULED SCAN START ===")
+					self._execute_scheduled_scan()
 
 		except Exception as e:
-			logger.error(f"CRASH: {str(e)}")
+			logger.error(f"ERROR: {str(e)}", exc_info=True)
 		finally:
 			logger.info("BackdropAutoDB STOPPED")
 
+	def force_immediate_download(self):
+		"""Forza lo scan bypassando l'attesa"""
+		logger.debug("Setting force_immediate flag and waking up threads")
+		self.force_immediate = True
+		self._stop_event.set()
+		self._stop_event.clear()
+
 	def _calculate_next_run(self, current_time):
+		if self.force_immediate:
+			return current_time - timedelta(seconds=1)
+
 		next_run = datetime(
 			year=current_time.year,
 			month=current_time.month,
 			day=current_time.day,
 			hour=self.scheduled_hour,
 			minute=self.scheduled_minute,
-			second=0  # Force seconds to 0
+			second=0
 		)
-		if next_run <= current_time:  # Use <= instead of <
+		if next_run <= current_time:
 			next_run += timedelta(days=1)
-
 		logger.debug(f"Next scan: {next_run.strftime('%Y-%m-%d %H:%M:%S')}")
 		return next_run
 
@@ -1039,9 +1048,6 @@ def clear_all_log():
 		except Exception as e:
 			logger.error(f"log_files cleanup failed: {e}")
 
-
-# Create an API Key Manager instance
-api_key_manager = ApiKeyManager()
 
 # download on requests
 if any(api_key_manager.get_active_providers().values()):

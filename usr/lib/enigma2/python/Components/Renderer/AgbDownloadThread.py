@@ -49,12 +49,13 @@ __copyright__ = "AGP Team"
 # Standard library
 from os import remove, rename
 from os.path import exists, getsize
-from re import compile, findall, DOTALL, sub  # , search, I
+from re import compile, findall, DOTALL, sub
 from threading import Thread
 from json import loads as json_loads
 from random import choice
 from unicodedata import normalize
 from time import sleep
+import threading
 import urllib3
 import logging
 
@@ -175,8 +176,9 @@ class AgbDownloadThread(Thread):
 	- Asynchronous Backdrop loading
 	"""
 
-	def __init__(self):
+	def __init__(self, *args, **kwargs):
 		Thread.__init__(self)
+		self._stop_event = threading.Event()
 		self.checkMovie = [
 			"film", "movie", "фильм", "кино", "ταινία",
 			"película", "cinéma", "cine", "cinema", "filma"
@@ -690,6 +692,7 @@ class AgbDownloadThread(Thread):
 			chkType, fd = self.checkType(shortdesc, fulldesc)
 			if not year:
 				year = self._extract_year(fd)
+
 			url_google = f'"{self.title_safe}"'
 			if channel and self.title_safe.find(channel) < 0:
 				url_google += f"+{quoteEventName(channel)}"
