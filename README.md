@@ -265,6 +265,134 @@ SCAN_TIME = "02:00"  # Global fallback
 **Cache System**: Auto-purges files >30 days old  
 **Memory Management**: Drops kernel caches automatically  
 
+
+~ 
+
+
+### AGLARE PLUGIN SETUP CONFIGURATIONS
+
+The Aglare plugin offers numerous configuration options to customize the behavior of the renderers and external services. Below are the main options available.
+
+## 🖼️ **Download Poster/Backdrop**
+
+Configure the immediate or automatic download of posters and backdrops. You can enable the "Download Now" option to download immediately or set up automatic download based on the EPG.
+
+- **Download Now Poster**  
+  Enable immediate download of the poster.  
+  `config.plugins.Aglare.download_now_poster`
+  
+- **Download Now Backdrop**  
+  Enable immediate download of the backdrop.  
+  `config.plugins.Aglare.download_now_backdrop`
+
+- **Automatic Poster Download**  
+  Enable automatic download of posters based on the EPG.  
+  `config.plugins.Aglare.pstdown`
+  
+- **Automatic Backdrop Download**  
+  Enable automatic download of backdrops based on the EPG.  
+  `config.plugins.Aglare.bkddown`
+
+## 🔑 **APIs and Keys**
+
+Aglare supports integration with several APIs to fetch content information. Each API can be enabled/disabled individually.
+
+- **Enable APIs**  
+  Enable the use of APIs to retrieve content information.  
+  `config.plugins.Aglare.actapi`
+
+- **Available APIs**  
+  - **TMDB**  
+    Enable/disable the TMDB API.  
+    `config.plugins.Aglare.tmdb`
+  - **OMDB**  
+    Enable/disable the OMDB API.  
+    `config.plugins.Aglare.omdb`
+  - **TheTVDB**  
+    Enable/disable the TheTVDB API.  
+    `config.plugins.Aglare.thetvdb`
+  - **Fanart**  
+    Enable/disable the Fanart API.  
+    `config.plugins.Aglare.fanart`
+  - **Other APIs**  
+    - **Elcinema**  
+      Enable/disable Elcinema.  
+      `config.plugins.Aglare.elcinema`
+    - **Google**  
+      Enable/disable Google.  
+      `config.plugins.Aglare.google`
+    - **IMDB**  
+      Enable/disable IMDB.  
+      `config.plugins.Aglare.imdb`
+    - **Molotov**  
+      Enable/disable Molotov.  
+      `config.plugins.Aglare.molotov`
+    - **Programmetv**  
+      Enable/disable Programmetv.  
+      `config.plugins.Aglare.programmetv`
+
+- **API Keys**  
+  Set the API key for each service:
+  - **TMDB API**  
+    `config.plugins.Aglare.tmdb_api`
+  - **OMDB API**  
+    `config.plugins.Aglare.omdb_api`
+  - **TheTVDB API**  
+    `config.plugins.Aglare.thetvdb_api`
+
+## ⭐ **Additional Features**
+
+- **Rating Stars**  
+  Enable the display of rating stars for events.  
+  `config.plugins.Aglare.rating_source`
+  
+- **Parental Icons**  
+  Display parental guidance icons for each event.  
+  `config.plugins.Aglare.info_parental_mode`
+
+- **Event Information Display**  
+  Enable the display of extended event information, including plot, cast, and other metadata.  
+  `config.plugins.Aglare.info_display_mode`
+  
+- **Genre Icons**  
+  Enable the display of icons representing event genres (e.g., action, comedy, drama).  
+  `config.plugins.Aglare.genre_source`
+
+- **Enhanced Movie Center Poster**  
+  Enable the display of posters from the local movie folder.  
+  `config.plugins.Aglare.xemc_poster`
+
+## 🗄️ **Cache**
+
+Caching can be enabled to improve performance when downloading events.
+
+- **Enable Cache**  
+  Enable or disable caching during event downloads.  
+  `config.plugins.Aglare.cache`
+
+## 🧹 **PNG Management**
+
+You can remove all PNG files from the local folder (poster and backdrop).
+
+- **Remove PNG**  
+  Remove all PNG files from the folder.  
+  `config.plugins.Aglare.png`
+
+## 🕒 **Scan Time**
+
+Set the scan times for automatic poster and backdrop downloads.
+
+- **Poster Scan Time**  
+  Set the scan time for automatic poster downloads.  
+  `config.plugins.Aglare.pscan_time`
+  
+- **Backdrop Scan Time**  
+  Set the scan time for automatic backdrop downloads.  
+  `config.plugins.Aglare.bscan_time`
+
+---
+
+
 > 💡 **Pro Tip**: Use RAM disk for slow devices  
 ```python
 if os.path.exists("/tmp/AGP"):
