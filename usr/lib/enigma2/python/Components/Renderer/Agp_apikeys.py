@@ -10,7 +10,7 @@ from __future__ import absolute_import, print_function
 #  License: CC BY-NC-SA 4.0                             #
 #  https://creativecommons.org/licenses/by-nc-sa/4.0    #
 #                                                       #
-#  Last Modified: "15:14 - 20250401"                    #
+#  Last Modified: "18:14 - 20250512"                    #
 #                                                       #
 #  Credits:                                             #
 #  - Original concept by Lululla                        #
@@ -169,3 +169,132 @@ if not _load_api_keys():
 	print("[API Config] Using default API keys")
 
 # ================ END SERVICE API CONFIGURATION ================
+
+
+# # Enigma2 Components
+# from Components.config import config, ConfigOnOff, ConfigYesNo, ConfigText, ConfigClock, NoSave, ConfigSelection, ConfigSubsection, configfile
+# from time import localtime, mktime
+
+# # Enigma2 Tools
+# from Tools.Directories import fileExists
+
+
+# # constants
+# my_cur_skin = False
+# mvi = '/usr/share/'
+# cur_skin = config.skin.primary_skin.value.replace("/skin.xml", "").strip()
+
+
+# def calcTime(hours, minutes):
+    # now_time = localtime()
+    # ret_time = mktime((now_time.tm_year, now_time.tm_mon, now_time.tm_mday, hours, minutes, 0, now_time.tm_wday, now_time.tm_yday, now_time.tm_isdst))
+    # return ret_time
+
+
+# class ApiKeyManager:
+    # """Loads API keys from skin files or falls back to defaults.
+    # Args:
+        # API_CONFIG (dict): Configuration mapping for each API.
+    # """
+
+    # def __init__(self):
+        # self.API_CONFIG = {
+            # "tmdb": {
+                # "skin_file": "tmdbkey",
+                # "default_key": "3c3efcf47c3577558812bb9d64019d65",
+                # "config_entry": config.plugins.Aglare.tmdb_api,
+                # "load_action": config.plugins.Aglare.load_tmdb_api
+            # },
+            # "fanart": {
+                # "skin_file": "fanartkey",
+                # "default_key": "6d231536dea4318a88cb2520ce89473b",
+                # "config_entry": config.plugins.Aglare.fanart_api,
+                # "load_action": config.plugins.Aglare.load_fanart_api
+            # },
+            # "thetvdb": {
+                # "skin_file": "thetvdbkey",
+                # "default_key": "a99d487bb3426e5f3a60dea6d3d3c7ef",
+                # "config_entry": config.plugins.Aglare.thetvdb_api,
+                # "load_action": config.plugins.Aglare.load_thetvdb_api
+            # },
+            # "omdb": {
+                # "skin_file": "omdbkey",
+                # "default_key": "cb1d9f55",
+                # "config_entry": config.plugins.Aglare.omdb_api,
+                # "load_action": config.plugins.Aglare.load_omdb_api
+            # }
+        # }
+
+        # self.init_paths()
+        # self.load_all_keys()
+
+    # def init_paths(self):
+        # """Initialize skin file paths"""
+        # for api, cfg in self.API_CONFIG.items():
+            # setattr(self, f"{api}_skin", f"{mvi}enigma2/{cur_skin}/{cfg['skin_file']}")
+
+    # def get_active_providers(self):
+        # active = {}
+        # for api, cfg in self.API_CONFIG.items():
+            # enabled = getattr(config.plugins.Aglare, api).value
+            # key_valid = bool(cfg['config_entry'].value and cfg['config_entry'].value != cfg['default_key'])
+
+            # if enabled and key_valid:
+                # active[api] = True
+        # return active
+
+    # def get_api_key(self, provider):
+        # """Retrieve API key for the specified provider."""
+        # if provider in self.API_CONFIG:
+            # return self.API_CONFIG[provider]['config_entry'].value
+        # return None
+
+    # def load_all_keys(self):
+        # """Upload all API keys from different sources"""
+        # global my_cur_skin
+        # if my_cur_skin:
+            # return
+
+        # try:
+            # # Loading from skin file
+            # for api, cfg in self.API_CONFIG.items():
+                # skin_path = f"/usr/share/enigma2/{cur_skin}/{cfg['skin_file']}"
+                # if fileExists(skin_path):
+                    # with open(skin_path, "r") as f:
+                        # key_value = f.read().strip()
+                    # if key_value:
+                        # cfg['config_entry'].value = key_value
+
+            # # Overwriting from default values
+            # for api, cfg in self.API_CONFIG.items():
+                # if not cfg['config_entry'].value:
+                    # cfg['config_entry'].value = cfg['default_key']
+
+            # my_cur_skin = True
+
+        # except Exception as e:
+            # print(f"Error loading API keys: {str(e)}")
+            # my_cur_skin = False
+
+    # def handle_load_key(self, api):
+        # """Handles loading keys from /tmp"""
+        # tmp_file = f"/tmp/{api}key.txt"
+        # cfg = self.API_CONFIG.get(api)
+
+        # try:
+            # if fileExists(tmp_file):
+                # with open(tmp_file, "r") as f:
+                    # key_value = f.read().strip()
+
+                # if key_value:
+                    # cfg['config_entry'].value = key_value
+                    # cfg['config_entry'].save()
+                    # return True, _("Key {} successfully loaded!").format(api.upper())
+            # return False, _("File {} not found or empty").format(tmp_file)
+
+        # except Exception as e:
+            # return False, _("Error loading: {}").format(str(e))
+
+
+# api_key_manager = ApiKeyManager()
+

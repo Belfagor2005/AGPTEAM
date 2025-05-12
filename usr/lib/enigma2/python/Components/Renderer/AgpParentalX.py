@@ -10,7 +10,7 @@ from __future__ import absolute_import, print_function
 #  License: CC BY-NC-SA 4.0                             #
 #  https://creativecommons.org/licenses/by-nc-sa/4.0    #
 #  from original code by @digiteng 2021                 #
-#  Last Modified: "15:14 - 20250401"                    #
+#  Last Modified: "18:14 - 20250512"                    #
 #                                                       #
 #  Credits:                                             #
 #  - Original concept by Lululla                        #
@@ -49,9 +49,12 @@ from Components.Renderer.Renderer import Renderer
 from enigma import ePixmap, loadPNG
 from urllib.request import urlopen
 import gettext
+from Components.config import config
 
 # local import
-from Plugins.Extensions.Aglare.plugin import ApiKeyManager, config
+from Plugins.Extensions.Aglare.api_config import cfg
+from Plugins.Extensions.Aglare.api_config import ApiKeyManager
+
 from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, logger
 from .Agp_Requests import intCheck
 from .Agp_lib import quoteEventName
@@ -65,7 +68,7 @@ _ = gettext.gettext
 cur_skin = config.skin.primary_skin.value.replace('/skin.xml', '')
 
 PARENTAL_ICON_PATH = f'/usr/share/enigma2/{cur_skin}/parental/'
-PARENT_SOURCE = config.plugins.Aglare.info_parental_mode.value
+PARENT_SOURCE = cfg.info_parental_mode.value
 DEFAULT_RATING = 'UN'
 NA_RATING = 'NA'
 DEFAULT_ICON = 'FSK_UN.png'

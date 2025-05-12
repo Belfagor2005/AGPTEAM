@@ -10,7 +10,7 @@ from __future__ import absolute_import, print_function
 #  License: CC BY-NC-SA 4.0                             #
 #  https://creativecommons.org/licenses/by-nc-sa/4.0    #
 #  from original code by @digiteng 2021                 #
-#  Last Modified: "15:14 - 20250401"                    #
+#  Last Modified: "18:14 - 20250512"                    #
 #                                                       #
 #  Credits:                                             #
 #  - Original concept by Lululla                        #
@@ -55,9 +55,10 @@ from json import loads as json_loads
 from Components.Renderer.Renderer import Renderer
 from enigma import ePixmap, loadPNG
 import gettext
+from Components.config import config
 
 # Local imports
-from Plugins.Extensions.Aglare.plugin import ApiKeyManager, config
+from Plugins.Extensions.Aglare.api_config import cfg
 from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, logger
 from .Agp_Requests import intCheck
 
@@ -65,11 +66,11 @@ if not POSTER_FOLDER.endswith("/"):
 	POSTER_FOLDER += "/"
 
 # Constants
-api_key_manager = ApiKeyManager()
+# api_key_manager = ApiKeyManager()
 _ = gettext.gettext
 cur_skin = config.skin.primary_skin.value.replace('/skin.xml', '')
 GENRE_PIC_PATH = f'/usr/share/enigma2/{cur_skin}/genre_pic/'
-GENRE_SOURCE = config.plugins.Aglare.genre_source.value
+GENRE_SOURCE = cfg.genre_source.value
 
 
 """skin configuration
@@ -300,8 +301,11 @@ class AgpGenreX(Renderer):
 
 	def changed(self, what):
 		"""Handle EPG changes"""
-		if what is None or not config.plugins.Aglare.genre_source.value:
-			# logger.debug(f"AgpGenreX.changed skipped (what={what}, genre_source={config.plugins.Aglare.genre_source.value})")
+		if not self.instance:
+			return
+
+		if what is None or not cfg.genre_source.value:
+			# logger.debug(f"AgpGenreX.changed skipped (what={what}, genre_source={cfg.genre_source.value})")
 			if self.instance:
 				self.instance.hide()
 			return

@@ -10,7 +10,7 @@ from __future__ import absolute_import, print_function
 #  License: CC BY-NC-SA 4.0                             #
 #  https://creativecommons.org/licenses/by-nc-sa/4.0    #
 #  from original code by @digiteng 2021                 #
-#  Last Modified: "15:14 - 20250401"                    #
+#  Last Modified: "18:14 - 20250512"                    #
 #                                                       #
 #  Credits:                                             #
 #  - Original concept by Lululla                        #
@@ -50,8 +50,8 @@ __copyright__ = "AGP Team"
 from json import load as json_load, dump as json_dump
 from functools import lru_cache
 from os import remove
-from os.path import exists, getsize  # , join
-from threading import Lock, Thread  # , Timer
+from os.path import exists, getsize
+from threading import Lock, Thread
 from urllib.error import HTTPError
 from urllib.request import urlopen
 
@@ -61,12 +61,16 @@ from Components.VariableValue import VariableValue
 from enigma import eEPGCache, eSlider
 from re import findall
 from enigma import eTimer
+from Components.config import config
 
 # Local imports
-from Plugins.Extensions.Aglare.plugin import ApiKeyManager, agp_use_cache, config
+from Plugins.Extensions.Aglare.api_config import cfg
+from Plugins.Extensions.Aglare.api_config import ApiKeyManager
+
 from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, logger
 from .Agp_Requests import intCheck
 from .Agp_lib import quoteEventName
+
 
 if not POSTER_FOLDER.endswith("/"):
 	POSTER_FOLDER += "/"
@@ -104,7 +108,6 @@ except:
 	transparent="1"
 	zPosition="22"/>
 
-
 <!-- ChannelList -->
 <widget source="ServiceEvent" render="AgpStarX"
 	position="1011,50"
@@ -114,6 +117,7 @@ except:
 	transparent="1"
 	zPosition="22"/>
 
+
 """
 
 
@@ -121,7 +125,6 @@ class AgpStarX(VariableValue, Renderer):
 	"""
 	Main Stars rating renderer class for Enigma2
 	Handles Star display and refresh logic
-
 	Features:
 	- Dynamic star rating loading based on current program
 	- Automatic refresh when channel/program changes
@@ -132,7 +135,6 @@ class AgpStarX(VariableValue, Renderer):
 	sources = ["Service", "ServiceEvent"]
 
 	def __init__(self):
-		# super().__init__()
 		Renderer.__init__(self)
 		VariableValue.__init__(self)
 		self.adsl = intCheck()
@@ -148,7 +150,7 @@ class AgpStarX(VariableValue, Renderer):
 		self.lock = Lock()
 		self._setup_caching()
 		self.last_channel = None
-		self.rating_source = config.plugins.Aglare.rating_source.value
+		self.rating_source = cfg.rating_source.value
 		self.epgcache = eEPGCache.getInstance()
 		logger.info("AgpStarX Renderer initialized")
 
@@ -170,21 +172,22 @@ class AgpStarX(VariableValue, Renderer):
 		self.infos()
 
 	def infos(self):
-		if hasattr(self.source, 'service') and not hasattr(self.source, 'event'):
-			service_ref = self.source.service.ref.toString()
+		source = self.source
+		if hasattr(source, 'service') and not hasattr(source, 'event'):
+			service_ref = source.service.ref.toString()
 			events = self.epgcache.lookupEvent([service_ref])
 			if events:
-				self.source.event = events[0]
+				source.event = events[0]
 
 		# if not hasattr(self.source, 'event') or not self.source.event:
 			# return
 
-		# logger.debug(f"AgpStarX - Source type: {type(self.source).__name__}")  # <--- QUESTA RIGA
+		# logger.debug(f"AgpStarX - Source type: {type(source).__name__}")  # <--- QUESTA RIGA
 		if not self.rating_source:
 			return
 
 		try:
-			current_event = self.source.event
+			current_event = source.event
 			if not current_event:
 				return
 
@@ -206,7 +209,7 @@ class AgpStarX(VariableValue, Renderer):
 
 	def _setup_caching(self):
 		"""Dynamic caching configuration"""
-		if agp_use_cache.value:
+		if config.plugins.Aglare.cache.value:
 			self.cached_download = lru_cache(maxsize=100)(self._safe_download_impl)
 		else:
 			self.cached_download = self._safe_download_impl
@@ -244,6 +247,7 @@ class AgpStarX(VariableValue, Renderer):
 
 					with urlopen(url, timeout=10) as response:
 						if response.status != 200:
+
 							return
 						url_data = json_load(response)
 
@@ -280,6 +284,7 @@ class AgpStarX(VariableValue, Renderer):
 					if e.code == 404:
 						logger.debug("AgpStarX Resource not found")
 					return
+
 				except Exception as e:
 					logger.error(f"AgpStarX Error while downloading: {str(e)}")
 
@@ -293,6 +298,7 @@ class AgpStarX(VariableValue, Renderer):
 				channel_name = self.pstcanal
 
 				self.api_key = api_key_manager.get_api_key('tmdb')
+
 				if not self.api_key or len(self.pstcanal) < 3:
 					return None
 
@@ -311,7 +317,6 @@ class AgpStarX(VariableValue, Renderer):
 
 				# Processing results
 				valid_results = [r for r in search_data.get('results', []) if r.get('media_type') in ['movie', 'tv']]
-
 				if not valid_results:
 					return None
 
@@ -327,7 +332,9 @@ class AgpStarX(VariableValue, Renderer):
 		except HTTPError as e:
 			if e.code == 404:
 				logger.debug("AgpStarX Resource not found")
+
 			return None
+
 		except Exception as e:
 			logger.error(f"AgpStarX Error download: {str(e)}")
 			return None

@@ -10,7 +10,7 @@ from __future__ import absolute_import, print_function
 #  License: CC BY-NC-SA 4.0                             #
 #  https://creativecommons.org/licenses/by-nc-sa/4.0    #
 #  from original code by @digiteng 2021                 #
-#  Last Modified: "15:14 - 20250401"                    #
+#  Last Modified: "18:14 - 20250512"                    #
 #                                                       #
 #  Credits:                                             #
 #  - Original concept by Lululla                        #
@@ -71,10 +71,8 @@ from enigma import getDesktop
 from Components.config import config
 
 # Local imports
-# from .Agp_lib import quoteEventName
 from .Agp_apikeys import tmdb_api, thetvdb_api, fanart_api  # , omdb_api
 from .Agp_Utils import logger
-from Plugins.Extensions.Aglare.plugin import agp_use_cache
 
 
 # ========================
@@ -197,7 +195,7 @@ class AgbanDownloadThread(Thread):
 			"clips", "concert", "santé", "éducation", "variété"
 		]
 
-		if agp_use_cache.value:
+		if config.plugins.Aglare.cache.value:
 			self.search_tmdb = lru_cache(maxsize=100)(self.search_tmdb)
 			self.search_tvdb = lru_cache(maxsize=100)(self.search_tvdb)
 			self.search_fanart = lru_cache(maxsize=100)(self.search_fanart)
@@ -301,6 +299,7 @@ class AgbanDownloadThread(Thread):
 					# callInThread(self.saveBanner, banner, dwn_poster)
 					# if exists(dwn_poster):
 						# return True, f"[SUCCESS] Banner matched: {title}"
+
 		return False, "[SKIP] No valid Result"
 
 	def search_tvdb(self, dwn_poster, title, shortdesc, fulldesc, year=None, channel=None, api_key=None):

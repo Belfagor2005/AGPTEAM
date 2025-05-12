@@ -10,7 +10,7 @@ from __future__ import absolute_import, print_function
 #  License: CC BY-NC-SA 4.0                             #
 #  https://creativecommons.org/licenses/by-nc-sa/4.0    #
 #                                                       #
-#  Last Modified: "15:14 - 20250401"                    #
+#  Last Modified: "18:14 - 20250512"                    #
 #                                                       #
 #  Credits:                                             #
 #  - Original concept by Lululla                        #
@@ -50,7 +50,7 @@ from re import compile, sub, DOTALL, IGNORECASE
 from unicodedata import normalize, category
 import sys
 from Components.config import config
-from .Agp_Utils import logger
+# from .Agp_Utils import logger
 # from functools import lru_cache
 
 convtext_cache = {}
@@ -190,17 +190,6 @@ def sanitize_filename(name):
 	return name
 
 
-try:
-	# from .Agp_lib import convtext
-	from .Converlib import convtext
-except ImportError:
-	logger.warning("AGP Utils ImportError convtext not found, using fallback")
-
-	def convtext(x):
-		"""Fallback text conversion function"""
-		return x
-
-
 # Character replacement mapping for filename sanitization
 CHAR_REPLACEMENTS = {
 	"$": "s",
@@ -267,7 +256,7 @@ CHAR_REPLACEMENTS = {
 
 
 # @lru_cache(maxsize=2500)  # not tested
-def convtextXXX(text):
+def convtext(text):
 	try:
 		if text is None:
 			# print("return None original text:", type(text))

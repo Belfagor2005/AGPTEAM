@@ -72,8 +72,9 @@ from ServiceReference import ServiceReference
 import NavigationInstance
 
 # Local imports
+from Plugins.Extensions.Aglare.api_config import cfg
+from Plugins.Extensions.Aglare.api_config import ApiKeyManager
 from Components.Renderer.AgbDownloadThread import AgbDownloadThread
-from Plugins.Extensions.Aglare.plugin import ApiKeyManager, config
 from .Agp_Requests import intCheck
 from .Agp_Utils import (
 	BACKDROP_FOLDER,
@@ -94,6 +95,7 @@ epgcache.load()
 pdb = LifoQueue()
 # Create an API Key Manager instance
 api_key_manager = ApiKeyManager()
+
 extensions = ['.jpg']
 autobouquet_file = None
 apdb = dict()
@@ -219,10 +221,10 @@ class AglareBackdropX(Renderer):
 		try:
 			# Handle different source types
 			if source_type is ServiceEvent:
-				service = self.source.getCurrentService()
+				service = source.getCurrentService()
 				servicetype = "ServiceEvent"
 			elif source_type is CurrentService:
-				service = self.source.getCurrentServiceRef()
+				service = source.getCurrentServiceRef()
 				servicetype = "CurrentService"
 			elif source_type is EventInfo:
 				service = NavigationInstance.instance.getCurrentlyPlayingServiceReference()
@@ -235,12 +237,12 @@ class AglareBackdropX(Renderer):
 				else:
 					# Clean and store event data
 					# self.canal[0] = None
-					self.canal[1] = self.source.event.getBeginTime()
+					self.canal[1] = source.event.getBeginTime()
 					# event_name = self.source.event.getEventName().replace('\xc2\x86', '').replace('\xc2\x87', '')
-					event_name = sub(r"[\u0000-\u001F\u007F-\u009F]", "", self.source.event.getEventName())
+					event_name = sub(r"[\u0000-\u001F\u007F-\u009F]", "", source.event.getEventName())
 					self.canal[2] = event_name
-					self.canal[3] = self.source.event.getExtendedDescription()
-					self.canal[4] = self.source.event.getShortDescription()
+					self.canal[3] = source.event.getExtendedDescription()
+					self.canal[4] = source.event.getShortDescription()
 					self.canal[5] = event_name
 					# self._log_debug(f"Event details set: {self.canal}")
 			else:
@@ -443,9 +445,11 @@ class AglareBackdropX(Renderer):
 class BackdropDB(AgbDownloadThread):
 	"""Handles Backdrop downloading and database management"""
 	def __init__(self, providers=None):
-		AgbDownloadThread.__init__()
+		# AgbDownloadThread.__init__()
+		super().__init__()
 
 		self.queued_backdrops = set()
+		self.backdrop_cache = {}
 		self.executor = ThreadPoolExecutor(max_workers=4)
 		self.extensions = extensions
 		self.logdbg = None
@@ -577,6 +581,14 @@ class BackdropDB(AgbDownloadThread):
 			logger.error(f"backdrop validation error: {str(e)}")
 			return False
 
+	# def update_backdrop_cache(self, backdrop_name, path):
+		# """Force update cache entry"""
+		# self.backdrop_cache[backdrop_name] = path
+		# # Limit cache size
+		# if len(self.backdrop_cache) > 50:
+			# oldest = next(iter(self.backdrop_cache))
+			# del self.backdrop_cache[oldest]
+
 	def mark_failed_attempt(self, canal_name):
 		"""Track failed download attempts"""
 		self._log_debug(f"Failed attempt for {canal_name}")
@@ -616,19 +628,23 @@ class BackdropAutoDB(AgbDownloadThread):
 
 	def __init__(self, providers=None, max_backdrops=1000):
 		"""Initialize the backdrop downloader with provider configurations"""
-		if hasattr(self, '_initialized') and self._initialized:
-			return
-
-		AgbDownloadThread.__init__(self)
-		self.daemon = True
+		"""
+		# if hasattr(self, '_initialized') and self._initialized:
+			# return
+		"""
+		super().__init__()
+		# AgbDownloadThread.__init__(self)
+		# self._initialized = True
 		self.force_immediate = False
-		self._initialized = True
+		# self._lock = threading.RLock()
 		self._stop_event = threading.Event()
 		self._active_event = threading.Event()
 		self._active_event.set()
+		# self.providers = providers or {}
 		self._scan_lock = Lock()
+		self.daemon = True
 
-		if not config.plugins.Aglare.bkddown.value:
+		if not cfg.bkddown.value:
 			logger.debug("BackdropAutoDB: Automatic downloads DISABLED in configuration")
 			self.active = False
 			return
@@ -641,8 +657,8 @@ class BackdropAutoDB(AgbDownloadThread):
 		logger.debug("BackdropAutoDB: Automatic downloads ENABLED in configuration")
 		self.active = True
 
+		# self.providers = providers or api_key_manager.get_active_providers()
 		self.providers = api_key_manager.get_active_providers()
-
 		self.pstcanal = None
 		self.extensions = extensions
 		self.service_queue = []
@@ -660,7 +676,7 @@ class BackdropAutoDB(AgbDownloadThread):
 		self.backdrop_download_count = 0
 		self.provider_engines = self.build_providers()
 		try:
-			scan_time = config.plugins.Aglare.bscan_time.value
+			scan_time = cfg.bscan_time.value
 			self.scheduled_hour = int(scan_time[0])
 			self.scheduled_minute = int(scan_time[1])
 			logger.debug(f"Configured time: {self.scheduled_hour:02d}:{self.scheduled_minute:02d}")
@@ -726,6 +742,9 @@ class BackdropAutoDB(AgbDownloadThread):
 
 	def run(self):
 		logger.info("BackdropAutoDB THREAD STARTED")
+		# logger.info("RUNNING IN TEST MODE - BYPASSING SCHEDULER")
+		# self._execute_scheduled_scan()  # Force immediate scan
+		# logger.info("TEST SCAN COMPLETED")
 		try:
 			while not self._stop_event.is_set():
 				if self.force_immediate:
@@ -760,12 +779,14 @@ class BackdropAutoDB(AgbDownloadThread):
 		finally:
 			logger.info("BackdropAutoDB STOPPED")
 
-	def force_immediate_download(self):
-		"""Forza lo scan bypassando l'attesa"""
-		logger.debug("Setting force_immediate flag and waking up threads")
-		self.force_immediate = True
-		self._stop_event.set()
-		self._stop_event.clear()
+	def _execute_immediate_scan(self):
+		with self._scan_lock:
+			logger.debug("Starting immediate scan")
+			self._full_scan()
+			self._process_services()
+			self.force_immediate = False
+			self._stop_event.set()
+			self._stop_event.clear()
 
 	def _calculate_next_run(self, current_time):
 		if self.force_immediate:
@@ -781,6 +802,7 @@ class BackdropAutoDB(AgbDownloadThread):
 		)
 		if next_run <= current_time:
 			next_run += timedelta(days=1)
+
 		logger.debug(f"Next scan: {next_run.strftime('%Y-%m-%d %H:%M:%S')}")
 		return next_run
 
@@ -1063,7 +1085,7 @@ else:
 
 
 # automatic download
-if config.plugins.Aglare.bkddown.value:
+if cfg.bkddown.value:
 	logger.debug("Starting BackdropAutoDB...")
 
 	# Stop existing instance if any

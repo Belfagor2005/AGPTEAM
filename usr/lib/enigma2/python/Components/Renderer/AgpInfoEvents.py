@@ -10,7 +10,7 @@ from __future__ import absolute_import, print_function
 #  License: CC BY-NC-SA 4.0                             #
 #  https://creativecommons.org/licenses/by-nc-sa/4.0    #
 #  from original code by @digiteng 2021                 #
-#  Last Modified: "15:14 - 20250401"                    #
+#  Last Modified: "18:14 - 20250512"                    #
 #                                                       #
 #  Credits:                                             #
 #  - Original concept by Lululla                        #
@@ -59,13 +59,15 @@ from urllib.request import urlopen
 from re import findall
 
 # Enigma2 imports
+from Components.config import config
 from Components.Renderer.Renderer import Renderer
 from Components.VariableText import VariableText
 import gettext
 from enigma import eLabel, eEPGCache, eTimer
 
 # Local imports
-from Plugins.Extensions.Aglare.plugin import ApiKeyManager, config
+from Plugins.Extensions.Aglare.api_config import cfg
+from Plugins.Extensions.Aglare.api_config import ApiKeyManager
 from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, logger
 from .Agp_Requests import intCheck
 from .Agp_lib import quoteEventName
@@ -75,14 +77,13 @@ if not POSTER_FOLDER.endswith("/"):
 
 # Constants
 api_key_manager = ApiKeyManager()
-DATA_SOURCE = config.plugins.Aglare.info_display_mode.value
+DATA_SOURCE = cfg.info_display_mode.value
 epgcache = eEPGCache.getInstance()
 api_lock = Lock()
 _ = gettext.gettext
 
 
 """skin custom configuration
-
 
 <widget source="ServiceEvent" render="AgpInfoEvents"
 	position="100,400"
