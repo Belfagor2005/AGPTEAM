@@ -759,7 +759,7 @@ class BackdropAutoDB(AgbDownloadThread):
 
 				while datetime.now() < next_run and not self._stop_event.is_set():
 					remaining = (next_run - datetime.now()).total_seconds()
-					logger.debug(f"Residual wait: {remaining:.1f}s")
+					# logger.debug(f"Residual wait: {remaining:.1f}s")
 
 					for _ in range(int(min(remaining, 1))):
 						if self._stop_event.is_set() or self.force_immediate:
