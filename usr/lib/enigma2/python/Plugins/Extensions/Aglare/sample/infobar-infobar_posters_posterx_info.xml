@@ -1,0 +1,10 @@
+
+
+<eLabel backgroundColor="backgroundtrans2" cornerRadius="30" position="20,427" size="1880,376" zPosition="-99" />
+<widget source="session.Event_Now" render="AglarePosterX" position="40,440" size="240,360" cornerRadius="14" zPosition="66" borderWidth="1" borderColor="igsd" />
+ <ePixmap name="" position="1436,745" size="200,20" pixmap="skin_default/starsbar_empty.png" alphatest="blend" transparent="1" zPosition="20" />
+  <widget source="session.Event_Now" render="AgpStarX" position="1436,745" size="200,20" pixmap="skin_default/starsbar_filled.png" alphatest="blend" transparent="1" zPosition="22" />
+  <widget render="AgpGenreX" source="session.Event_Now" position="1670,730" size="160,45" zPosition="99" transparent="1" />
+<widget source="session.Event_Now" render="AgpInfoEvents" size="1100,300" position="310,498" font="Regular; 22" transparent="1" zPosition="5" />
+<widget source="session.Event_Now" render="AglareBackdropX" position="1436,460" size="450,255" zPosition="2" cornerRadius="20" />
+<widget source="session.Event_Now" render="AgpParentalX" position="1840,730" size="45,45" zPosition="10" transparent="1" alphatest="blend" scale="1" />
