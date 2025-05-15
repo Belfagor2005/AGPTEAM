@@ -1,4 +1,3 @@
-
 <screen name="ChannelSelection" position="0,0" size="1920,1080" title="Channel Selection" backgroundColor="black" flags="wfNoBorder">
   <panel name="ScreenTemplateAllColorButtons_menu" />
   <panel name="timedate" />
