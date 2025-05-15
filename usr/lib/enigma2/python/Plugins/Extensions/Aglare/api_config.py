@@ -73,25 +73,25 @@ class ApiKeyManager:
 	def __init__(self):
 		self.API_CONFIG = {
 			"tmdb": {
-				"skin_file": "tmdbkey",
+				"skin_file": "tmdb_api",
 				"default_key": "3c3efcf47c3577558812bb9d64019d65",
 				"config_entry": config.plugins.Aglare.tmdb_api,
 				"load_action": config.plugins.Aglare.load_tmdb_api
 			},
 			"fanart": {
-				"skin_file": "fanartkey",
+				"skin_file": "fanart_api",
 				"default_key": "6d231536dea4318a88cb2520ce89473b",
 				"config_entry": config.plugins.Aglare.fanart_api,
 				"load_action": config.plugins.Aglare.load_fanart_api
 			},
 			"thetvdb": {
-				"skin_file": "thetvdbkey",
+				"skin_file": "thetvdb_api",
 				"default_key": "a99d487bb3426e5f3a60dea6d3d3c7ef",
 				"config_entry": config.plugins.Aglare.thetvdb_api,
 				"load_action": config.plugins.Aglare.load_thetvdb_api
 			},
 			"omdb": {
-				"skin_file": "omdbkey",
+				"skin_file": "omdb_api",
 				"default_key": "cb1d9f55",
 				"config_entry": config.plugins.Aglare.omdb_api,
 				"load_action": config.plugins.Aglare.load_omdb_api
@@ -110,7 +110,10 @@ class ApiKeyManager:
 		active = {}
 		for api, cfg in self.API_CONFIG.items():
 			enabled = getattr(config.plugins.Aglare, api).value
-			key_valid = bool(cfg['config_entry'].value and cfg['config_entry'].value != cfg['default_key'])
+			api_value = cfg['config_entry'].value
+
+			# Accept any non-empty API key
+			key_valid = bool(api_value)
 
 			if enabled and key_valid:
 				active[api] = True

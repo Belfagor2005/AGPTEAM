@@ -476,9 +476,30 @@ class AglareSetup(ConfigListScreen, Screen):
 			cfg.download_now_poster.value = False
 			cfg.download_now_poster.save()
 
-			active_providers = api_key_manager.get_active_providers()
-			if not active_providers:
-				raise ValueError(_("No active providers with valid API keys"))
+			# Otteniamo TUTTI i provider abilitati, anche con chiavi di default
+			enabled_providers = {}
+			using_default_keys = False
+
+			for api, cfgdata in api_key_manager.API_CONFIG.items():
+				enabled = getattr(config.plugins.Aglare, api).value
+				api_value = cfgdata["config_entry"].value
+				is_default = (api_value == cfgdata["default_key"])
+
+				if enabled:
+					enabled_providers[api] = True
+					if is_default:
+						using_default_keys = True
+
+			if not enabled_providers:
+				raise ValueError(_("No active providers enabled"))
+
+			if using_default_keys:
+				current_session.open(
+					MessageBox,
+					_("Warning: You are using default API keys!\nWe strongly recommend configuring your own API keys in the plugin settings."),
+					MessageBox.TYPE_INFO,
+					timeout=5
+				)
 
 			current_session.open(
 				MessageBox,
@@ -489,7 +510,7 @@ class AglareSetup(ConfigListScreen, Screen):
 
 			def _start_download(session_ref=current_session):
 				try:
-					startPosterAutoDB(active_providers, session_ref)
+					startPosterAutoDB(enabled_providers, session=session_ref)
 				except Exception as e:
 					reactor.callFromThread(
 						session_ref.open,
@@ -503,7 +524,7 @@ class AglareSetup(ConfigListScreen, Screen):
 		except Exception as e:
 			self.session.open(
 				MessageBox,
-				_("Init Error: {}").format(str(e)),
+				_("Poster download error: {}").format(str(e)),
 				MessageBox.TYPE_ERROR
 			)
 
@@ -514,9 +535,30 @@ class AglareSetup(ConfigListScreen, Screen):
 			cfg.download_now_backdrop.value = False
 			cfg.download_now_backdrop.save()
 
-			active_providers = api_key_manager.get_active_providers()
-			if not active_providers:
-				raise ValueError("No active providers with valid API keys")
+			# Get all enabled providers, including those using default keys
+			enabled_providers = {}
+			using_default_keys = False
+
+			for api, cfgdata in api_key_manager.API_CONFIG.items():
+				enabled = getattr(config.plugins.Aglare, api).value
+				api_value = cfgdata["config_entry"].value
+				is_default = (api_value == cfgdata["default_key"])
+
+				if enabled:
+					enabled_providers[api] = True
+					if is_default:
+						using_default_keys = True
+
+			if not enabled_providers:
+				raise ValueError(_("No active providers enabled"))
+
+			if using_default_keys:
+				current_session.open(
+					MessageBox,
+					_("Warning: You are using default API keys!\nWe strongly recommend configuring your own API keys in the plugin settings."),
+					MessageBox.TYPE_INFO,
+					timeout=5
+				)
 
 			current_session.open(
 				MessageBox,
@@ -527,7 +569,7 @@ class AglareSetup(ConfigListScreen, Screen):
 
 			def _start_download(session_ref=current_session):
 				try:
-					startBackdropAutoDB(active_providers, session=session_ref)
+					startBackdropAutoDB(enabled_providers, session=session_ref)
 				except Exception as e:
 					reactor.callFromThread(
 						session_ref.open,
