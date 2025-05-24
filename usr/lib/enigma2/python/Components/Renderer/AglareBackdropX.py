@@ -98,7 +98,7 @@ api_key_manager = ApiKeyManager()
 
 extensions = ['.jpg']
 autobouquet_file = None
-apdb = dict()
+abdb = dict()
 SCAN_TIME = "02:00"
 
 global global_agb_auto_db
@@ -270,8 +270,8 @@ class AglareBackdropX(Renderer):
 				self.canal[5] = self.canal[2]
 				# self._log_debug(f"Event data set: {self.canal}")
 
-				if not autobouquet_file and service_name not in apdb:
-					apdb[service_name] = service_str
+				if not autobouquet_file and service_name not in abdb:
+					abdb[service_name] = service_str
 
 			# Skip if no valid program data
 			if not servicetype or not self.canal[5]:
@@ -663,7 +663,7 @@ class BackdropAutoDB(AgbDownloadThread):
 		self.extensions = extensions
 		self.service_queue = []
 		self.last_scan = 0
-		self.apdb = OrderedDict()  # Active services database
+		self.abdb = OrderedDict()  # Active services database
 		self.max_retries = 3
 		self.current_retry = 0
 
@@ -862,7 +862,7 @@ class BackdropAutoDB(AgbDownloadThread):
 								service_ref = line[9:]
 								if self._is_valid_service(service_ref):
 									services[service_ref] = None
-									self.apdb[service_ref] = service_ref
+									self.abdb[service_ref] = service_ref
 				except Exception as e:
 					self._log_error(f"Error reading bouquet {bouquet}: {str(e)}")
 
@@ -877,7 +877,7 @@ class BackdropAutoDB(AgbDownloadThread):
 
 	def _process_services(self):
 		"""Process all services and download backdrops"""
-		for service_ref in self.apdb.values():
+		for service_ref in self.abdb.values():
 			try:
 				events = epgcache.lookupEvent(['IBDCTESX', (service_ref, 0, -1, 1440)])
 				if not events:
