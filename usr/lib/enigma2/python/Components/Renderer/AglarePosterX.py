@@ -155,39 +155,47 @@ class AglarePosterX(Renderer):
 	def __init__(self):
 		"""Initialize the poster renderer"""
 		Renderer.__init__(self)
-		self.adsl = intCheck()
-		if not self.adsl:
-			logger.warning("AglarePosterX No internet connection, offline mode activated")
-			return
-		else:
-			logger.info("AglarePosterX Internet connection verified")
-		self.nxts = 0
+
+		self._stop_event = threading.Event()
+		self._active_event = threading.Event()
+		self._active_event.set()
+		self.poster_cache = {}
+		self.queued_posters = set()
 		self.storage_path = POSTER_FOLDER
 		self.extensions = extensions
+		self.providers = {}
+		self.nxts = 0
+
 		self.canal = [None] * 6
-		self.pstrNm = None
 		self.oldCanal = None
 		self.pstcanal = None
+		self.pstrNm = None
 		self.backrNm = None
+
 		self.log_file = "/tmp/agplog/AglarePosterX.log"
 		if not exists("/tmp/agplog"):
 			makedirs("/tmp/agplog")
-
-		# Initialize default providers configuration
-		self.providers = api_key_manager.get_active_providers()
-
 		clear_all_log()
-		self.queued_posters = set()
-		self.loaded_posters = set()
-		self.poster_cache = {}
+
+		self.adsl = intCheck()
+		if not self.adsl:
+			logger.warning("No internet - modae offline")
+			return
+
 		if len(self.poster_cache) > 50:
 			self.poster_cache.clear()
+
 		self.show_timer = eTimer()
 		self.show_timer.callback.append(self.showPoster)
-		# Initialize helper classes with providers config
+
+		self.providers = api_key_manager.get_active_providers()
 		self.poster_db = PosterDB(providers=self.providers)
 		self.poster_auto_db = PosterAutoDB(providers=self.providers)
+
+		# -------------------------------------------------
 		logger.info("AglarePosterX Renderer initialized")
+		logger.debug(f"Path archiving: {self.storage_path}")
+		logger.debug(f"Provider actives: {list(self.providers.keys())}")
 
 	def applySkin(self, desktop, parent):
 		"""Apply skin configuration and settings"""
@@ -449,12 +457,14 @@ class PosterDB(AgpDownloadThread):
 		# AgpDownloadThread.__init__()
 		super().__init__()
 
-		self.queued_posters = set()
+		self.providers = {}
 		self.poster_cache = {}
-		self.executor = ThreadPoolExecutor(max_workers=3)
-		self.extensions = extensions
-		self.logdbg = None
+		self.provider_engines = []
 		self.pstcanal = None
+		self.logdbg = None
+		self.extensions = extensions
+		self.queued_posters = set()
+		self.executor = ThreadPoolExecutor(max_workers=3)
 		self.service_pattern = compile(r'^#SERVICE (\d+):([^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+)')
 
 		self.log_file = "/tmp/agplog/PosterDB.log"
@@ -636,46 +646,47 @@ class PosterAutoDB(AgpDownloadThread):
 		super().__init__()
 		# AgpDownloadThread.__init__(self)
 		# self._initialized = True
-		self.force_immediate = False
-		# self._lock = threading.RLock()
 		self._stop_event = threading.Event()
 		self._active_event = threading.Event()
-		self._active_event.set()
-		# self.providers = providers or {}
 		self._scan_lock = Lock()
+		self.poster_download_count = 0
+		self.max_posters = max_posters
+		self.min_disk_space = 100
+		self.max_poster_age = 30
+		self.last_scan = 0
+
+		self.apdb = OrderedDict()
+		self.service_queue = []
+		self.processed_titles = OrderedDict()
+		self.provider_engines = []
+
+		self.providers = {}
+		self.pstcanal = None
+		self.extensions = extensions
+		self.poster_folder = "/tmp/posters"
+		self.scheduled_hour = 0
+		self.scheduled_minute = 0
+		self.last_scheduled_run = None
+		self.log_file = "/tmp/agplog/PosterAutoDB.log"
 		self.daemon = True
+		self.force_immediate = False
+		self.active = False
+		self._active_event.set()
 
 		if not cfg.pstdown.value:
 			logger.debug("PosterAutoDB: Automatic downloads DISABLED in configuration")
-			self.active = False
 			return
 
 		if not any(api_key_manager.get_active_providers().values()):
 			logger.debug("Disabled - no active provider")
-			self.active = False
 			return
 
-		logger.debug("PosterAutoDB: Automatic downloads ENABLED in configuration")
+		# Proceed with full initialization
 		self.active = True
-
-		# self.providers = providers or api_key_manager.get_active_providers()
 		self.providers = api_key_manager.get_active_providers()
-		self.pstcanal = None
-		self.extensions = extensions
-		self.service_queue = []
-		self.last_scan = 0
-		self.apdb = OrderedDict()  # Active services database
-		self.max_retries = 3
-		self.current_retry = 0
-
-		self.min_disk_space = 100
-		self.max_poster_age = 30
 		self.poster_folder = self._init_poster_folder()
-		self.max_posters = max_posters
-
-		self.processed_titles = OrderedDict()  # Tracks processed shows
-		self.poster_download_count = 0
 		self.provider_engines = self.build_providers()
+		logger.debug("PosterAutoDB: Automatic downloads ENABLED in configuration")
 		try:
 			scan_time = cfg.pscan_time.value
 			self.scheduled_hour = int(scan_time[0])
@@ -683,16 +694,11 @@ class PosterAutoDB(AgpDownloadThread):
 			logger.debug(f"Configured time: {self.scheduled_hour:02d}:{self.scheduled_minute:02d}")
 		except Exception as e:
 			logger.error("Error parsing scan time: " + str(e))
-			self.scheduled_hour = 0
-			self.scheduled_minute = 0
 
-		self.last_scheduled_run = None
-
-		self.log_file = "/tmp/agplog/PosterAutoDB.log"
 		if not exists("/tmp/agplog"):
 			makedirs("/tmp/agplog")
-
 		self._log("=== INITIALIZATION COMPLETE ===")
+		self._log("=== READY ===")
 
 	def __new__(cls, *args, **kwargs):
 		if cls._instance is None:

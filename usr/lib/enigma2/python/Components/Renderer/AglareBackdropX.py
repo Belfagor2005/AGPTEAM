@@ -155,39 +155,47 @@ class AglareBackdropX(Renderer):
 	def __init__(self):
 		"""Initialize the backdrop renderer"""
 		Renderer.__init__(self)
+
+		self._stop_event = threading.Event()
+		self._active_event = threading.Event()
+		self._active_event.set()
+		self.backdrop_cache = {}
+		self.queued_backdrops = set()
+		self.storage_path = BACKDROP_FOLDER
+		self.extensions = extensions
+		self.providers = {}
+		self.nxts = 0
+
+		self.canal = [None] * 6
+		self.oldCanal = None
+		self.pstcanal = None
+		self.pstrNm = None
+		self.backrNm = None
+
+		self.log_file = "/tmp/agplog/AglareBackdropX.log"
+		if not exists("/tmp/agplog"):
+			makedirs("/tmp/agplog")
+		clear_all_log()
+
 		self.adsl = intCheck()
 		if not self.adsl:
 			logger.warning("AglareBackdropX No internet connection, offline mode activated")
 			return
-		else:
-			logger.info("AglareBackdropX Internet connection verified")
-		self.nxts = 0
-		self.storage_path = BACKDROP_FOLDER
-		self.extensions = extensions
-		self.canal = [None] * 6
-		self.pstrNm = None
-		self.oldCanal = None
-		self.pstcanal = None
-		self.backrNm = None
-		self.log_file = "/tmp/agplog/AglareBackdropX.log"
-		if not exists("/tmp/agplog"):
-			makedirs("/tmp/agplog")
 
-		# Initialize default providers configuration
-		self.providers = api_key_manager.get_active_providers()
-
-		clear_all_log()
-		self.queued_backdrops = set()
-		self.loaded_backdrops = set()
-		self.backdrop_cache = {}
 		if len(self.backdrop_cache) > 50:
 			self.backdrop_cache.clear()
+
 		self.show_timer = eTimer()
 		self.show_timer.callback.append(self.showBackdrop)
-		# Initialize helper classes with providers config
+
+		self.providers = api_key_manager.get_active_providers()
 		self.backdrop_db = BackdropDB(providers=self.providers)
 		self.backdrop_auto_db = BackdropAutoDB(providers=self.providers)
+
+		# -------------------------------------------------
 		logger.info("AglareBackdropX Renderer initialized")
+		logger.debug(f"Path archiving: {self.storage_path}")
+		logger.debug(f"Provider actives: {list(self.providers.keys())}")
 
 	def applySkin(self, desktop, parent):
 		"""Apply skin configuration and settings"""
@@ -350,6 +358,7 @@ class AglareBackdropX(Renderer):
 	# def showBackdrop(self, backdrop_path=None):
 		# if not self.instance:
 			# return
+
 		# try:
 			# path = backdrop_path or self.backrNm
 			# if not path:
@@ -446,14 +455,17 @@ class BackdropDB(AgbDownloadThread):
 	"""Handles Backdrop downloading and database management"""
 	def __init__(self, providers=None):
 		# AgbDownloadThread.__init__()
+
 		super().__init__()
 
-		self.queued_backdrops = set()
+		self.providers = {}
 		self.backdrop_cache = {}
-		self.executor = ThreadPoolExecutor(max_workers=4)
-		self.extensions = extensions
-		self.logdbg = None
+		self.provider_engines = []
 		self.pstcanal = None
+		self.logdbg = None
+		self.extensions = extensions
+		self.queued_backdrops = set()
+		self.executor = ThreadPoolExecutor(max_workers=3)
 		self.service_pattern = compile(r'^#SERVICE (\d+):([^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+)')
 
 		self.log_file = "/tmp/agplog/BackdropDB.log"
@@ -635,46 +647,47 @@ class BackdropAutoDB(AgbDownloadThread):
 		super().__init__()
 		# AgbDownloadThread.__init__(self)
 		# self._initialized = True
-		self.force_immediate = False
-		# self._lock = threading.RLock()
 		self._stop_event = threading.Event()
 		self._active_event = threading.Event()
-		self._active_event.set()
-		# self.providers = providers or {}
 		self._scan_lock = Lock()
+		self.backdrop_download_count = 0
+		self.max_backdrops = max_backdrops
+		self.min_disk_space = 100
+		self.max_backdrop_age = 30
+		self.last_scan = 0
+
+		self.abdb = OrderedDict()
+		self.service_queue = []
+		self.processed_titles = OrderedDict()
+		self.provider_engines = []
+
+		self.providers = {}
+		self.pstcanal = None
+		self.extensions = extensions
+		self.backdrop_folder = "/tmp/backdrops"
+		self.scheduled_hour = 0
+		self.scheduled_minute = 0
+		self.last_scheduled_run = None
+		self.log_file = "/tmp/agplog/BackdropAutoDB.log"
 		self.daemon = True
+		self.force_immediate = False
+		self.active = False
+		self._active_event.set()
 
 		if not cfg.bkddown.value:
 			logger.debug("BackdropAutoDB: Automatic downloads DISABLED in configuration")
-			self.active = False
 			return
 
 		if not any(api_key_manager.get_active_providers().values()):
 			logger.debug("Disabilitato - nessun provider attivo")
-			self.active = False
 			return
 
-		logger.debug("BackdropAutoDB: Automatic downloads ENABLED in configuration")
+		# Proceed with full initialization
 		self.active = True
-
-		# self.providers = providers or api_key_manager.get_active_providers()
 		self.providers = api_key_manager.get_active_providers()
-		self.pstcanal = None
-		self.extensions = extensions
-		self.service_queue = []
-		self.last_scan = 0
-		self.abdb = OrderedDict()  # Active services database
-		self.max_retries = 3
-		self.current_retry = 0
-
-		self.min_disk_space = 100
-		self.max_backdrop_age = 30
 		self.backdrop_folder = self._init_backdrop_folder()
-		self.max_backdrops = max_backdrops
-
-		self.processed_titles = OrderedDict()  # Tracks processed shows
-		self.backdrop_download_count = 0
 		self.provider_engines = self.build_providers()
+		logger.debug("BackdropAutoDB: Automatic downloads ENABLED in configuration")
 		try:
 			scan_time = cfg.bscan_time.value
 			self.scheduled_hour = int(scan_time[0])
@@ -682,16 +695,11 @@ class BackdropAutoDB(AgbDownloadThread):
 			logger.debug(f"Configured time: {self.scheduled_hour:02d}:{self.scheduled_minute:02d}")
 		except Exception as e:
 			logger.error("Error parsing scan time: " + str(e))
-			self.scheduled_hour = 0
-			self.scheduled_minute = 0
 
-		self.last_scheduled_run = None
-
-		self.log_file = "/tmp/agplog/BackdropAutoDB.log"
 		if not exists("/tmp/agplog"):
 			makedirs("/tmp/agplog")
-
 		self._log("=== INITIALIZATION COMPLETE ===")
+		self._log("=== READY ===")
 
 	def __new__(cls, *args, **kwargs):
 		if cls._instance is None:
