@@ -128,17 +128,17 @@ class AgpInfoEvents(Renderer, VariableText):
 	def __init__(self):
 		Renderer.__init__(self)
 		VariableText.__init__(self)
+		self.current_request = None
+		self.last_event = None
+		self.lock = Lock()
+		self.text = ""
+
 		self.adsl = intCheck()
 		if not self.adsl:
 			logger.warning("AgpInfoEvents No internet connection, offline mode activated")
 			return
-		else:
-			logger.info("AgpInfoEvents Internet connection verified")
+
 		self.storage_path = POSTER_FOLDER
-		self.current_request = None
-		self.lock = Lock()
-		self.last_event = None
-		self.text = ""
 		self.timer = eTimer()
 		self.timer.callback.append(self.delayed_update)
 		logger.info("AgpInfoEvents Renderer initialized")

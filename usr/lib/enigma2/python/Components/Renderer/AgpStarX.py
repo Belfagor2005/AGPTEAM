@@ -137,21 +137,23 @@ class AgpStarX(VariableValue, Renderer):
 	def __init__(self):
 		Renderer.__init__(self)
 		VariableValue.__init__(self)
+
+		self.last_channel = None
+		self.current_request = None
+		self.lock = Lock()
+		self.__start = 0
+		self.__end = 100
+		self.text = ""
+		self.epgcache = eEPGCache.getInstance()
+
 		self.adsl = intCheck()
 		if not self.adsl:
 			logger.warning("AgpStarX No internet connection, offline mode activated")
 			return
-		else:
-			logger.info("AgpStarX Internet connection verified")
-		self.__start = 0
-		self.__end = 100
-		self.text = ""
-		self.current_request = None
-		self.lock = Lock()
-		self._setup_caching()
-		self.last_channel = None
+
 		self.rating_source = cfg.rating_source.value
-		self.epgcache = eEPGCache.getInstance()
+		self._setup_caching()
+
 		logger.info("AgpStarX Renderer initialized")
 
 	def changed(self, what):

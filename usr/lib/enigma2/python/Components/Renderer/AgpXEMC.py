@@ -109,23 +109,21 @@ class AgpXEMC(Renderer):
 
 	def __init__(self):
 		Renderer.__init__(self)
+		self.storage_path = IMOVIE_FOLDER
+		self.release_year = None								   
+		clear_all_log()
 		self.adsl = intCheck()
 		if not self.adsl:
 			logger.warning("AgpXEMC No internet connection, offline mode activated")
 			return
-		else:
-			logger.info("AgpXEMC Internet connection verified")
+
 		if not cfg.xemc_poster.value:
 			logger.debug("Movie renderer disabled in configuration")
 			return
-		self.storage_path = IMOVIE_FOLDER
-		# self.timer = eTimer()
-		# self.timer.callback.append(self.waitPoster)
-		self.release_year = None
+
 		self._poster_timer = eTimer()
 		self._poster_timer.callback.append(self._retryPoster)
 		logger.info("AGP Movie Renderer initialized")
-		clear_all_log()
 
 	def applySkin(self, desktop, parent):
 		if not cfg.xemc_poster.value:
@@ -329,6 +327,8 @@ class PosterDBEMC(AgpDownloadThread):
 	def __init__(self, providers=None):
 		super().__init__()
 		self.executor = ThreadPoolExecutor(max_workers=2)
+		self.providers = {}
+		self.provider_engines = []
 		self.queued = set()
 		self.lock = Lock()
 		self.api = api_key_manager

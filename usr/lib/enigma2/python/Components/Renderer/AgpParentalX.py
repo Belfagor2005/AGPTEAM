@@ -145,15 +145,15 @@ class AgpParentalX(Renderer):
 
 	def __init__(self):
 		Renderer.__init__(self)
+		self.last_event = None
+		self.current_request = None
+		self.lock = Lock()
+
 		self.adsl = intCheck()
 		if not self.adsl:
 			logger.warning("AgpParentalX No internet connection, offline mode activated")
 			return
-		else:
-			logger.info("AgpParentalX Internet connection verified")
-		self.current_request = None
-		self.lock = Lock()
-		self.last_event = None
+
 		self.icon_path = join(PARENTAL_ICON_PATH, DEFAULT_ICON)
 		self.storage_path = POSTER_FOLDER
 		logger.info("AgpParentalX Renderer initialized")

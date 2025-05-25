@@ -290,12 +290,12 @@ class AgpGenreX(Renderer):
 
 	def __init__(self):
 		Renderer.__init__(self)
+
 		self.adsl = intCheck()
 		if not self.adsl:
 			logger.warning("AgpGenreX No internet connection, offline mode activated")
 			return
-		else:
-			logger.info("AgpGenreX Internet connection verified")
+
 		self.storage_path = POSTER_FOLDER
 		logger.info("AgpGenreX Renderer initialized")
 
