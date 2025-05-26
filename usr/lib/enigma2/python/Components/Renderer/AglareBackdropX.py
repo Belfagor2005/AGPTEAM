@@ -664,7 +664,7 @@ class BackdropAutoDB(AgbDownloadThread):
 		self.providers = {}
 		self.pstcanal = None
 		self.extensions = extensions
-		self.backdrop_folder = "/tmp/backdrops"
+		self.backdrop_folder = "/tmp"
 		self.scheduled_hour = 0
 		self.scheduled_minute = 0
 		self.last_scheduled_run = None

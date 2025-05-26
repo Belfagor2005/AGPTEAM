@@ -663,7 +663,7 @@ class PosterAutoDB(AgpDownloadThread):
 		self.providers = {}
 		self.pstcanal = None
 		self.extensions = extensions
-		self.poster_folder = "/tmp/posters"
+		self.poster_folder = "/tmp"
 		self.scheduled_hour = 0
 		self.scheduled_minute = 0
 		self.last_scheduled_run = None
