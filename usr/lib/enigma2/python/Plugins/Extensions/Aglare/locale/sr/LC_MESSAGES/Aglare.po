@@ -1,0 +1,394 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Aglare\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-04-10 18:47+0800\n"
+"PO-Revision-Date: 2025-05-26 20:37+0200\n"
+"Last-Translator: milan58 <milan58>\n"
+"Language-Team: milan58\n"
+"Language: sr@latin\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.5\n"
+
+msgid "Add"
+msgstr "Dodaj"
+
+msgid ""
+"Aglare update was done!!!\n"
+"Do you want to restart the GUI now?"
+msgstr ""
+"Ažuriranje Aglare je završeno!!!\n"
+"Da li želite da ponovo pokrenete grafički korisnički interfejs sad?"
+
+msgid "Back"
+msgstr "Nazad"
+
+msgid "Backdrop"
+msgstr "Pozadina"
+
+msgid "BebasNeue"
+msgstr "BebasNeue"
+
+msgid "Black"
+msgstr "Crna"
+
+msgid "Blue"
+msgstr "Plava"
+
+msgid "Brown"
+msgstr "Braon"
+
+msgid "CD"
+msgstr "CD"
+
+msgid "Cancel"
+msgstr "Otkaži"
+
+msgid "ChannelSelection Style:"
+msgstr "Stil Izbora Kanala:"
+
+msgid "ChannelSelection_1_Poster"
+msgstr "Poster_1_Izbor Kanala"
+
+msgid "ChannelSelection_4_Posters"
+msgstr "Poster_4_Izbor Kanala"
+
+msgid "ChannelSelection_6_Posters"
+msgstr "Poster_6_Izbor Kanala"
+
+msgid "ChannelSelection_BackDrop_H"
+msgstr "Izbor Kanala_Pozadina_H"
+
+msgid "ChannelSelection_BackDrop_V"
+msgstr "Izbor Kanala_Pozadina_V"
+
+msgid "ChannelSelection_NO_Posters"
+msgstr "Izbor Kanala_BEZ_Postera"
+
+msgid "ChannelSelection_NO_Posters_NO_Picon"
+msgstr "Izbor Kanala_BEZ_Postera_BEZ_Pikona"
+
+msgid "ChannelSelection_big_mini_tv"
+msgstr "Izbor Kanala_veliki_mini_tv"
+
+msgid "City"
+msgstr "Grad"
+
+msgid "Color Style:"
+msgstr "Stil Boje:"
+
+msgid "Customization tool for Aglare-FHD Skin"
+msgstr "Podešavajući alat za Aglare-FHD Skin"
+
+msgid "Default"
+msgstr "Zadano"
+
+msgid "Delete"
+msgstr "Izbriši"
+
+msgid "Do you want to save the changes?"
+msgstr "Da li želite da sačuvate izmene?"
+
+msgid "Download in progress..."
+msgstr "Preuzimanje u toku..."
+
+msgid "Downloading Aglare..."
+msgstr "Preuzimanje Aglare..."
+
+msgid "Edit"
+msgstr "Uredi"
+
+msgid "Error by processing the skin file: {}"
+msgstr "Greška pri obradi skina datoteke: {}"
+
+msgid "Error downloading files!"
+msgstr "Greška pri preuzimanju datoteke!"
+
+msgid "EventView Style:"
+msgstr "Stil Prikaza Događaja:"
+
+msgid "EventView_7_Posters"
+msgstr "Poster_7_Prikaz_Događaja"
+
+msgid "EventView_NO_Posters"
+msgstr "Pregled Događaja_BEZ_Postera"
+
+msgid "Exit"
+msgstr "Izlaz"
+
+msgid "File Commander - Addon"
+msgstr "File Commander - Dodatni"
+
+msgid ""
+"GUI needs a restart to apply a new skin.\n"
+"Do you want to Restart the GUI now?"
+msgstr ""
+"GUI je potrebno ponovno pokretanje da bi se primenio novi skin\n"
+"Želite li sada da ponovo pokrenete GUI?"
+
+msgid "Green"
+msgstr "Zelena"
+
+msgid "Green2"
+msgstr "Zelena2"
+
+msgid "Greta"
+msgstr "Greta"
+
+msgid "HandelGotD"
+msgstr "HandelGotD"
+
+msgid "Import Api Key OMDB from /tmp/omdbkey.txt?"
+msgstr "Uvoz API ključa OMDB iz /tmp/omdbkey.txt?"
+
+msgid "Import Api Key TMDB from /tmp/tmdbkey.txt?"
+msgstr "Uvoz API ključa TMDB iz /tmp/tmdbkey.txt?"
+
+msgid "Info..."
+msgstr "Info..."
+
+msgid "InfoBar Date:"
+msgstr "Datum Info Trake:"
+
+msgid "InfoBar PosterX:"
+msgstr "Info Traka PosterX:"
+
+msgid "InfoBar Style:"
+msgstr "Info Traka Stil:"
+
+msgid "InfoBar Weather:"
+msgstr "Info Traka Prognoze:"
+
+msgid "InfoBar Xtraevent:"
+msgstr "Info Traka Xtraevent:"
+
+msgid "Infobar_Date"
+msgstr "Info Traka_Datum"
+
+msgid "Infobar_NO_Date"
+msgstr "Info Traka_BEZ_Datuma"
+
+msgid "Infobar_NO_Weather"
+msgstr "Info Traka_BEZ_Vremena"
+
+msgid "Infobar_Weather"
+msgstr "Info Traka_Prognoze"
+
+msgid "Installing updates!"
+msgstr "Instaliranje ispravke!"
+
+msgid "KhalidArtboldRegular"
+msgstr "KhalidArtbold Regular"
+
+msgid "Load OMDB Apikey from /tmp/omdbkey.txt"
+msgstr "Učitavanje OMDB Apikey iz /tmp/omdbkey.txt"
+
+msgid "Load TMDB Apikey from /tmp/tmdbkey.txt"
+msgstr "Učitavanje TMDB Apikey iz /tmp/tmdbkey.txt"
+
+msgid "Location code"
+msgstr "Lokacija koda"
+
+msgid "MSN location search result"
+msgstr "MSN lokacija rezultat pretrage"
+
+msgid "MV Boli"
+msgstr "MV Boli"
+
+msgid "Magenta"
+msgstr "Magenta"
+
+msgid "Missing %s !"
+msgstr "Nedostaje %s !"
+
+msgid "OFF"
+msgstr "ISKLJ"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "OMDB ApiKey Imported & Stored!"
+msgstr "OMDB ApiKey je Uvežen & Sačuvan!"
+
+msgid "OMDB ApiKey is empty!"
+msgstr "OMDB ApiKey je prazan!"
+
+msgid "ON"
+msgstr "UKLJ"
+
+msgid "Please enter a valid city name."
+msgstr "Unesite važeće ime grada."
+
+msgid "Please enter a valid location code for the city."
+msgstr "Unesite važeći kod lokacije za grad."
+
+msgid "Purple"
+msgstr "Ljubičasta"
+
+msgid "Really delete this WeatherPlugin Entry?"
+msgstr "Stvarno izbrisati stavku Vremenski Plugin?"
+
+msgid "Red"
+msgstr "Crvena"
+
+msgid "Restart GUI now?"
+msgstr "Ponovo pokreni GUI sada?"
+
+msgid "Save"
+msgstr "Sačuvaj"
+
+msgid "Search Code"
+msgstr "Traži Kod"
+
+msgid "SecondInfobar Posterx:"
+msgstr "Druga Info Traka Posterx:"
+
+msgid "SecondInfobar Style:"
+msgstr "Druga Info Traka Stil:"
+
+msgid "SecondInfobar Xtraevent:"
+msgstr "Druga Info Traka Xtraevent :"
+
+msgid "Segoe UI light"
+msgstr "Segoe UI Light"
+
+msgid "Select Your Font:"
+msgstr "Izaberi Svoje Slovo:"
+
+msgid "Server version:"
+msgstr "Server verzija:"
+
+msgid "Settings Apikey Server"
+msgstr "Подешавање Apikey Сервера"
+
+msgid "Settings OMDB APIKEY"
+msgstr "Podešavanje OMDB APIKEY"
+
+msgid "Settings TMDB ApiKey"
+msgstr "Podešavanje TMDB ApiKey"
+
+msgid "Setup Aglare for Aglare-FHD v.%s"
+msgstr "Postavke Aglare za Aglare-FHD v.%s"
+
+msgid "Signup on OMDB and input free personal ApiKey"
+msgstr "Registrujte se na OMDB i unesite besplatni lični ApiKey"
+
+msgid "Signup on TMDB and input free personal ApiKey"
+msgstr "Registrujte se na TMDB i unesite besplatni lični ApiKey"
+
+msgid "Skin Style:"
+msgstr "Skin Stila:"
+
+msgid "Style2"
+msgstr "Stil2"
+
+msgid "Style3"
+msgstr "Stil3"
+
+msgid "Style4"
+msgstr "Stil4"
+
+msgid "Style5 CD"
+msgstr "Stil5 CD"
+
+msgid "Support E2iplayer Skins:"
+msgstr "Podrška E2iplayer Skina:"
+
+msgid "System"
+msgstr "Sistem"
+
+msgid "TMDB ApiKey Imported & Stored!"
+msgstr "TMDB АПИ кључ је увезен & сачуван!"
+
+msgid "TMDB ApiKey is empty!"
+msgstr "TMDB ApiKey je prazan!"
+
+msgid ""
+"The update is available!\n"
+"\n"
+"Do you want to run the update now?"
+msgstr ""
+"Ažuriranje je dostupno!\n"
+"\n"
+"Da li želite da pokrenete ažuriranje sada?"
+
+msgid "Version installed:"
+msgstr "Verzija instalirana:"
+
+msgid "VolumeBar Style:"
+msgstr "Stil Trake Tona:"
+
+msgid "WeatherPlugin: Edit Entry"
+msgstr "WeatherPlugin: Uredi Unos"
+
+msgid "WeatherPlugin: List of Entries"
+msgstr "WeatherPlugin: Lista od Unosa"
+
+msgid "You have the current version Aglare!"
+msgstr "Imate trenutnu verziju Aglare!"
+
+msgid "You have version %s!!!"
+msgstr "Vaša verzija je %s!!!"
+
+msgid ""
+"You need to enter a valid city name before you can search for the location "
+"code."
+msgstr ""
+"Potrebno je da unesete važeće ime grada pre nego što možete da potražite kod "
+"lokacije."
+
+msgid ""
+"[Checkskin] This operation checks if the skin has its components (is not "
+"sure)..\n"
+"Do you really want to continue?"
+msgstr ""
+"[Checkskin] Ova operacija proverava da li skin ima svoje komponente (nije "
+"siguran)..\n"
+"Da li želite da nastavite?"
+
+msgid "imperial system"
+msgstr "imperial sistem"
+
+msgid "metric system"
+msgstr "metric sistem"
+
+msgid "play/show Files"
+msgstr "reprodukuj/prikaži Datoteke"
+
+msgid "volume2"
+msgstr "ton2"
+
+msgid "--------------------------( SKIN GENERAL SETUP )-----------------------"
+msgstr ""
+"------------------------------( OPŠTE POSTAVKE "
+"SKINA )--------------------------"
+
+msgid "--------------------------( SKIN APIKEY SETUP )-----------------------"
+msgstr ""
+"--------------------------(SKIN APIKEY POSTAVKE)-----------------------"
+
+msgid "API KEY SETUP:"
+msgstr "API KEY PODEŠAVANJE:"
+
+msgid "TMDB API:"
+msgstr "TMDB API:"
+
+msgid "--Load TMDB Apikey"
+msgstr "--Učitavanje TMDB Apikey"
+
+msgid "--Set TMDB Apikey"
+msgstr "--Podesi TMDB Apikey"
+
+msgid "OMDB API:"
+msgstr "OMDB API:"
+
+msgid "--Load OMDB Apikey"
+msgstr "--Učitavanje OMDB Apikey"
+
+msgid "--Set OMDB Apikey"
+msgstr "--Podesi OMDB Apikey"
+
+msgid "Setup Aglare"
+msgstr "Postavke Aglare"

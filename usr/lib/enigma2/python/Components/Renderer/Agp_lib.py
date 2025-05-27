@@ -288,7 +288,7 @@ def convtext(text):
 			("n.c.i.s.", "ncis", "replace"),
 			("ncis:", "ncis", "replace"),
 			("ncis - ", "ncis ", "replace"),
-			("mission:", "mission", "replace"),
+			("mission: impossible", "mission impossible", "replace"),
 			("ritorno al futuro:", "ritorno al futuro", "replace"),
 			("cash or trash chi offre di piu", "cash or trash", "replace"),
 

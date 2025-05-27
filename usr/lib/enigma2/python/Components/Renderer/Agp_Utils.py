@@ -526,6 +526,50 @@ def cleanText(text):
 
 
 # @lru_cache(maxsize=2000)
+# def clean_for_tvdb(title):
+    # """
+    # Optimized version for:
+    # 1. Removal of prefixes (Live:, Diretta:)
+    # 2. Proper title capitalization
+    # 3. Preservation of structure (colons/hyphens)
+    # 4. TMDB-compatible formatting
+    # """
+    # # Handle null/empty input
+    # if not title:
+        # return ""
+
+    # try:
+        # # Decode bytes if necessary
+        # if isinstance(title, bytes):
+            # title = title.decode('utf-8', errors='ignore')
+
+        # # Step 1: Remove unwanted prefixes
+        # title = sub(r'^(Live:|Diretta:|NEW:)\s*', '', title, flags=IGNORECASE)
+
+        # # Step 2: Normalize special characters
+        # title = sub(r'[\\/*?:"<>|]', '', title)
+        
+        # # Step 3: Custom replacements
+        # title = sub(r'\bMission Impossible\b', 'Mission: Impossible', title, flags=IGNORECASE)
+        # title = sub(r'\bReconing\b', 'Reckoning', title, flags=IGNORECASE)
+        
+        # # Step 4: Structure formatting
+        # title = sub(r'\s*:\s*', ': ', title)  # Normalize spaces after colons
+        # title = sub(r'\s*-\s*', ' - ', title)  # Normalize spaces around hyphens
+        
+        # # Step 5: Smart capitalization
+        # title = title.strip().title()
+        
+        # # Step 6: Final cleanup
+        # title = sub(r'\s+', ' ', title).strip()
+        
+        # return title
+
+    # except Exception as e:
+        # logger.error("Title cleaning error: " + str(e))
+        # return ""
+
+
 def clean_for_tvdb(title):
 	"""
 	Prepare title for API searches with comprehensive cleaning
