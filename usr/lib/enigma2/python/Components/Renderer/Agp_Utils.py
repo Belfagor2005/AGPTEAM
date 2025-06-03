@@ -71,7 +71,7 @@ from os.path import (
     getsize,
     getmtime,
     basename,
-
+    isdir
 )
 from pathlib import Path
 import glob
@@ -958,35 +958,30 @@ delete_old_files_if_low_disk_space(IMOVIE_FOLDER, min_free_space_mb=50, max_age_
 
 
 def create_secure_log_dir():
-    """Create a secure log directory with safety checks"""
+    """Create a secure log directory with safety checks for Python 2.7"""
     base_tmp = tempfile.gettempdir()
     target_dir = join(base_tmp, "agplog")
 
     try:
         # Create directory with secure permissions
-        makedirs(target_dir, mode=0o700, exist_ok=True)
+        if not exists(target_dir):
+            makedirs(target_dir, 0o700)
+        else:
+            # Ensure existing directory has safe permissions
+            chmod(target_dir, 0o700)
 
         # Verify directory security
-        st = stat(target_dir)
-        # 1. Check it's a real directory
-        if not stat.S_ISDIR(st.st_mode):
+        # 1. Check it's a real directory (using os.path.isdir instead of stat)
+        if not isdir(target_dir):
             return tempfile.mkdtemp(prefix="agplog_")  # Fallback
 
         # 2. Verify ownership
-        if st.st_uid != getuid():
+        if stat(target_dir).st_uid != getuid():
             return tempfile.mkdtemp(prefix="agplog_")  # Fallback
-
-        # 3. Check permissions (should be 700)
-        if st.st_mode & 0o077 != 0:  # Group/others have access?
-            # Attempt to fix permissions
-            try:
-                chmod(target_dir, 0o700)
-            except OSError:
-                return tempfile.mkdtemp(prefix="agplog_")  # Fallback if fix fails
 
         return target_dir
 
-    except OSError:
+    except (OSError, Exception):
         # Fallback to secure tempfile method if any operation fails
         return tempfile.mkdtemp(prefix="agplog_")
 
