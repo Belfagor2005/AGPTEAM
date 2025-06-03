@@ -70,7 +70,6 @@ from Components.Sources.CurrentService import CurrentService
 from Components.Sources.ServiceEvent import ServiceEvent
 from ServiceReference import ServiceReference
 import NavigationInstance
-import tempfile
 
 # Local imports
 from Plugins.Extensions.Aglare.api_config import cfg
@@ -84,8 +83,12 @@ from .Agp_Utils import (
     validate_media_path,
     # MemClean,
     clean_for_tvdb,
-    logger
+    logger,
+    create_secure_log_dir
 )
+
+secure_log_dir = create_secure_log_dir()
+# self.log_file = join(secure_log_dir, "AglarePosterX.log")
 
 if not POSTER_FOLDER.endswith("/"):
     POSTER_FOLDER += "/"
@@ -173,7 +176,7 @@ class AglarePosterX(Renderer):
         self.pstrNm = None
         self.backrNm = None
 
-        self.log_file = tempfile.mkdtemp(prefix="agplog_") + "/AglarePosterX.log"
+        self.log_file = join(secure_log_dir, "AglarePosterX.log")
         clear_all_log()
 
         self.adsl = intCheck()
@@ -445,7 +448,7 @@ class AglarePosterX(Renderer):
         """Centralized logging method writing to fixed log files"""
         try:
             if not hasattr(self, "log_dir"):
-                log_dir = tempfile.mkdtemp(prefix="agplog_")
+                log_dir = secure_log_dir
 
             if not exists(log_dir):
                 makedirs(log_dir)
@@ -478,7 +481,7 @@ class PosterDB(AgpDownloadThread):
         self.executor = ThreadPoolExecutor(max_workers=3)
         self.service_pattern = compile(r'^#SERVICE (\d+):([^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+)')
 
-        self.log_file = tempfile.mkdtemp(prefix="agplog_") + "/PosterDB.log"
+        self.log_file = join(secure_log_dir, "PosterDB.log")
 
         self.providers = api_key_manager.get_active_providers()
         self.provider_engines = self.build_providers()
@@ -626,7 +629,7 @@ class PosterDB(AgpDownloadThread):
         """Centralized logging method writing to fixed log files"""
         try:
             if not hasattr(self, "log_dir"):
-                log_dir = tempfile.mkdtemp(prefix="agplog_")
+                log_dir = secure_log_dir
 
             if not exists(log_dir):
                 makedirs(log_dir)
@@ -689,7 +692,7 @@ class PosterAutoDB(AgpDownloadThread):
         self.scheduled_hour = 0
         self.scheduled_minute = 0
         self.last_scheduled_run = None
-        self.log_file = tempfile.mkdtemp(prefix="agplog_") + "/PosterAutoDB.log"
+        self.log_file = join(secure_log_dir, "PosterAutoDB.log")
         self.daemon = True
         self.force_immediate = False
         self.active = False
@@ -1101,10 +1104,11 @@ def is_valid_poster(poster_path):
 
 
 def clear_all_log():
+    log_dir = secure_log_dir
     log_files = [
-        "/tmp/agplog/PosterX_errors.log",
-        "/tmp/agplog/PosterX.log",
-        "/tmp/agplog/PosterAutoDB.log"
+        log_dir + "/PosterX_errors.log",
+        log_dir + "/PosterX.log",
+        log_dir + "/PosterAutoDB.log"
     ]
     for file in log_files:
         try:

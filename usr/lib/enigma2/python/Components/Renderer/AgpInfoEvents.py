@@ -64,7 +64,6 @@ from Components.Renderer.Renderer import Renderer
 from Components.VariableText import VariableText
 import gettext
 from enigma import eLabel, eEPGCache, eTimer
-# import tempfile
 
 # Local imports
 from Plugins.Extensions.Aglare.api_config import cfg

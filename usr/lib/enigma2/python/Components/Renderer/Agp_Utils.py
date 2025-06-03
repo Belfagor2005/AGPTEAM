@@ -50,6 +50,7 @@ __copyright__ = "AGP Team"
 # SYSTEM IMPORTS
 # ========================
 from sys import version_info, stdout, stderr
+
 from os import (
     makedirs,
     statvfs,
@@ -58,7 +59,9 @@ from os import (
     access,
     W_OK,
     system,
-    stat
+    stat,
+    chmod,
+    getuid
 )
 from os.path import (
     join,
@@ -72,6 +75,8 @@ from os.path import (
 )
 from pathlib import Path
 import glob
+import tempfile
+
 # from functools import lru_cache
 
 # ========================
@@ -950,6 +955,46 @@ def delete_old_files_if_low_disk_space(MEDIA_FOLDER, min_free_space_mb=50, max_a
 delete_old_files_if_low_disk_space(POSTER_FOLDER, min_free_space_mb=50, max_age_days=30)
 delete_old_files_if_low_disk_space(BACKDROP_FOLDER, min_free_space_mb=50, max_age_days=30)
 delete_old_files_if_low_disk_space(IMOVIE_FOLDER, min_free_space_mb=50, max_age_days=30)
+
+
+def create_secure_log_dir():
+    """Create a secure log directory with safety checks"""
+    base_tmp = tempfile.gettempdir()
+    target_dir = join(base_tmp, "agplog")
+
+    try:
+        # Create directory with secure permissions
+        makedirs(target_dir, mode=0o700, exist_ok=True)
+
+        # Verify directory security
+        st = stat(target_dir)
+        # 1. Check it's a real directory
+        if not stat.S_ISDIR(st.st_mode):
+            return tempfile.mkdtemp(prefix="agplog_")  # Fallback
+
+        # 2. Verify ownership
+        if st.st_uid != getuid():
+            return tempfile.mkdtemp(prefix="agplog_")  # Fallback
+
+        # 3. Check permissions (should be 700)
+        if st.st_mode & 0o077 != 0:  # Group/others have access?
+            # Attempt to fix permissions
+            try:
+                chmod(target_dir, 0o700)
+            except OSError:
+                return tempfile.mkdtemp(prefix="agplog_")  # Fallback if fix fails
+
+        return target_dir
+
+    except OSError:
+        # Fallback to secure tempfile method if any operation fails
+        return tempfile.mkdtemp(prefix="agplog_")
+
+
+# Usage:
+secure_log_dir = create_secure_log_dir()
+# self.log_file = join(secure_log_dir, "AglarePosterX.log")
+
 
 # ================ END MEDIASTORAGE CONFIGURATION ===============
 # ================ START MEMORY CONFIGURATION ================

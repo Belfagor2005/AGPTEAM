@@ -61,16 +61,20 @@ from Components.Sources.EventInfo import EventInfo
 from Components.Sources.CurrentService import CurrentService
 from Components.Sources.ServiceEvent import ServiceEvent
 import NavigationInstance
-import tempfile
+
 
 # Local imports
 from Plugins.Extensions.Aglare.api_config import cfg
 from Plugins.Extensions.Aglare.api_config import ApiKeyManager
 from Components.Renderer.AgpDownloadThread import AgpDownloadThread
 
-from .Agp_Utils import IMOVIE_FOLDER, clean_for_tvdb, logger
+from .Agp_Utils import IMOVIE_FOLDER, clean_for_tvdb, logger, create_secure_log_dir
 from .Agp_Requests import intCheck
 from .Agp_lib import sanitize_filename
+
+secure_log_dir = create_secure_log_dir()
+# self.log_file = join(secure_log_dir, "AglarePosterX.log")
+
 
 if not IMOVIE_FOLDER.endswith("/"):
     IMOVIE_FOLDER += "/"
@@ -113,20 +117,23 @@ class AgpXEMC(Renderer):
         Renderer.__init__(self)
         self.storage_path = IMOVIE_FOLDER
         self.release_year = None
-        self.log_file = tempfile.mkdtemp(prefix="agplog_") + "/PosterDBEMC.log"
+        self.log_file = join(secure_log_dir, "PosterDBEMC.log")
         clear_all_log()
         self.adsl = intCheck()
         if not self.adsl:
             logger.warning("AgpXEMC No internet connection, offline mode activated")
+            self._log_info("AgpXEMC No internet connection, offline mode activated")
             return
 
         if not cfg.xemc_poster.value:
-            logger.debug("Movie renderer disabled in configuration")
+            logger.debug("AgpXEMC Movie renderer disabled in configuration")
+            self._log_info("AgpXEMC Movie renderer disabled in configuration")
             return
 
         self._poster_timer = eTimer()
         self._poster_timer.callback.append(self._retryPoster)
-        logger.info("AGP Movie Renderer initialized")
+        logger.info("AgpXEMC AGP Movie Renderer initialized")
+        self._log_info("AgpXEMC AGP Movie Renderer initialized")
 
     def applySkin(self, desktop, parent):
         if not cfg.xemc_poster.value:
@@ -160,6 +167,7 @@ class AgpXEMC(Renderer):
                     movie_path = service_ref.getPath()
 
                 logger.debug(f"AgpXEMC service_handler {service} movie_path {movie_path}")
+                self._log_info(f"AgpXEMC service_handler {service} movie_path {movie_path}")
 
             # Dynamic EMC source detection
             if hasattr(source, '__class__'):
@@ -198,6 +206,7 @@ class AgpXEMC(Renderer):
 
             # Process valid movie paths
             if movie_path and _is_video_file(movie_path):
+                self._log_info("AgpXEMC Process valid movie paths")
                 self._process_movie_path(movie_path)
             else:
                 self.instance.hide()
@@ -236,26 +245,27 @@ class AgpXEMC(Renderer):
         logger.info(f"Sanitized title: {cleaned}")
 
         year_match = findall(r'\b(19|20)\d{2}\b', filename)
-        logger.info(f"Year found: {year_match}")
+        logger.info(f"AgpXEMC Year found: {year_match}")
 
         if year_match:
             self.release_year = year_match[0]  # Prendi il primo anno trovato
-            logger.info(f"Year extract: {self.release_year}")
+            logger.info(f"AgpXEMC Year extract: {self.release_year}")
         else:
             self.release_year = None
-            logger.info("Year not found in file name.")
+            logger.info("AgpXEMC Year not found in file name.")
 
         # if self.release_year and len(self.release_year) == 2:
             # self.release_year = "2025"
             # logger.info(f"Year coorect: {self.release_year}")
-        logger.info(f"Title to find TMDB: {cleaned}")
+        logger.info(f"AgpXEMC Title to find TMDB: {cleaned}")
+        self._log_info(f"AgpXEMC Title to find TMDB: {cleaned}")
         return cleaned.strip()
 
     def _queue_for_download(self, search_title, clean_title, poster_path):
         if not any([AgpDBemc.is_alive(), AgpDBemc.isDaemon()]):
-            logger.error("Thread downloader not active!")
+            logger.error("AgpXEMC Thread downloader not active!")
             AgpDBemc.start()
-        logger.info("EMC put: clean_title='%s' movie_path='%s' poster_path='%s'", search_title, clean_title, poster_path)
+        logger.info("AgpXEMC  EMC put: clean_title='%s' movie_path='%s' poster_path='%s'", search_title, clean_title, poster_path)
         pdbemc.put((search_title, clean_title, poster_path, self.release_year))
         self.runPosterThread(poster_path)
         # self.waitPoster(poster_path)
@@ -273,14 +283,14 @@ class AgpXEMC(Renderer):
     def display_poster(self, poster_path=None):
         """Display the poster image"""
         if not self.instance:
-            logger.error("Instance is None in display_poster")
+            logger.error("AgpXEMC Instance is None in display_poster")
             return
 
         if poster_path:
-            logger.info(f"Displaying poster from path: {poster_path}")
+            logger.info(f"AgpXEMC Displaying poster from path: {poster_path}")
 
             if _validate_poster(poster_path):
-                logger.info(f"Poster validated, loading image from {poster_path}")
+                logger.info(f"AgpXEMC Poster validated, loading image from {poster_path}")
                 self.instance.setPixmap(loadJPG(poster_path))
                 self.instance.setScale(1)
                 self.instance.show()
@@ -288,7 +298,7 @@ class AgpXEMC(Renderer):
                 self.instance.invalidate()
                 self.instance.show()
             else:
-                logger.error(f"Poster file is invalid: {poster_path}")
+                logger.error(f"AgpXEMC Poster file is invalid: {poster_path}")
                 self.instance.hide()
 
     def waitPoster(self, poster_path=None):
@@ -307,7 +317,7 @@ class AgpXEMC(Renderer):
 
     def _retryPoster(self):
         if _validate_poster(self.poster_path):
-            logger.debug("Poster found, displaying")
+            logger.debug("AgpXEMC Poster found, displaying")
             self.display_poster(self.poster_path)
             return
 
@@ -316,13 +326,40 @@ class AgpXEMC(Renderer):
             delay = 500 + self.retry_count * 200
             self._poster_timer.start(delay, True)
         else:
-            logger.warning("Poster not found after retries: %s", self.poster_path)
+            logger.warning("AgpXEMC Poster not found after retries: %s", self.poster_path)
 
     def __del__(self):
         if self._poster_timer.isActive():
             self._poster_timer.stop()
         if AgpDBemc:
             AgpDBemc.join(timeout=5)
+
+    def _log_info(self, message):
+        self._write_log("INFO", message)
+
+    def _log_debug(self, message):
+        self._write_log("DEBUG", message)
+
+    def _log_error(self, message):
+        self._write_log("ERROR", message, error=True)
+
+    def _write_log(self, level, message, error=False):
+        """Centralized logging method writing to fixed log files"""
+        try:
+            log_dir = "/tmp/agplog"
+            if not exists(log_dir):
+                makedirs(log_dir)
+
+            # Choose file based on error flag
+            if error:
+                log_file = log_dir + "/AgpXEMC_errors.log"
+            else:
+                log_file = log_dir + "/AgpXEMC.log"
+
+            with open(log_file, "a") as w:
+                w.write(f"{datetime.now()} {level}: {message}\n")
+        except Exception as e:
+            print(f"Logging error: {e}")
 
 
 class PosterDBEMC(AgpDownloadThread):
@@ -359,7 +396,7 @@ class PosterDBEMC(AgpDownloadThread):
 
     def _process_item(self, item):
         search_title, clean_title, poster_path, release_year = item
-        logger.debug(f"Processing item: {item}")
+        logger.debug(f"AgpXEMC Processing item: {item}")
         with self.lock:
             if search_title in self.queued:
                 return
@@ -369,7 +406,7 @@ class PosterDBEMC(AgpDownloadThread):
             if self._check_existing(poster_path):
                 return
 
-            logger.info("Starting download: %s", search_title)
+            logger.info("AgpXEMC Starting download: %s", search_title)
             # Sort by priority (lower number = higher priority)
             sorted_providers = sorted(
                 self.provider_engines,
@@ -380,10 +417,10 @@ class PosterDBEMC(AgpDownloadThread):
                 try:
                     api_key = api_key_manager.get_api_key(provider_name)
                     if not api_key:
-                        logger.warning("Missing API key for %s", provider_name)
+                        logger.warning("AgpXEMC Missing API key for %s", provider_name)
                         continue
 
-                    logger.info("EMC processing: search_title='%s' clean_title='%s'", search_title, clean_title)
+                    logger.info("AgpXEMC EMC processing: search_title='%s' clean_title='%s'", search_title, clean_title)
                     result = provider_func(
                         dwn_poster=poster_path,
                         title=search_title,
@@ -394,15 +431,15 @@ class PosterDBEMC(AgpDownloadThread):
                         api_key=api_key
                     )
 
-                    logger.info(f"Trying provider: {provider_name} with title: {search_title} year: {release_year}")
+                    logger.info(f"AgpXEMC Trying provider: {provider_name} with title: {search_title} year: {release_year}")
 
                     if result and self.check_valid_poster(poster_path):
-                        logger.info("Download successful with %s", provider_name)
-                        logger.success(f"Found poster via {provider_name}: {poster_path}")
+                        logger.info("AgpXEMC Download successful with %s", provider_name)
+                        logger.success(f"AgpXEMC Found poster via {provider_name}: {poster_path}")
                         break
 
                 except Exception as e:
-                    logger.error("Error from %s: %s", provider_name, str(e))
+                    logger.error("AgpXEMC Error from %s: %s", provider_name, str(e))
 
         finally:
             with self.lock:
@@ -438,7 +475,7 @@ class PosterDBEMC(AgpDownloadThread):
                     return False
             return True
         except Exception as e:
-            logger.error(f"Poster validation error: {str(e)}")
+            logger.error(f"AgpXEMC Poster validation error: {str(e)}")
             return False
 
     def _check_existing(self, path):
@@ -485,18 +522,19 @@ def _validate_poster(poster_path):
 
 
 def clear_all_log():
-    log_dir = tempfile.gettempdir() + "/agplog"
+    log_dir = secure_log_dir
     log_files = [
         log_dir + "/PosterDBEMC_errors.log",
-        log_dir + "/PosterDBEMC.log"
+        log_dir + "/PosterDBEMC.log",
+        log_dir + "/PosterXEMC.log",
     ]
     for file in log_files:
         try:
             if exists(file):
                 remove(file)
-                logger.warning(f"Removed cache: {file}")
+                logger.warning(f"AgpXEMC Removed cache: {file}")
         except Exception as e:
-            logger.error(f"log_files cleanup failed: {e}")
+            logger.error(f"AgpXEMC log_files cleanup failed: {e}")
 
 
 # Start thread poster
@@ -504,12 +542,12 @@ db_lock = Lock()
 AgpDBemc = None
 if cfg.xemc_poster.value:
     if any(api_key_manager.get_active_providers().values()):
-        logger.debug("Starting PosterDB with active providers")
+        logger.debug("AgpXEMC Starting PosterDB with active providers")
         with db_lock:
             if AgpDBemc is None or not AgpDBemc.is_alive():
                 AgpDBemc = PosterDBEMC()
                 AgpDBemc.daemon = True
                 AgpDBemc.start()
-                logger.debug(f"PosterDBEMC started with PID: {AgpDBemc.ident}")
+                logger.debug(f"AgpXEMC PosterDBEMC started with PID: {AgpDBemc.ident}")
 else:
-    logger.debug("PosterDBEMC not started - no active providers")
+    logger.debug("AgpXEMC PosterDBEMC not started - no active providers")
