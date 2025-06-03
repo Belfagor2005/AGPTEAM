@@ -85,10 +85,16 @@ class AglareEventTime(Poll, Converter):
 			return None
 
 		st = event.getBeginTime()
+		if st is None:
+			return None
+
 		if self.type == self.STARTTIME:
 			return st
 
 		duration = event.getDuration()
+		if duration is None:
+			return None
+
 		if self.type == self.DURATION:
 			return duration
 
@@ -183,18 +189,20 @@ class AglareEventTime(Poll, Converter):
 		if event is None:
 			return None
 
-		progress = int(time()) - event.getBeginTime()
+		beginTime = event.getBeginTime()
 		duration = event.getDuration()
+
+		if beginTime is None or duration is None:
+			return None
+
+		progress = int(time()) - beginTime
+
 		if duration > 0 and progress >= 0:
 			if progress > duration:
 				progress = duration
 			return progress * 1000 / duration
 		else:
 			return None
-
-	time = property(getTime)
-	value = property(getValue)
-	range = 1000
 
 	def changed(self, what):
 		Converter.changed(self, what)

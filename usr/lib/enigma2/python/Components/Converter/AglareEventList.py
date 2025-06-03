@@ -23,18 +23,18 @@
 
 """
 <widget
-	source="ServiceEvent"
-	render="EventListDisplay"
-	position="1080,610"
-	size="1070,180"
-	column0="0,100,yellow,Regular,30,0,0"
-	column1="100,950,white,Regular,28,0,1"
-	primetimeoffset="0"
-	rowHeight="35"
-	backgroundColor="#FF101010"
-	transparent="1"
-	zPosition="50">
-	<convert type="AglareEventList">beginOnly=yes,primetime=yes,eventcount=4</convert>
+    source="ServiceEvent"
+    render="EventListDisplay"
+    position="1080,610"
+    size="1070,180"
+    column0="0,100,yellow,Regular,30,0,0"
+    column1="100,950,white,Regular,28,0,1"
+    primetimeoffset="0"
+    rowHeight="35"
+    backgroundColor="#FF101010"
+    transparent="1"
+    zPosition="50">
+    <convert type="AglareEventList">beginOnly=yes,primetime=yes,eventcount=4</convert>
 </widget>
 """
 
@@ -56,76 +56,103 @@ logger.addHandler(ch)
 
 
 class AglareEventList(Converter, object):
-	def __init__(self, type):
-		Converter.__init__(self, type)
-		self.epgcache = eEPGCache.getInstance()
-		self.primetime = 0
-		self.eventcount = 0
-		self.beginOnly = False
+    def __init__(self, type):
+        Converter.__init__(self, type)
+        self.epgcache = eEPGCache.getInstance()
+        self.primetime = 0
+        self.eventcount = 0
+        self.beginOnly = False
 
-		# Parse the input arguments
-		if len(type):
-			args = type.split(',')
-			i = 0
-			while i <= len(args) - 1:
-				type_c, value = args[i].split('=')
-				if type_c == "eventcount":
-					self.eventcount = int(value)
-				elif type_c == "primetime":
-					if value == "yes":
-						self.primetime = 1
-				elif type_c == "beginOnly":
-					if value == "yes":
-						self.beginOnly = True
-				i += 1
+        # Parse the input arguments
+        if len(type):
+            args = type.split(',')
+            i = 0
+            while i <= len(args) - 1:
+                type_c, value = args[i].split('=')
+                if type_c == "eventcount":
+                    self.eventcount = int(value)
+                elif type_c == "primetime":
+                    if value == "yes":
+                        self.primetime = 1
+                elif type_c == "beginOnly":
+                    if value == "yes":
+                        self.beginOnly = True
+                i += 1
 
-	@cached
-	def getContent(self):
-		contentList = []
-		ref = self.source.service
-		info = ref and self.source.info
-		if info is None:
-			return []
+    @cached
+    def getContent(self):
+        contentList = []
+        ref = self.source.service
+        info = ref and self.source.info
+        if info is None:
+            return []
 
-		event = self.source.getCurrentEvent()
-		if not event:
-			return contentList
+        event = self.source.getCurrentEvent()
+        if not event:
+            return contentList
 
-		i = 1
-		while i <= self.eventcount and event:
-			# Look up the next event in the EPG cache
-			event = self.epgcache.lookupEventTime(eServiceReference(ref.toString()), event.getBeginTime() + event.getDuration())
-			if event:
-				contentList.append(self.getEventTuple(event))
-			i += 1
+        i = 1
+        while i <= self.eventcount and event:
+            # Append current event to list
+            contentList.append(self.getEventTuple(event))
 
-		if self.primetime == 1:
-			now = localtime(time())
-			dt = datetime(now.tm_year, now.tm_mon, now.tm_mday, 20, 15)
-			if time() > mktime(dt.timetuple()):
-				dt += timedelta(days=1)  # Skip to the next day...
-			primeTime = int(mktime(dt.timetuple()))
-			event = self.epgcache.lookupEventTime(eServiceReference(ref.toString()), primeTime)
-			if event and event.getBeginTime() <= primeTime:
-				contentList.append(self.getEventTuple(event))
+            # Controllo che beginTime e duration non siano None prima di calcolare il prossimo inizio
+            begin = event.getBeginTime()
+            dur = event.getDuration()
+            if begin is None or dur is None:
+                break
 
-		return contentList
+            next_start_time = begin + dur
+            event = self.epgcache.lookupEventTime(
+                eServiceReference(ref.toString()), next_start_time
+            )
+            i += 1
 
-	def getEventTuple(self, event):
-		try:
-			if self.beginOnly:
-				event_time = "%s" % (strftime("%H:%M", localtime(event.getBeginTime())))
-			else:
-				event_time = "%s - %s" % (strftime("%H:%M", localtime(event.getBeginTime())), strftime("%H:%M", localtime(event.getBeginTime() + event.getDuration())))
+        if self.primetime == 1:
+            now = localtime(time())
+            dt = datetime(now.tm_year, now.tm_mon, now.tm_mday, 20, 15)
+            if time() > mktime(dt.timetuple()):
+                dt += timedelta(days=1)  # Skip to the next day...
+            primeTime = int(mktime(dt.timetuple()))
 
-			title = event.getEventName()
-			duration = "%d min" % (event.getDuration() / 60)
-			return (event_time, title, duration)
-		except Exception as e:
-			# Log the error with more detail
-			logger.error('Error in getEventTuple: %s', e)
-			return ("Error", "Error retrieving event", "")
+            event = self.epgcache.lookupEventTime(
+                eServiceReference(ref.toString()), primeTime
+            )
+            # Controllo che event e getBeginTime non siano None
+            if event:
+                bt = event.getBeginTime()
+                if bt is not None and bt <= primeTime:
+                    contentList.append(self.getEventTuple(event))
 
-	def changed(self, what):
-		if what[0] != self.CHANGED_SPECIFIC:
-			Converter.changed(self, what)
+        return contentList
+
+    def getEventTuple(self, event):
+        try:
+            begin = event.getBeginTime()
+            dur = event.getDuration()
+
+            # Se uno dei due è None, restituisco una tupla vuota o un placeholder
+            if begin is None or dur is None:
+                return ("", "", "")
+
+            if self.beginOnly:
+                event_time = "%s" % (strftime("%H:%M", localtime(begin)))
+            else:
+                end = begin + dur
+                event_time = "%s - %s" % (
+                    strftime("%H:%M", localtime(begin)),
+                    strftime("%H:%M", localtime(end)),
+                )
+
+            title = event.getEventName() or ""
+            duration = "%d min" % (dur / 60)
+            return (event_time, title, duration)
+        except Exception as e:
+            # Log the error con maggiore dettaglio
+            logger.error("Error in getEventTuple: %s", e)
+            return ("Error", "Error retrieving event", "")
+
+
+    def changed(self, what):
+        if what[0] != self.CHANGED_SPECIFIC:
+            Converter.changed(self, what)

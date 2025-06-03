@@ -118,18 +118,29 @@ class AglareEventName2(Converter, object):
 		if current_event:
 			now = localtime(time())
 			dt = datetime(now.tm_year, now.tm_mon, now.tm_mday, 20, 15)
-			self.epgcache.startTimeQuery(eServiceReference(reference.toString()), int(mktime(dt.timetuple())))
+			target_time = int(mktime(dt.timetuple()))
+			self.epgcache.startTimeQuery(eServiceReference(reference.toString()), target_time)
 			next_event = self.epgcache.getNextTimeEntry()
-			if next_event and next_event.getBeginTime() <= int(mktime(dt.timetuple())):
-				return self.formatPrimeTimeEvent(next_event)
+			if next_event:
+				begin_time = next_event.getBeginTime()
+				if begin_time is not None and begin_time <= target_time:
+					return self.formatPrimeTimeEvent(next_event)
 		return ''
 
 	def formatPrimeTimeEvent(self, event):
-		begin = strftime('%H:%M', localtime(event.getBeginTime()))
-		end = strftime('%H:%M', localtime(event.getBeginTime() + event.getDuration()))
-		title = event.getEventName()
-		duration = _('%d min') % (event.getDuration() / 60)
-		return f"{begin} - {end} ({duration}) {title}"
+		begin_time = event.getBeginTime()
+		duration = event.getDuration()
+		if begin_time is None or duration is None:
+			return ''
+
+		end_time = begin_time + duration
+		title = event.getEventName() or ''
+
+		begin_str = strftime('%H:%M', localtime(begin_time))
+		end_str = strftime('%H:%M', localtime(end_time))
+		duration_str = _('%d min') % (duration // 60)
+
+		return "{} - {} ({}) {}".format(begin_str, end_str, duration_str, title)
 
 	def getNextEventDetails(self):
 		reference = self.source.service

@@ -175,11 +175,13 @@ class AgpInfoEvents(Renderer, VariableText):
 
 		self.event = self.source.event
 		if self.event is not None:
-			self.evnt = self.event.getEventName().replace('\xc2\x86', '').replace('\xc2\x87', '')
-			current_event_hash = f"{self.event.getEventName()}{self.event.getBeginTime()}"
-			if current_event_hash != self.last_event:
-				self.last_event = current_event_hash
-				self.start_data_fetch()
+			begin = self.event.getBeginTime()
+			if begin is not None:
+				self.evnt = self.event.getEventName().replace('\xc2\x86', '').replace('\xc2\x87', '')
+				current_event_hash = self.event.getEventName() + str(begin)
+				if current_event_hash != self.last_event:
+					self.last_event = current_event_hash
+					self.start_data_fetch()
 		else:
 			# Clear the text and hide when there's no event
 			self.text = ""

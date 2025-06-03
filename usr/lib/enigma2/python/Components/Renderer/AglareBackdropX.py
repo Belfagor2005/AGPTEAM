@@ -245,7 +245,9 @@ class AglareBackdropX(Renderer):
 				else:
 					# Clean and store event data
 					# self.canal[0] = None
-					self.canal[1] = source.event.getBeginTime()
+                    bt = source.event.getBeginTime()
+                    if bt is not None:
+                        self.canal[1] = bt
 					# event_name = self.source.event.getEventName().replace('\xc2\x86', '').replace('\xc2\x87', '')
 					event_name = sub(r"[\u0000-\u001F\u007F-\u009F]", "", source.event.getEventName())
 					self.canal[2] = event_name
