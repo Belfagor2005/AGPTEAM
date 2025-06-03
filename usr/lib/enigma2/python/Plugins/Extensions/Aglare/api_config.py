@@ -247,7 +247,7 @@ config.plugins.Aglare.colorSelector = ConfigSelection(default='color0', choices=
 	('color5', _('Blue')),
 	('color6', _('Red')),
 	('color7', _('Purple')),
-	('color8', _('Green2'))
+	('color8', _('Dark Green'))
 ])
 
 config.plugins.Aglare.FontStyle = ConfigSelection(default='basic', choices=[
@@ -268,20 +268,18 @@ config.plugins.Aglare.InfobarStyle = ConfigSelection(default='infobar_base1', ch
 	('infobar_base1', _('Default')),
 	('infobar_base2', _('Style2')),
 	('infobar_base3', _('Style3')),
-	('infobar_base4', _('Style4')),
-	('infobar_base5', _('Style5 CD'))
+	('infobar_base4', _('Style4'))
 ])
 
 config.plugins.Aglare.InfobarPosterx = ConfigSelection(default='infobar_posters_posterx_off', choices=[
 	('infobar_posters_posterx_off', _('OFF')),
 	('infobar_posters_posterx_on', _('ON')),
-	('infobar_posters_posterx_cd', _('CD'))
+	('infobar_posters_posterx_info', _('Backdrop'))
 ])
 
 config.plugins.Aglare.InfobarXtraevent = ConfigSelection(default='infobar_posters_xtraevent_off', choices=[
 	('infobar_posters_xtraevent_off', _('OFF')),
 	('infobar_posters_xtraevent_on', _('ON')),
-	('infobar_posters_xtraevent_cd', _('CD')),
 	('infobar_posters_xtraevent_info', _('Backdrop'))
 ])
 
@@ -315,8 +313,10 @@ config.plugins.Aglare.SecondInfobarXtraevent = ConfigSelection(default='secondin
 config.plugins.Aglare.ChannSelector = ConfigSelection(default='channellist_no_posters', choices=[
 	('channellist_no_posters', _('ChannelSelection_NO_Posters')),
 	('channellist_no_posters_no_picon', _('ChannelSelection_NO_Posters_NO_Picon')),
-	('channellist_backdrop_v', _('ChannelSelection_BackDrop_V')),
-	('channellist_backdrop_h', _('ChannelSelection_BackDrop_H')),
+	('channellist_backdrop_v', _('ChannelSelection_BackDrop_V_EX')),
+	('channellist_backdrop_v_posterx', _('ChannelSelection_BackDrop_V_PX')),
+	('channellist_backdrop_h', _('ChannelSelection_BackDrop_H_EX')),
+	('channellist_backdrop_h_posterx', _('ChannelSelection_BackDrop_H_PX')),
 	('channellist_1_poster_PX', _('ChannelSelection_1_Poster_X')),
 	('channellist_1_poster_EX', _('ChannelSelection_1_Poster_EX')),
 	('channellist_4_posters_PX', _('ChannelSelection_4_Posters_X')),

@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Aglare\n"
-"POT-Creation-Date: 2025-06-03 10:00+0200\n"
+"POT-Creation-Date: 2025-06-03 17:41+0200\n"
 "PO-Revision-Date: 2025-01-12 18:23+0100\n"
 "Last-Translator: \n"
 "Language-Team: lululla\n"
@@ -51,7 +51,7 @@ msgid "Off"
 msgstr ""
 
 #: api_config.py:242 api_config.py:254 api_config.py:264 api_config.py:268
-#: api_config.py:299 api_config.py:335
+#: api_config.py:297 api_config.py:335
 msgid "Default"
 msgstr ""
 
@@ -84,7 +84,7 @@ msgid "Purple"
 msgstr ""
 
 #: api_config.py:250
-msgid "Green2"
+msgid "Dark Green"
 msgstr ""
 
 #: api_config.py:255
@@ -111,70 +111,70 @@ msgstr ""
 msgid "MV Boli"
 msgstr ""
 
-#: api_config.py:269 api_config.py:300
+#: api_config.py:269 api_config.py:298
 msgid "Style2"
 msgstr ""
 
-#: api_config.py:270 api_config.py:301
+#: api_config.py:270 api_config.py:299
 msgid "Style3"
 msgstr ""
 
-#: api_config.py:271 api_config.py:302
+#: api_config.py:271 api_config.py:300
 msgid "Style4"
 msgstr ""
 
-#: api_config.py:272
-msgid "Style5 CD"
-msgstr ""
-
-#: api_config.py:276 api_config.py:282 api_config.py:306 api_config.py:311
-#: api_config.py:340 plugin.py:231 plugin.py:256
+#: api_config.py:275 api_config.py:281 api_config.py:304 api_config.py:309
+#: api_config.py:340 plugin.py:231 plugin.py:255
 msgid "OFF"
 msgstr ""
 
-#: api_config.py:277 api_config.py:283 api_config.py:307 api_config.py:312
-#: api_config.py:341 plugin.py:232 plugin.py:257
+#: api_config.py:276 api_config.py:282 api_config.py:305 api_config.py:310
+#: api_config.py:341 plugin.py:232 plugin.py:256
 msgid "ON"
 msgstr ""
 
-#: api_config.py:278 api_config.py:284 plugin.py:237 plugin.py:267
-msgid "CD"
-msgstr ""
-
-#: api_config.py:285 plugin.py:263
+#: api_config.py:277 api_config.py:283 plugin.py:262
 msgid "Backdrop"
 msgstr ""
 
-#: api_config.py:289
+#: api_config.py:287
 msgid "Infobar_NO_Date"
 msgstr ""
 
-#: api_config.py:290
+#: api_config.py:288
 msgid "Infobar_Date"
 msgstr ""
 
-#: api_config.py:294
+#: api_config.py:292
 msgid "Infobar_NO_Weather"
 msgstr ""
 
-#: api_config.py:295
+#: api_config.py:293
 msgid "Infobar_Weather"
 msgstr ""
 
-#: api_config.py:316
+#: api_config.py:314
 msgid "ChannelSelection_NO_Posters"
 msgstr ""
 
-#: api_config.py:317
+#: api_config.py:315
 msgid "ChannelSelection_NO_Posters_NO_Picon"
 msgstr ""
 
+#: api_config.py:316
+msgid "ChannelSelection_BackDrop_V_EX"
+msgstr ""
+
+#: api_config.py:317
+msgid "ChannelSelection_BackDrop_V_PX"
+msgstr ""
+
 #: api_config.py:318
-msgid "ChannelSelection_BackDrop_V"
+msgid "ChannelSelection_BackDrop_H_EX"
 msgstr ""
 
 #: api_config.py:319
-msgid "ChannelSelection_BackDrop_H"
+msgid "ChannelSelection_BackDrop_H_PX"
 msgstr ""
 
 #: api_config.py:320
@@ -217,205 +217,209 @@ msgstr ""
 msgid "volume2"
 msgstr ""
 
-#: plugin.py:286
+#: plugin.py:237 plugin.py:266
+msgid "CD"
+msgstr ""
+
+#: plugin.py:285
 msgid "Color Style:"
 msgstr ""
 
-#: plugin.py:287
+#: plugin.py:286
 msgid "Select Your Font:"
 msgstr ""
 
-#: plugin.py:288
+#: plugin.py:287
 msgid "Skin Style:"
 msgstr ""
 
-#: plugin.py:289
+#: plugin.py:288
 msgid "InfoBar Style:"
 msgstr ""
 
-#: plugin.py:290
+#: plugin.py:289
 msgid "InfoBar PosterX:"
 msgstr ""
 
-#: plugin.py:291
+#: plugin.py:290
 msgid "InfoBar Xtraevent:"
 msgstr ""
 
-#: plugin.py:292
+#: plugin.py:291
 msgid "InfoBar Date:"
 msgstr ""
 
-#: plugin.py:293
+#: plugin.py:292
 msgid "InfoBar Weather:"
 msgstr ""
 
-#: plugin.py:294
+#: plugin.py:293
 msgid "SecondInfobar Style:"
 msgstr ""
 
-#: plugin.py:295
+#: plugin.py:294
 msgid "SecondInfobar Posterx:"
 msgstr ""
 
-#: plugin.py:296
+#: plugin.py:295
 msgid "SecondInfobar Xtraevent:"
 msgstr ""
 
-#: plugin.py:297
+#: plugin.py:296
 msgid "ChannelSelection Style:"
 msgstr ""
 
-#: plugin.py:298
+#: plugin.py:297
 msgid "EventView Style:"
 msgstr ""
 
-#: plugin.py:299
+#: plugin.py:298
 msgid "VolumeBar Style:"
 msgstr ""
 
-#: plugin.py:300
+#: plugin.py:299
 msgid "Support E2iplayer Skins:"
 msgstr ""
 
-#: plugin.py:304
+#: plugin.py:303
 msgid "Remove all png (poster - backdrop) (OK)"
 msgstr ""
 
-#: plugin.py:304
+#: plugin.py:303
 msgid "This operation remove all png from folder device (Poster-Backdrop)"
 msgstr ""
 
-#: plugin.py:308
+#: plugin.py:307
 msgid "Enable Rating Star:"
 msgstr ""
 
-#: plugin.py:308
+#: plugin.py:307
 msgid "This operation enable the display of rating stars for events, based on the selected rating source."
 msgstr ""
 
-#: plugin.py:309
+#: plugin.py:308
 msgid "Enable Parental Icons:"
 msgstr ""
 
-#: plugin.py:309
+#: plugin.py:308
 msgid "Show parental guidance icons on events to indicate content rating and age suitability."
 msgstr ""
 
-#: plugin.py:310
+#: plugin.py:309
 msgid "Enable Display InfoEvents:"
 msgstr ""
 
-#: plugin.py:310
+#: plugin.py:309
 msgid "Enable the display of extended event information, including full cast, crew, plot details, and other metadata, in the info widget."
 msgstr ""
 
-#: plugin.py:311
+#: plugin.py:310
 msgid "Enable Display Genre icons:"
 msgstr ""
 
-#: plugin.py:311
+#: plugin.py:310
 msgid "Show icons representing the genre of each event (e.g., action, comedy, drama)"
 msgstr ""
 
-#: plugin.py:312
+#: plugin.py:311
 msgid "Enable Display XMC Poster:"
 msgstr ""
 
-#: plugin.py:312
+#: plugin.py:311
 msgid "Show poster from movie in local folder"
 msgstr ""
 
-#: plugin.py:314
+#: plugin.py:313
 msgid "Settings Apikey Server"
 msgstr ""
 
-#: plugin.py:322
+#: plugin.py:321
 msgid "Activate/Deactivate {}"
 msgstr ""
 
-#: plugin.py:330
+#: plugin.py:329
 msgid "Load from /tmp/{}key.txt"
 msgstr ""
 
-#: plugin.py:335
+#: plugin.py:334
 msgid "Personal API key for {}"
 msgstr ""
 
-#: plugin.py:338
+#: plugin.py:337
 msgid "Activate/Deactivate ELCINEMA"
 msgstr ""
 
-#: plugin.py:339
+#: plugin.py:338
 msgid "Activate/Deactivate GOOGLE"
 msgstr ""
 
-#: plugin.py:340
+#: plugin.py:339
 msgid "Activate/Deactivate IMDB"
 msgstr ""
 
-#: plugin.py:341
+#: plugin.py:340
 msgid "Activate/Deactivate MOLOTOV"
 msgstr ""
 
-#: plugin.py:342
+#: plugin.py:341
 msgid "Activate/Deactivate PROGRAMMETV"
 msgstr ""
 
-#: plugin.py:346
+#: plugin.py:345
 msgid "Enable or disable caching during event download to speed up repeated searches."
 msgstr ""
 
-#: plugin.py:347
+#: plugin.py:346
 msgid "Download now poster"
 msgstr ""
 
-#: plugin.py:347
+#: plugin.py:346
 msgid "Start downloading poster immediately"
 msgstr ""
 
-#: plugin.py:348
+#: plugin.py:347
 msgid "Automatic download of poster"
 msgstr ""
 
-#: plugin.py:348
+#: plugin.py:347
 msgid "Automatically fetch posters for favorite events based on EPG"
 msgstr ""
 
-#: plugin.py:350
+#: plugin.py:349
 msgid "Set Time our - minute for Poster download"
 msgstr ""
 
-#: plugin.py:350 plugin.py:354
+#: plugin.py:349 plugin.py:353
 msgid "Configure the delay time (in minutes) before starting the automatic poster download"
 msgstr ""
 
-#: plugin.py:351
+#: plugin.py:350
 msgid "Download now backdrop"
 msgstr ""
 
-#: plugin.py:351
+#: plugin.py:350
 msgid "Start downloading backdrop immediately"
 msgstr ""
 
-#: plugin.py:352
+#: plugin.py:351
 msgid "Automatic download of backdrop"
 msgstr ""
 
-#: plugin.py:352
+#: plugin.py:351
 msgid "Automatically fetch backdrop for favorite events based on EPG"
 msgstr ""
 
-#: plugin.py:354
+#: plugin.py:353
 msgid "Set Time our - minute for Backdrop download"
 msgstr ""
 
-#: plugin.py:365
+#: plugin.py:364
 msgid ""
 "[Checkskin] This operation checks if the skin has its components (not guaranteed)...\n"
 "Do you really want to continue?"
 msgstr ""
 
-#: plugin.py:428
+#: plugin.py:427
 #, python-brace-format
 msgid ""
 "Setup Aglare Skin\n"
@@ -428,110 +432,110 @@ msgid ""
 "Skinner creator: Odem2014 "
 msgstr ""
 
-#: plugin.py:431
+#: plugin.py:430
 msgid "Setup Aglare Skin Info"
 msgstr ""
 
-#: plugin.py:437
+#: plugin.py:436
 msgid ""
 "[RemovePng] This operation will remove all PNGs from the device folder (Poster-Backdrop)...\n"
 "Do you really want to continue?"
 msgstr ""
 
-#: plugin.py:446
+#: plugin.py:445
 msgid "All png are removed from folder!"
 msgstr ""
 
-#: plugin.py:447
+#: plugin.py:446
 msgid "Info..."
 msgstr ""
 
-#: plugin.py:496 plugin.py:555
+#: plugin.py:495 plugin.py:554
 msgid "No active providers enabled"
 msgstr ""
 
-#: plugin.py:501 plugin.py:560
+#: plugin.py:500 plugin.py:559
 msgid ""
 "Warning: You are using default API keys!\n"
 "We strongly recommend configuring your own API keys in the plugin settings."
 msgstr ""
 
-#: plugin.py:508
+#: plugin.py:507
 msgid ""
 "Poster download will start in 2 minutes.\n"
 "You can safely exit this menu."
 msgstr ""
 
-#: plugin.py:520 plugin.py:579
+#: plugin.py:519 plugin.py:578
 msgid "Error: {}"
 msgstr ""
 
-#: plugin.py:529
+#: plugin.py:528
 msgid "Poster download error: {}"
 msgstr ""
 
-#: plugin.py:567
+#: plugin.py:566
 msgid ""
 "Backdrop download will start in 2 minutes.\n"
 "You can safely exit this menu."
 msgstr ""
 
-#: plugin.py:588
+#: plugin.py:587
 msgid "Backdrop download error: {}"
 msgstr ""
 
-#: plugin.py:604
+#: plugin.py:603
 #, python-brace-format
 msgid "Import key {0} from {1}?"
 msgstr ""
 
-#: plugin.py:609
+#: plugin.py:608
 #, python-format
 msgid "The file %s is empty."
 msgstr ""
 
-#: plugin.py:616
+#: plugin.py:615
 #, python-format
 msgid "The file %s was not found."
 msgstr ""
 
-#: plugin.py:626
+#: plugin.py:625
 msgid "Key empty"
 msgstr ""
 
-#: plugin.py:636
+#: plugin.py:635
 #, python-format
 msgid "%s key imported!"
 msgstr ""
 
-#: plugin.py:644
+#: plugin.py:643
 #, python-brace-format
 msgid "Error {0}: {1}"
 msgstr ""
 
-#: plugin.py:786
+#: plugin.py:792
 msgid "Error by processing the skin file: {}"
 msgstr ""
 
-#: plugin.py:791
+#: plugin.py:797
 msgid ""
 "GUI needs a restart to apply a new skin.\n"
 "Do you want to Restart the GUI now?"
 msgstr ""
 
-#: plugin.py:794 plugin.py:926
+#: plugin.py:800 plugin.py:932
 msgid "Restart GUI now?"
 msgstr ""
 
-#: plugin.py:807
+#: plugin.py:813
 msgid "Update URL not initialised – open the plugin once from the Plugins menu first."
 msgstr ""
 
-#: plugin.py:839
+#: plugin.py:845
 msgid "You already have the latest version ({})."
 msgstr ""
 
-#: plugin.py:847
+#: plugin.py:853
 msgid ""
 "Server version: {}\n"
 "Installed version: {}\n"
@@ -539,47 +543,47 @@ msgid ""
 "A newer build is available – update now?"
 msgstr ""
 
-#: plugin.py:855
+#: plugin.py:861
 msgid "Local build ({}) is newer than server build ({})."
 msgstr ""
 
-#: plugin.py:860
+#: plugin.py:866
 msgid "Update check failed: {}"
 msgstr ""
 
-#: plugin.py:898
+#: plugin.py:904
 msgid "Downloading Aglare..."
 msgstr ""
 
-#: plugin.py:906
+#: plugin.py:912
 msgid "Installing updates..."
 msgstr ""
 
-#: plugin.py:923
+#: plugin.py:929
 msgid ""
 "Aglare update was done!\n"
 "Do you want to restart the GUI now?"
 msgstr ""
 
-#: plugin.py:928
+#: plugin.py:934
 msgid "Update package not found!"
 msgstr ""
 
-#: plugin.py:931
+#: plugin.py:937
 msgid ""
 "The update file was not found in /tmp.\n"
 "Update aborted."
 msgstr ""
 
-#: plugin.py:936
+#: plugin.py:942
 msgid "Error downloading files!"
 msgstr ""
 
-#: plugin.py:950
+#: plugin.py:956
 msgid "Download in progress…"
 msgstr ""
 
-#: plugin.py:1032
+#: plugin.py:1038
 #, python-format
 msgid "Customization tool for %s Skin"
 msgstr ""
