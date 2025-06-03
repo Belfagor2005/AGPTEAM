@@ -88,7 +88,6 @@ from .Agp_Utils import (
 )
 
 secure_log_dir = create_secure_log_dir()
-# self.log_file = join(secure_log_dir, "AglarePosterX.log")
 
 if not BACKDROP_FOLDER.endswith("/"):
 	BACKDROP_FOLDER += "/"

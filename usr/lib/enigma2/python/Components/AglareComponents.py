@@ -8,7 +8,6 @@ from re import sub
 from six import text_type
 import unicodedata
 
-
 try:
     # Python 2 imports
     from urlparse import urljoin, urlparse, urlunparse, urlsplit, urlunsplit, parse_qs, parse_qsl
@@ -41,19 +40,18 @@ imageType = None
 PYversion = None
 
 
-def WhatPythonVersion():
+def what_python_version():
     import sys
     return sys.version_info[0]
 
-
-def isPY2():
-    global PYversion
-    if PYversion is None:
-        if WhatPythonVersion() == 3:
-            PYversion = False
+def is_py2():
+    global py_version
+    if py_version is None:
+        if what_python_version() == 3:
+            py_version = False
         else:
-            PYversion = True
-    return PYversion
+            py_version = True
+    return py_version
 
 
 def ensure_binary(text, encoding='utf-8', errors='strict'):
@@ -86,32 +84,30 @@ def ensure_str(text, encoding='utf-8', errors='strict'):
     return text
 
 
-def clearCache():
+def clear_cache():
     with open("/proc/sys/vm/drop_caches", "w") as f:
         f.write("1\n")
 
 
-def getImageType():
+def get_image_type():
     return imageType
 
 
-def isImageType(imgName=''):
+def isImageType(img_name=''):
     global imageType
     if imageType is None:
         if path.exists('/etc/opkg/all-feed.conf'):
             with open('/etc/opkg/all-feed.conf', 'r') as file:
-                fileContent = file.read()
-                file.close()
-                fileContent = fileContent.lower()
-                if fileContent.find('VTi') > -1:
+                fileContent = file.read().lower()
+                if 'vti' in fileContent:
                     imageType = 'vti'
-                elif fileContent.find('code.vuplus.com') > -1:
+                elif 'code.vuplus.com' in fileContent:
                     imageType = 'vuplus'
-                elif fileContent.find('openpli-7') > -1:
+                elif 'openpli-7' in fileContent:
                     imageType = 'openpli7'
-                elif fileContent.find('openatv') > -1:
+                elif 'openatv' in fileContent:
                     imageType = 'openatv'
-                    if fileContent.find('/5.3/') > -1:
+                    if '/5.3/' in fileContent:
                         imageType += '5.3'
     if imageType is None:
         if path.exists('/usr/lib/enigma2/python/Plugins/SystemPlugins/VTIPanel/'):
@@ -124,29 +120,26 @@ def isImageType(imgName=''):
             imageType = 'pkt'
         else:
             imageType = 'unknown'
-    if imgName.lower() == imageType.lower():
-        return True
-    else:
-        return False
+    return img_name.lower() == imageType.lower()
 
 
-def AGDEBUG(myText=None, Append=True, myDEBUG='/tmp/AglareComponents.log'):
+def agb_debug(mytext=None, append=True, mydebug='/tmp/AglareComponents.log'):
     global append2file
 
-    if not myDEBUG or not myText:
+    if not mydebug or not mytext:
         return
 
     try:
-        mode = 'a' if (append2file and Append) else 'w'
+        mode = 'a' if (append2file and append) else 'w'
         append2file = True  # Set global flag on first write
 
         # Write log entry
-        with open(myDEBUG, mode) as f:
-            f.write(f'{datetime.now()}\t{myText}\n')
+        with open(mydebug, mode) as f:
+            f.write(f'{datetime.now()}\t{mytext}\n')
 
         # Rotate if file too large
-        if path.getsize(myDEBUG) > 100000:
-            with open(myDEBUG, 'r+') as f:
+        if path.getsize(mydebug) > 100000:
+            with open(mydebug, 'r+') as f:
                 lines = f.readlines()
                 f.seek(0)
                 f.writelines(lines[10:])  # Keep all but first 10 lines
@@ -154,7 +147,7 @@ def AGDEBUG(myText=None, Append=True, myDEBUG='/tmp/AglareComponents.log'):
 
     except Exception as e:
         try:  # Attempt to log the error
-            with open(myDEBUG, 'a') as f:
+            with open(mydebug, 'a') as f:
                 f.write(f'{datetime.now()}\tException: {e}\n')
         except:
             print(f'Logging failed: {e}')
@@ -196,11 +189,11 @@ def log_missing(
         try:
             with open(log_file, 'a') as f:
                 f.write(f'{datetime.now()}\tLOG ERROR: {e}\n')
-        except:
+        except Exception as e:
             print(f'Logging failed: {e}')
 
 
-def isINETworking(addr='8.8.8.8', port=53):
+def is_inet_working(addr='8.8.8.8', port=53):
     try:
         import socket
         if addr[:1].isdigit():

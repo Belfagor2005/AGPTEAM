@@ -73,7 +73,6 @@ from .Agp_Requests import intCheck
 from .Agp_lib import sanitize_filename
 
 secure_log_dir = create_secure_log_dir()
-# self.log_file = join(secure_log_dir, "AglarePosterX.log")
 
 
 if not IMOVIE_FOLDER.endswith("/"):

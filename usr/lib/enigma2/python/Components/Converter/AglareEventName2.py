@@ -138,7 +138,8 @@ class AglareEventName2(Converter, object):
 
 		begin_str = strftime('%H:%M', localtime(begin_time))
 		end_str = strftime('%H:%M', localtime(end_time))
-		duration_str = _('%d min') % (duration // 60)
+		DURATION_FORMAT = _('%d min')
+		duration_str = DURATION_FORMAT % (duration // 60)
 
 		return "{} - {} ({}) {}".format(begin_str, end_str, duration_str, title)
 

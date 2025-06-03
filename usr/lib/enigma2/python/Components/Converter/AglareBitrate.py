@@ -24,7 +24,7 @@ _image_type = None
 _append_to_file = False
 
 
-def AGDEBUG(my_text=None, append=True, debug_file=DEBUG_FILE):
+def agb_debug(my_text=None, append=True, debug_file=DEBUG_FILE):
 	global _append_to_file
 	if not debug_file or not my_text:
 		return

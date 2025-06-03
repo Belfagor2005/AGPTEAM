@@ -988,7 +988,6 @@ def create_secure_log_dir():
 
 # Usage:
 secure_log_dir = create_secure_log_dir()
-# self.log_file = join(secure_log_dir, "AglarePosterX.log")
 
 
 # ================ END MEDIASTORAGE CONFIGURATION ===============

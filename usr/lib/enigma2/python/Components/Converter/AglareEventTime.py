@@ -189,13 +189,13 @@ class AglareEventTime(Poll, Converter):
 		if event is None:
 			return None
 
-		beginTime = event.getBeginTime()
+		begin_time = event.getBeginTime()
 		duration = event.getDuration()
 
-		if beginTime is None or duration is None:
+		if begin_time is None or duration is None:
 			return None
 
-		progress = int(time()) - beginTime
+		progress = int(time()) - begin_time
 
 		if duration > 0 and progress >= 0:
 			if progress > duration:
