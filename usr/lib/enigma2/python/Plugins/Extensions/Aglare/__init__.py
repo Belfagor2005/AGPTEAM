@@ -1,44 +1,34 @@
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
-
-from __future__ import absolute_import
-
-__author__ = "Lululla"
-__email__ = "ekekaz@gmail.com"
-__copyright__ = "Copyright (c) 2024 Lululla"
-__license__ = "GPL-v2"
-__version__ = "1.0.0"
-
-import os
-import gettext
 
 from Components.Language import language
 from Tools.Directories import resolveFilename, SCOPE_PLUGINS
+import gettext
+import os
 
-PluginLanguageDomain = "Aglare"
-PluginLanguagePath = "Extensions/Aglare/locale"
 
-isDreambox = os.path.exists("/usr/bin/apt-get")
+PluginLanguageDomain = 'Aglare'
+PluginLanguagePath = 'Extensions/Aglare/locale'
 
+isDreamOS = False
+if os.path.exists("/var/lib/dpkg/status"):
+    isDreamOS = True
 
 def localeInit():
-	if isDreambox:
-		lang = language.getLanguage()[:2]
-		os.environ["LANGUAGE"] = lang
-	if PluginLanguageDomain and PluginLanguagePath:
-		gettext.bindtextdomain(PluginLanguageDomain, resolveFilename(SCOPE_PLUGINS, PluginLanguagePath))
+    if isDreamOS:
+        lang = language.getLanguage()[:2]
+        os.environ["LANGUAGE"] = lang
+    gettext.bindtextdomain(PluginLanguageDomain, resolveFilename(SCOPE_PLUGINS, PluginLanguagePath))
 
 
-if isDreambox:
-	def _(txt):
-		return gettext.dgettext(PluginLanguageDomain, txt) if txt else ""
+if isDreamOS:
+    _ = lambda txt: gettext.dgettext(PluginLanguageDomain, txt) if txt else ""
 else:
-	def _(txt):
-		translated = gettext.dgettext(PluginLanguageDomain, txt)
-		if translated:
-			return translated
-		else:
-			print("[%s] fallback to default translation for %s" % (PluginLanguageDomain, txt))
-			return gettext.gettext(txt)
-
+    def _(txt):
+        if gettext.dgettext(PluginLanguageDomain, txt):
+            return gettext.dgettext(PluginLanguageDomain, txt)
+        else:
+            print(("[%s] fallback to default translation for %s" % (PluginLanguageDomain, txt)))
+            return gettext.gettext(txt)
 localeInit()
 language.addCallback(localeInit)

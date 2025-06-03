@@ -237,7 +237,7 @@ config.plugins.Aglare.xemc_poster = ConfigOnOff(default=False)
 # remove png
 config.plugins.Aglare.png = NoSave(ConfigYesNo(default=False))
 
-# skin style management
+# SKIN STYLE MANAGEMENT =========================================================
 config.plugins.Aglare.colorSelector = ConfigSelection(default='color0', choices=[
 	('color0', _('Default')),
 	('color1', _('Black')),

@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Aglare\n"
-"POT-Creation-Date: 2025-05-24 16:00+0200\n"
+"POT-Creation-Date: 2025-06-03 10:00+0200\n"
 "PO-Revision-Date: 2025-01-12 18:23+0100\n"
 "Last-Translator: \n"
 "Language-Team: lululla\n"
@@ -416,10 +416,10 @@ msgid ""
 msgstr ""
 
 #: plugin.py:428
-#, python-format
+#, python-brace-format
 msgid ""
 "Setup Aglare Skin\n"
-"for %s v.%s\n"
+"for {0} v.{1}\n"
 "\n"
 "by Lululla @2020\n"
 "\n"
@@ -481,8 +481,8 @@ msgid "Backdrop download error: {}"
 msgstr ""
 
 #: plugin.py:604
-#, python-format
-msgid "Import key %s from %s?"
+#, python-brace-format
+msgid "Import key {0} from {1}?"
 msgstr ""
 
 #: plugin.py:609
@@ -505,8 +505,8 @@ msgid "%s key imported!"
 msgstr ""
 
 #: plugin.py:644
-#, python-format
-msgid "Error %s: %s"
+#, python-brace-format
+msgid "Error {0}: {1}"
 msgstr ""
 
 #: plugin.py:786
