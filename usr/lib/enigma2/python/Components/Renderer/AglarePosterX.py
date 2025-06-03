@@ -70,6 +70,7 @@ from Components.Sources.CurrentService import CurrentService
 from Components.Sources.ServiceEvent import ServiceEvent
 from ServiceReference import ServiceReference
 import NavigationInstance
+import tempfile
 
 # Local imports
 from Plugins.Extensions.Aglare.api_config import cfg
@@ -172,9 +173,7 @@ class AglarePosterX(Renderer):
         self.pstrNm = None
         self.backrNm = None
 
-        self.log_file = "/tmp/agplog/AglarePosterX.log"
-        if not exists("/tmp/agplog"):
-            makedirs("/tmp/agplog")
+        self.log_file = tempfile.mkdtemp(prefix="agplog_") + "/AglarePosterX.log"
         clear_all_log()
 
         self.adsl = intCheck()
@@ -243,18 +242,16 @@ class AglarePosterX(Renderer):
                     service = NavigationInstance.instance.getCurrentlyPlayingServiceReference()
                     print('fallback service:', service)
                 else:
-					# Clean and store event data
-					# self.canal[0] = None
+                    # Clean and store event data
+                    # self.canal[0] = None
                     bt = source.event.getBeginTime()
                     if bt is not None:
                         self.canal[1] = bt
-
                     event_name = sub(r"[\u0000-\u001F\u007F-\u009F]", "", source.event.getEventName())
                     self.canal[2] = event_name
                     self.canal[3] = source.event.getExtendedDescription()
                     self.canal[4] = source.event.getShortDescription()
                     self.canal[5] = event_name
-
             else:
                 servicetype = None
 
@@ -435,25 +432,37 @@ class AglarePosterX(Renderer):
             logger.error(f"Poster validation error: {str(e)}")
             return False
 
+    def _log_info(self, message):
+        self._write_log("INFO", message)
+
     def _log_debug(self, message):
         self._write_log("DEBUG", message)
 
     def _log_error(self, message):
-        self._write_log("ERROR", message)
+        self._write_log("ERROR", message, error=True)
 
-    def _write_log(self, level, message):
-        """Centralized logging method"""
+    def _write_log(self, level, message, error=False):
+        """Centralized logging method writing to fixed log files"""
         try:
-            log_dir = "/tmp/agplog"
+            if not hasattr(self, "log_dir"):
+                log_dir = tempfile.mkdtemp(prefix="agplog_")
+
             if not exists(log_dir):
                 makedirs(log_dir)
-            with open(self.log_file, "a") as w:
-                w.write(f"{datetime.now()} {level}: {message}\n")
+
+            if error:
+                log_file = log_dir + "/PosterX_errors.log"
+            else:
+                log_file = log_dir + "/PosterX.log"
+
+            with open(log_file, "a") as w:
+                w.write("{} {}: {}\n".format(datetime.now(), level, message))
         except Exception as e:
-            print(f"Logging error: {e}")
+            print("Logging error: {}".format(e))
 
 
 class PosterDB(AgpDownloadThread):
+
     """Handles Poster downloading and database management"""
     def __init__(self, providers=None):
         # AgpDownloadThread.__init__()
@@ -469,9 +478,7 @@ class PosterDB(AgpDownloadThread):
         self.executor = ThreadPoolExecutor(max_workers=3)
         self.service_pattern = compile(r'^#SERVICE (\d+):([^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+)')
 
-        self.log_file = "/tmp/agplog/PosterDB.log"
-        if not exists("/tmp/agplog"):
-            makedirs("/tmp/agplog")
+        self.log_file = tempfile.mkdtemp(prefix="agplog_") + "/PosterDB.log"
 
         self.providers = api_key_manager.get_active_providers()
         self.provider_engines = self.build_providers()
@@ -606,22 +613,33 @@ class PosterDB(AgpDownloadThread):
         """Track failed download attempts"""
         self._log_debug(f"Failed attempt for {canal_name}")
 
+    def _log_info(self, message):
+        self._write_log("INFO", message)
+
     def _log_debug(self, message):
         self._write_log("DEBUG", message)
 
     def _log_error(self, message):
-        self._write_log("ERROR", message)
+        self._write_log("ERROR", message, error=True)
 
-    def _write_log(self, level, message):
-        """Centralized logging method"""
+    def _write_log(self, level, message, error=False):
+        """Centralized logging method writing to fixed log files"""
         try:
-            log_dir = "/tmp/agplog"
+            if not hasattr(self, "log_dir"):
+                log_dir = tempfile.mkdtemp(prefix="agplog_")
+
             if not exists(log_dir):
                 makedirs(log_dir)
-            with open(self.log_file, "a") as w:
-                w.write(f"{datetime.now()} {level}: {message}\n")
+
+            if error:
+                log_file = log_dir + "/PosterX_errors.log"
+            else:
+                log_file = log_dir + "/PosterX.log"
+
+            with open(log_file, "a") as w:
+                w.write("{} {}: {}\n".format(datetime.now(), level, message))
         except Exception as e:
-            print(f"Logging error: {e}")
+            print("Logging error: {}".format(e))
 
 
 class PosterAutoDB(AgpDownloadThread):
@@ -665,11 +683,13 @@ class PosterAutoDB(AgpDownloadThread):
         self.providers = {}
         self.pstcanal = None
         self.extensions = extensions
-        self.poster_folder = "/tmp"
+        self.poster_folder = "/tmp/posters"
+        if not exists(self.poster_folder):
+            makedirs(self.poster_folder, mode=0o700)
         self.scheduled_hour = 0
         self.scheduled_minute = 0
         self.last_scheduled_run = None
-        self.log_file = "/tmp/agplog/PosterAutoDB.log"
+        self.log_file = tempfile.mkdtemp(prefix="agplog_") + "/PosterAutoDB.log"
         self.daemon = True
         self.force_immediate = False
         self.active = False
@@ -699,8 +719,8 @@ class PosterAutoDB(AgpDownloadThread):
 
         if not exists("/tmp/agplog"):
             makedirs("/tmp/agplog")
-        self._log("=== INITIALIZATION COMPLETE ===")
-        self._log("=== READY ===")
+        self._log_info("=== INITIALIZATION COMPLETE ===")
+        self._log_info("=== READY ===")
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -839,9 +859,9 @@ class PosterAutoDB(AgpDownloadThread):
 
     def _full_scan(self):
         """Scan all available TV services"""
-        self._log("Starting full service scan")
+        self._log_info("Starting full service scan")
         self.service_queue = self._load_services()
-        self._log(f"Scan completed, found {len(self.service_queue)} services")
+        self._log_info(f"Scan completed, found {len(self.service_queue)} services")
 
     def _load_services(self):
         """Load services from Enigma2 bouquet files"""
@@ -961,7 +981,7 @@ class PosterAutoDB(AgpDownloadThread):
             return False
 
         if not self._check_storage():
-            self._log("Download skipped due to insufficient storage")
+            self._log_info("Download skipped due to insufficient storage")
             return False
 
         if not check_disk_space(POSTER_FOLDER, 10):
@@ -1014,7 +1034,13 @@ class PosterAutoDB(AgpDownloadThread):
             )
         except Exception as e:
             self._log_error(f"Poster folder init failed: {str(e)}")
-            return "/tmp/posters"
+            fallback = "/tmp/posters"
+            try:
+                if not exists(fallback):
+                    makedirs(fallback, mode=0o700)
+            except:
+                pass
+            return fallback
 
     def _check_storage(self):
         """Version optimized using utilities"""
@@ -1022,7 +1048,7 @@ class PosterAutoDB(AgpDownloadThread):
             if check_disk_space(self.poster_folder, self.min_disk_space):
                 return True
 
-            self._log("Low disk space detected, running cleanup...")
+            self._log_info("Low disk space detected, running cleanup...")
             delete_old_files_if_low_disk_space(
                 self.poster_folder,
                 min_free_space_mb=self.min_disk_space,
@@ -1035,22 +1061,31 @@ class PosterAutoDB(AgpDownloadThread):
             self._log_error(f"Storage check failed: {str(e)}")
             return False
 
-    def _log(self, message):
+    def _log_info(self, message):
         self._write_log("INFO", message)
 
     def _log_debug(self, message):
         self._write_log("DEBUG", message)
 
     def _log_error(self, message):
-        self._write_log("ERROR", message)
+        self._write_log("ERROR", message, error=True)
 
-    def _write_log(self, level, message):
-        """Centralized logging method"""
+    def _write_log(self, level, message, error=False):
+        """Centralized logging method writing to fixed log files"""
         try:
             log_dir = "/tmp/agplog"
             if not exists(log_dir):
                 makedirs(log_dir)
-            with open(self.log_file, "a") as w:
+
+            # Choose file based on error flag
+            if error:
+                log_file = log_dir + "/PosterX_errors.log"
+            elif level == "DEBUG":
+                log_file = log_dir + "/PosterX.log"
+            else:
+                log_file = log_dir + "/PosterX.log"
+
+            with open(log_file, "a") as w:
                 w.write(f"{datetime.now()} {level}: {message}\n")
         except Exception as e:
             print(f"Logging error: {e}")
@@ -1071,13 +1106,13 @@ def clear_all_log():
         "/tmp/agplog/PosterX.log",
         "/tmp/agplog/PosterAutoDB.log"
     ]
-    for files in log_files:
+    for file in log_files:
         try:
-            if exists(files):
-                remove(files)
-                logger.warning(f"Removed cache: {files}")
+            if exists(file):
+                remove(file)
+                logger.warning("Removed cache: {}".format(file))
         except Exception as e:
-            logger.error(f"log_files cleanup failed: {e}")
+            logger.error("log_files cleanup failed: {}".format(e))
 
 
 # download on requests

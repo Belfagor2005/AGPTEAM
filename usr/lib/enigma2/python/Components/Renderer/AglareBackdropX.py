@@ -70,6 +70,7 @@ from Components.Sources.CurrentService import CurrentService
 from Components.Sources.ServiceEvent import ServiceEvent
 from ServiceReference import ServiceReference
 import NavigationInstance
+import tempfile
 
 # Local imports
 from Plugins.Extensions.Aglare.api_config import cfg
@@ -172,9 +173,7 @@ class AglareBackdropX(Renderer):
         self.pstrNm = None
         self.backrNm = None
 
-        self.log_file = "/tmp/agplog/AglareBackdropX.log"
-        if not exists("/tmp/agplog"):
-            makedirs("/tmp/agplog")
+        self.log_file = tempfile.mkdtemp(prefix="agplog_") + "/AglareBackdropX.log"
         clear_all_log()
 
         self.adsl = intCheck()
@@ -248,13 +247,11 @@ class AglareBackdropX(Renderer):
                     bt = source.event.getBeginTime()
                     if bt is not None:
                         self.canal[1] = bt
-                    # event_name = self.source.event.getEventName().replace('\xc2\x86', '').replace('\xc2\x87', '')
                     event_name = sub(r"[\u0000-\u001F\u007F-\u009F]", "", source.event.getEventName())
                     self.canal[2] = event_name
                     self.canal[3] = source.event.getExtendedDescription()
                     self.canal[4] = source.event.getShortDescription()
                     self.canal[5] = event_name
-                    # self._log_debug(f"Event details set: {self.canal}")
             else:
                 servicetype = None
 
@@ -435,25 +432,37 @@ class AglareBackdropX(Renderer):
             logger.error(f"Backdrop validation error: {str(e)}")
             return False
 
+    def _log_info(self, message):
+        self._write_log("INFO", message)
+
     def _log_debug(self, message):
         self._write_log("DEBUG", message)
 
     def _log_error(self, message):
-        self._write_log("ERROR", message)
+        self._write_log("ERROR", message, error=True)
 
-    def _write_log(self, level, message):
-        """Centralized logging method"""
+    def _write_log(self, level, message, error=False):
+        """Centralized logging method writing to fixed log files"""
         try:
-            log_dir = "/tmp/agplog"
-            if not exists(log_dir):
-                makedirs(log_dir)
-            with open(self.log_file, "a") as w:
-                w.write(f"{datetime.now()} {level}: {message}\n")
+            if not hasattr(self, "log_dir"):
+                log_dir = tempfile.mkdtemp(prefix="agplog_")
+
+            if not exists(self.log_dir):
+                makedirs(self.log_dir)
+
+            if error:
+                log_file = log_dir + "/BackdropX_errors.log"
+            else:
+                log_file = log_dir + "/BackdropX.log"
+
+            with open(log_file, "a") as w:
+                w.write("{} {}: {}\n".format(datetime.now(), level, message))
         except Exception as e:
-            print(f"Logging error: {e}")
+            print("Logging error: {}".format(e))
 
 
 class BackdropDB(AgbDownloadThread):
+
     """Handles Backdrop downloading and database management"""
     def __init__(self, providers=None):
         # AgbDownloadThread.__init__()
@@ -470,9 +479,7 @@ class BackdropDB(AgbDownloadThread):
         self.executor = ThreadPoolExecutor(max_workers=3)
         self.service_pattern = compile(r'^#SERVICE (\d+):([^:]+:[^:]+:[^:]+:[^:]+:[^:]+:[^:]+)')
 
-        self.log_file = "/tmp/agplog/BackdropDB.log"
-        if not exists("/tmp/agplog"):
-            makedirs("/tmp/agplog")
+        self.log_file = tempfile.mkdtemp(prefix="agplog_") + "/BackdropDB.log"
 
         self.providers = api_key_manager.get_active_providers()
         self.provider_engines = self.build_providers()
@@ -607,22 +614,33 @@ class BackdropDB(AgbDownloadThread):
         """Track failed download attempts"""
         self._log_debug(f"Failed attempt for {canal_name}")
 
+    def _log_info(self, message):
+        self._write_log("INFO", message)
+
     def _log_debug(self, message):
         self._write_log("DEBUG", message)
 
     def _log_error(self, message):
-        self._write_log("ERROR", message)
+        self._write_log("ERROR", message, error=True)
 
-    def _write_log(self, level, message):
-        """Centralized logging method"""
+    def _write_log(self, level, message, error=False):
+        """Centralized logging method writing to fixed log files"""
         try:
-            log_dir = "/tmp/agplog"
-            if not exists(log_dir):
-                makedirs(log_dir)
-            with open(self.log_file, "a") as w:
-                w.write(f"{datetime.now()} {level}: {message}\n")
+            if not hasattr(self, "log_dir"):
+                log_dir = tempfile.mkdtemp(prefix="agplog_")
+
+            if not exists(self.log_dir):
+                makedirs(self.log_dir)
+
+            if error:
+                log_file = log_dir + "/BackdropX_errors.log"
+            else:
+                log_file = log_dir + "/BackdropX.log"
+
+            with open(log_file, "a") as w:
+                w.write("{} {}: {}\n".format(datetime.now(), level, message))
         except Exception as e:
-            print(f"Logging error: {e}")
+            print("Logging error: {}".format(e))
 
 
 class BackdropAutoDB(AgbDownloadThread):
@@ -666,11 +684,13 @@ class BackdropAutoDB(AgbDownloadThread):
         self.providers = {}
         self.pstcanal = None
         self.extensions = extensions
-        self.backdrop_folder = "/tmp"
+        self.backdrop_folder = "/tmp/backdrops"
+        if not exists(self.backdrop_folder):
+            makedirs(self.backdrop_folder, mode=0o700)
         self.scheduled_hour = 0
         self.scheduled_minute = 0
         self.last_scheduled_run = None
-        self.log_file = "/tmp/agplog/BackdropAutoDB.log"
+        self.log_file = tempfile.mkdtemp(prefix="agplog_") + "/BackdropAutoDB.log"
         self.daemon = True
         self.force_immediate = False
         self.active = False
@@ -700,8 +720,8 @@ class BackdropAutoDB(AgbDownloadThread):
 
         if not exists("/tmp/agplog"):
             makedirs("/tmp/agplog")
-        self._log("=== INITIALIZATION COMPLETE ===")
-        self._log("=== READY ===")
+        self._log_info("=== INITIALIZATION COMPLETE ===")
+        self._log_info("=== READY ===")
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -840,9 +860,9 @@ class BackdropAutoDB(AgbDownloadThread):
 
     def _full_scan(self):
         """Scan all available TV services"""
-        self._log("Starting full service scan")
+        self._log_info("Starting full service scan")
         self.service_queue = self._load_services()
-        self._log(f"Scan completed, found {len(self.service_queue)} services")
+        self._log_info(f"Scan completed, found {len(self.service_queue)} services")
 
     def _load_services(self):
         """Load services from Enigma2 bouquet files"""
@@ -962,7 +982,7 @@ class BackdropAutoDB(AgbDownloadThread):
             return False
 
         if not self._check_storage():
-            self._log("Download skipped due to insufficient storage")
+            self._log_info("Download skipped due to insufficient storage")
             return False
 
         if not check_disk_space(BACKDROP_FOLDER, 10):
@@ -1014,8 +1034,14 @@ class BackdropAutoDB(AgbDownloadThread):
                 min_space_mb=self.min_disk_space
             )
         except Exception as e:
-            self._log_error(f"backdrop folder init failed: {str(e)}")
-            return "/tmp/backdrops"
+            self._log_error(f"backdrops folder init failed: {str(e)}")
+            fallback = "/tmp/backdrops"
+            try:
+                if not exists(fallback):
+                    makedirs(fallback, mode=0o700)
+            except:
+                pass
+            return fallback
 
     def _check_storage(self):
         """Version optimized using utilities"""
@@ -1023,7 +1049,7 @@ class BackdropAutoDB(AgbDownloadThread):
             if check_disk_space(self.backdrop_folder, self.min_disk_space):
                 return True
 
-            self._log("Low disk space detected, running cleanup...")
+            self._log_info("Low disk space detected, running cleanup...")
             delete_old_files_if_low_disk_space(
                 self.backdrop_folder,
                 min_free_space_mb=self.min_disk_space,
@@ -1036,22 +1062,31 @@ class BackdropAutoDB(AgbDownloadThread):
             self._log_error(f"Storage check failed: {str(e)}")
             return False
 
-    def _log(self, message):
+    def _log_info(self, message):
         self._write_log("INFO", message)
 
     def _log_debug(self, message):
         self._write_log("DEBUG", message)
 
     def _log_error(self, message):
-        self._write_log("ERROR", message)
+        self._write_log("ERROR", message, error=True)
 
-    def _write_log(self, level, message):
-        """Centralized logging method"""
+    def _write_log(self, level, message, error=False):
+        """Centralized logging method writing to fixed log files"""
         try:
             log_dir = "/tmp/agplog"
             if not exists(log_dir):
                 makedirs(log_dir)
-            with open(self.log_file, "a") as w:
+
+            # Choose file based on error flag and level
+            if error:
+                log_file = log_dir + "/BackdropX_errors.log"
+            elif level == "DEBUG":
+                log_file = log_dir + "/BackdropX.log"
+            else:
+                log_file = log_dir + "/BackdropAutoDB.log"
+
+            with open(log_file, "a") as w:
                 w.write(f"{datetime.now()} {level}: {message}\n")
         except Exception as e:
             print(f"Logging error: {e}")
@@ -1072,13 +1107,13 @@ def clear_all_log():
         "/tmp/agplog/BackdropX.log",
         "/tmp/agplog/BackdropAutoDB.log"
     ]
-    for files in log_files:
+    for file in log_files:
         try:
-            if exists(files):
-                remove(files)
-                logger.warning(f"Removed cache: {files}")
+            if exists(file):
+                remove(file)
+                logger.warning("Removed cache: {}".format(file))
         except Exception as e:
-            logger.error(f"log_files cleanup failed: {e}")
+            logger.error("log_files cleanup failed: {}".format(e))
 
 
 # download on requests

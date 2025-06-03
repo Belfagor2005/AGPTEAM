@@ -50,6 +50,7 @@ from enigma import ePixmap, loadPNG
 from urllib.request import urlopen
 import gettext
 from Components.config import config
+# import tempfile
 
 # local import
 from Plugins.Extensions.Aglare.api_config import cfg
