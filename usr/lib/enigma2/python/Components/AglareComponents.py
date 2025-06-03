@@ -55,7 +55,7 @@ def is_py2():
 
 
 def ensure_binary(text, encoding='utf-8', errors='strict'):
-    if isPY2():
+    if is_py2():
         return text
     else:
         if isinstance(text, bytes):
