@@ -116,14 +116,14 @@ class AglareBitrate(Converter, object):
 	@cached
 	def getText(self):
 		if DBG:
-			AGDEBUG(f"[AglareBitrate:getText] vcur {self.vcur}")
+			agb_debug(f"[AglareBitrate:getText] vcur {self.vcur}")
 		return f'{self.vcur} Kb/s' if self.vcur > 0 else ''
 
 	text = property(getText)
 
 	def doSuspend(self, suspended):
 		if DBG:
-			AGDEBUG(f"[AglareBitrate:suspended] >>> self.is_suspended={self.is_suspended}, suspended={suspended}")
+			agb_debug(f"[AglareBitrate:suspended] >>> self.is_suspended={self.is_suspended}, suspended={suspended}")
 
 		if not suspended:
 			self.is_suspended = False
@@ -137,17 +137,17 @@ class AglareBitrate(Converter, object):
 		if not self.is_running:
 			if self.source.service:
 				if DBG:
-					AGDEBUG("[AglareBitrate:start] initiate run_timer")
+					agb_debug("[AglareBitrate:start] initiate run_timer")
 				self.is_running = True
 				self.run_timer.start(100, True)
 			else:
 				if DBG:
-					AGDEBUG("[AglareBitrate:start] wait 100ms for self.source.service")
+					agb_debug("[AglareBitrate:start] wait 100ms for self.source.service")
 				self.start_timer.start(100, True)
 
 	def run_bitrate(self):
 		if DBG:
-			AGDEBUG("[AglareBitrate:run_bitrate] >>>")
+			agb_debug("[AglareBitrate:run_bitrate] >>>")
 
 		# Default values
 		adapter = 0
@@ -158,14 +158,14 @@ class AglareBitrate(Converter, object):
 			stream = self.source.service.stream()
 			if stream:
 				if DBG:
-					AGDEBUG("[AglareBitrate:run_bitrate] Collecting stream data...")
+					agb_debug("[AglareBitrate:run_bitrate] Collecting stream data...")
 				stream_data = stream.getStreamingData()
 				if stream_data:
 					demux = max(stream_data.get('demux', 0), 0)
 					adapter = max(stream_data.get('adapter', 0), 0)
 		except Exception as e:
 			if DBG:
-				AGDEBUG(f"[AglareBitrate:run_bitrate] Exception collecting stream data: {e}")
+				agb_debug(f"[AglareBitrate:run_bitrate] Exception collecting stream data: {e}")
 
 		# Get service info
 		try:
@@ -174,7 +174,7 @@ class AglareBitrate(Converter, object):
 			apid = info.getInfo(iServiceInformation.sAudioPID)
 		except Exception as e:
 			if DBG:
-				AGDEBUG(f"[AglareBitrate:run_bitrate] Exception collecting service info: {e}")
+				agb_debug(f"[AglareBitrate:run_bitrate] Exception collecting service info: {e}")
 			return
 
 		if vpid >= 0 and apid >= 0:
@@ -184,12 +184,12 @@ class AglareBitrate(Converter, object):
 				cmd = f'killall -9 bitrate > /dev/null 2>&1; nice bitrate {adapter} {demux} {vpid} {vpid}'
 
 			if DBG:
-				AGDEBUG(f'[AglareBitrate:run_bitrate] starting "{cmd}"')
+				agb_debug(f'[AglareBitrate:run_bitrate] starting "{cmd}"')
 			self.container.execute(cmd)
 
 	def clear_values(self, *args):
 		if DBG:
-			AGDEBUG("[AglareBitrate:clear_values] >>>")
+			agb_debug("[AglareBitrate:clear_values] >>>")
 
 		self.is_running = False
 		self.vmin = self.vmax = self.vavg = self.vcur = 0
@@ -200,7 +200,7 @@ class AglareBitrate(Converter, object):
 
 	def app_closed(self, retval):
 		if DBG:
-			AGDEBUG(f"[AglareBitrate:app_closed] >>> retval={retval}, is_suspended={self.is_suspended}")
+			agb_debug(f"[AglareBitrate:app_closed] >>> retval={retval}, is_suspended={self.is_suspended}")
 
 		if self.is_suspended:
 			self.clear_values()
@@ -209,7 +209,7 @@ class AglareBitrate(Converter, object):
 
 	def data_avail(self, data):
 		if DBG:
-			AGDEBUG(f"[AglareBitrate:data_avail] >>> data '{data}'\n\tself.remaining_data='{self.remaining_data}'")
+			agb_debug(f"[AglareBitrate:data_avail] >>> data '{data}'\n\tself.remaining_data='{self.remaining_data}'")
 
 		# Handle string encoding
 		data_str = self.remaining_data + (str(data) if six.PY2 else str(data, 'utf-8', 'ignore'))
