@@ -213,7 +213,7 @@ config.plugins.Aglare.bscan_time = ConfigClock(calcTime(2, 0))  # 02:00
 config.plugins.Aglare.rating_source = ConfigOnOff(default=False)
 
 # infoevents
-config.plugins.Aglare.info_display_mode = ConfigSelection(default="auto", choices=[
+config.plugins.Aglare.info_display_mode = ConfigSelection(default="Off", choices=[
 	("auto", _("Automatic")),
 	("tmdb", _("TMDB Only")),
 	("omdb", _("OMDB Only")),
@@ -221,7 +221,7 @@ config.plugins.Aglare.info_display_mode = ConfigSelection(default="auto", choice
 ])
 
 # parental
-config.plugins.Aglare.info_parental_mode = ConfigSelection(default="auto", choices=[
+config.plugins.Aglare.info_parental_mode = ConfigSelection(default="Off", choices=[
 	("auto", _("Automatic")),
 	("tmdb", _("TMDB Only")),
 	("omdb", _("OMDB Only")),
