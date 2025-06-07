@@ -194,9 +194,9 @@ class AglarePosterX(Renderer):
         self.poster_auto_db = PosterAutoDB(providers=self.providers)
 
         # -------------------------------------------------
-        logger.info("AglarePosterX Renderer initialized")
-        logger.debug(f"Path archiving: {self.storage_path}")
-        logger.debug(f"Provider actives: {list(self.providers.keys())}")
+        # logger.info("AglarePosterX Renderer initialized")
+        # logger.debug(f"Path archiving: {self.storage_path}")
+        # logger.debug(f"Provider actives: {list(self.providers.keys())}")
 
     def applySkin(self, desktop, parent):
         """Apply skin configuration and settings"""
@@ -698,11 +698,11 @@ class PosterAutoDB(AgpDownloadThread):
         self._active_event.set()
 
         if not cfg.pstdown.value:
-            logger.debug("PosterAutoDB: Automatic downloads DISABLED in configuration")
+            # logger.debug("PosterAutoDB: Automatic downloads DISABLED in configuration")
             return
 
         if not any(api_key_manager.get_active_providers().values()):
-            logger.debug("Disabled - no active provider")
+            # logger.debug("Disabled - no active provider")
             return
 
         # Proceed with full initialization

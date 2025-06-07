@@ -194,9 +194,9 @@ class AglareBackdropX(Renderer):
 		self.backdrop_auto_db = BackdropAutoDB(providers=self.providers)
 
 		# -------------------------------------------------
-		logger.info("AglareBackdropX Renderer initialized")
-		logger.debug(f"Path archiving: {self.storage_path}")
-		logger.debug(f"Provider actives: {list(self.providers.keys())}")
+		# logger.info("AglareBackdropX Renderer initialized")
+		# logger.debug(f"Path archiving: {self.storage_path}")
+		# logger.debug(f"Provider actives: {list(self.providers.keys())}")
 
 	def applySkin(self, desktop, parent):
 		"""Apply skin configuration and settings"""
@@ -699,11 +699,11 @@ class BackdropAutoDB(AgbDownloadThread):
 		self._active_event.set()
 
 		if not cfg.bkddown.value:
-			logger.debug("BackdropAutoDB: Automatic downloads DISABLED in configuration")
+			# logger.debug("BackdropAutoDB: Automatic downloads DISABLED in configuration")
 			return
 
 		if not any(api_key_manager.get_active_providers().values()):
-			logger.debug("Disabilitato - nessun provider attivo")
+			# logger.debug("Disabilitato - nessun provider attivo")
 			return
 
 		# Proceed with full initialization

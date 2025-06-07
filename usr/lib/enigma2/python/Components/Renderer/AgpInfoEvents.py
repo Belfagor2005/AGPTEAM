@@ -141,7 +141,7 @@ class AgpInfoEvents(Renderer, VariableText):
 		self.storage_path = POSTER_FOLDER
 		self.timer = eTimer()
 		self.timer.callback.append(self.delayed_update)
-		logger.info("AgpInfoEvents Renderer initialized")
+		# logger.info("AgpInfoEvents Renderer initialized")
 
 	def get_labels(self):
 		return {

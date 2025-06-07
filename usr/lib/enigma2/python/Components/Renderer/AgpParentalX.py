@@ -156,7 +156,7 @@ class AgpParentalX(Renderer):
 
 		self.icon_path = join(PARENTAL_ICON_PATH, DEFAULT_ICON)
 		self.storage_path = POSTER_FOLDER
-		logger.info("AgpParentalX Renderer initialized")
+		# logger.info("AgpParentalX Renderer initialized")
 
 	def changed(self, what):
 		if what is None or not self.adsl or PARENT_SOURCE == "off":

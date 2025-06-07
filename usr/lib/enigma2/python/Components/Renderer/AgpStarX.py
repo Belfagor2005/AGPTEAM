@@ -154,7 +154,7 @@ class AgpStarX(VariableValue, Renderer):
 		self.rating_source = cfg.rating_source.value
 		self._setup_caching()
 
-		logger.info("AgpStarX Renderer initialized")
+		# logger.info("AgpStarX Renderer initialized")
 
 	def changed(self, what):
 		"""Handle content changes"""

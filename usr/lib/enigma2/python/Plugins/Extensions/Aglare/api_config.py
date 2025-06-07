@@ -178,8 +178,8 @@ config.plugins.Aglare = ConfigSubsection()
 config.plugins.Aglare.download_now_poster = NoSave(ConfigYesNo(default=False))
 config.plugins.Aglare.download_now_backdrop = NoSave(ConfigYesNo(default=False))
 
-config.plugins.Aglare.actapi = ConfigOnOff(default=True)
-config.plugins.Aglare.tmdb = ConfigOnOff(default=True)
+config.plugins.Aglare.actapi = ConfigOnOff(default=False)
+config.plugins.Aglare.tmdb = ConfigOnOff(default=False)
 config.plugins.Aglare.load_tmdb_api = ConfigYesNo(default=False)
 config.plugins.Aglare.tmdb_api = ConfigText(default="3c3efcf47c3577558812bb9d64019d65", visible_width=50, fixed_size=False)
 
@@ -201,7 +201,7 @@ config.plugins.Aglare.imdb = ConfigOnOff(default=False)
 config.plugins.Aglare.programmetv = ConfigOnOff(default=False)
 config.plugins.Aglare.molotov = ConfigOnOff(default=False)
 
-config.plugins.Aglare.cache = ConfigOnOff(default=True)
+config.plugins.Aglare.cache = ConfigOnOff(default=False)
 agp_use_cache = config.plugins.Aglare.cache
 
 config.plugins.Aglare.pstdown = ConfigOnOff(default=False)

@@ -131,7 +131,7 @@ class AgpXEMC(Renderer):
 
         self._poster_timer = eTimer()
         self._poster_timer.callback.append(self._retryPoster)
-        logger.info("AgpXEMC AGP Movie Renderer initialized")
+        # logger.info("AgpXEMC AGP Movie Renderer initialized")
         self._log_info("AgpXEMC AGP Movie Renderer initialized")
 
     def applySkin(self, desktop, parent):

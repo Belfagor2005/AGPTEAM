@@ -297,7 +297,7 @@ class AgpGenreX(Renderer):
 			return
 
 		self.storage_path = POSTER_FOLDER
-		logger.info("AgpGenreX Renderer initialized")
+		# logger.info("AgpGenreX Renderer initialized")
 
 	def changed(self, what):
 		"""Handle EPG changes"""
