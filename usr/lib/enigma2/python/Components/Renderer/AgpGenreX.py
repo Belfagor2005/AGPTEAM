@@ -74,12 +74,20 @@ GENRE_SOURCE = cfg.genre_source.value
 
 
 """skin configuration
-
+# eventview
 <widget render="AgpGenreX"
 	source="session.Event_Now"
 	position="44,370"
 	size="160,45"
 	zPosition="22"
+	transparent="1" />
+
+# channel selection
+<widget render="AgpXEMC"
+	source="Service"
+	position="1708,534"
+	size="200,300"
+	zPosition="22"/>
 	transparent="1" />
 
 
