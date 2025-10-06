@@ -338,6 +338,7 @@ def convtext(text):
 			("ncis origins", "ncis origins", "set"),
 			("ncis hawai", "ncis hawai", "set"),
 			("ncis sydney", "ncis sydney", "set"),
+			("ncis tony & ziva", "ncis tony & ziva", "set"),
 			("ritorno al futuro - parte iii", "ritornoalfuturoparteiii", "set"),
 			("ritorno al futuro - parte ii", "ritornoalfuturoparteii", "set"),
 			("walker, texas ranger", "walker texas ranger", "set"),
