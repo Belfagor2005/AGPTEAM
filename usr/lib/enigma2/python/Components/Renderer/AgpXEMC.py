@@ -48,7 +48,7 @@ __copyright__ = "AGP Team"
 # Standard library
 from datetime import datetime
 from os import remove, makedirs
-from os.path import join, exists, getsize, basename  # , splitext
+from os.path import join, exists, getsize, basename, dirname
 from threading import Thread, Lock
 from queue import LifoQueue
 from concurrent.futures import ThreadPoolExecutor
@@ -220,42 +220,34 @@ class AgpXEMC(Renderer):
 
         if _validate_poster(poster_path):
             self.waitPoster(poster_path)
-        else:
-            search_title = self._sanitize_title(basename(movie_path))  # .rsplit('.', 1)[0]
-            self._queue_for_download(search_title, clean_title, poster_path)
+            return
 
-    # def _sanitize_title(self, filename):
-        # name = splitext(basename(filename))[0]
-        # # Preserve common separators and remove special characters
-        # cleaned = re.sub(r'[^\w\-_\.\(\) ]', '', name)
-        # # Extract year more accurately
-        # year_match = re.search(r'(19|20)\d{2}', cleaned)
-        # self.release_year = year_match.group(0) if year_match else None
-        # # Remove year from title for cleaner search
-        # if self.release_year:
-            # cleaned = cleaned.replace(self.release_year, '').strip()
-        # return cleaned
+        with db_lock:
+            if clean_title in AgpDBemc.queued if hasattr(AgpDBemc, 'queued') else False:
+                self.waitPoster(poster_path)
+                return
+
+        search_title = self._sanitize_title(basename(movie_path))
+        self._queue_for_download(search_title, clean_title, poster_path)
 
     def _sanitize_title(self, filename):
         name = filename.rsplit('.', 1)[0]
         logger.info(f"Original name: {filename}")
+
         cleaned = sanitize_filename(name)
         cleaned = clean_for_tvdb(cleaned)
         logger.info(f"Sanitized title: {cleaned}")
 
-        year_match = findall(r'\b(19|20)\d{2}\b', filename)
+        year_match = findall(r'\b(19\d{2}|20\d{2})\b', filename)
         logger.info(f"AgpXEMC Year found: {year_match}")
 
         if year_match:
-            self.release_year = year_match[0]  # Prendi il primo anno trovato
+            self.release_year = year_match[-1]
             logger.info(f"AgpXEMC Year extract: {self.release_year}")
         else:
             self.release_year = None
             logger.info("AgpXEMC Year not found in file name.")
 
-        # if self.release_year and len(self.release_year) == 2:
-            # self.release_year = "2025"
-            # logger.info(f"Year coorect: {self.release_year}")
         logger.info(f"AgpXEMC Title to find TMDB: {cleaned}")
         self._log_info(f"AgpXEMC Title to find TMDB: {cleaned}")
         return cleaned.strip()
@@ -267,7 +259,6 @@ class AgpXEMC(Renderer):
         logger.info("AgpXEMC  EMC put: clean_title='%s' movie_path='%s' poster_path='%s'", search_title, clean_title, poster_path)
         pdbemc.put((search_title, clean_title, poster_path, self.release_year))
         self.runPosterThread(poster_path)
-        # self.waitPoster(poster_path)
 
     def runPosterThread(self, poster_path):
         """Start background thread to wait for poster download"""
@@ -396,12 +387,18 @@ class PosterDBEMC(AgpDownloadThread):
     def _process_item(self, item):
         search_title, clean_title, poster_path, release_year = item
         logger.debug(f"AgpXEMC Processing item: {item}")
+
         with self.lock:
             if search_title in self.queued:
                 return
             self.queued.add(search_title)
 
         try:
+            poster_dir = dirname(poster_path)
+            if not exists(poster_dir):
+                makedirs(poster_dir, exist_ok=True)
+                logger.info(f"Created directory: {poster_dir}")
+
             if self._check_existing(poster_path):
                 return
 
@@ -516,8 +513,23 @@ def _is_video_file(path):
 
 
 def _validate_poster(poster_path):
-    """Check if the poster file is valid (exists and has a valid size)"""
-    return exists(poster_path) and getsize(poster_path) > 100
+    """Check if the poster file is valid (exists and has a valid size and formato)"""
+    try:
+        if not exists(poster_path):
+            return False
+
+        file_size = getsize(poster_path)
+        if file_size < 1024:
+            return False
+
+        with open(poster_path, 'rb') as f:
+            header = f.read(2)
+            if header != b'\xFF\xD8':  # JPEG magic number
+                return False
+
+        return True
+    except Exception:
+        return False
 
 
 def clear_all_log():
