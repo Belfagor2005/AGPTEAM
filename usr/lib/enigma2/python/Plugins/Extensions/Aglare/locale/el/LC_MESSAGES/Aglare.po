@@ -1,8 +1,15 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: Aglare\n"
-"POT-Creation-Date: 2025-05-24 16:00+0200\n"
-"PO-Revision-Date: 2025-05-24 23:26+0300\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-11-15 12:37+0100\n"
+"PO-Revision-Date: 2025-11-15 12:37+0100\n"
 "Last-Translator: \n"
 "Language-Team: giorbak\n"
 "Language: el\n"
@@ -10,46 +17,160 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 3.2\n"
-"X-Poedit-Basepath: ..\n"
+"X-Generator: Poedit 3.8\n"
 "X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-Basepath: ../../..\n"
 "X-Poedit-SearchPath-0: api_config.py\n"
 "X-Poedit-SearchPath-1: DownloadControl.py\n"
 "X-Poedit-SearchPath-2: plugin.py\n"
+"X-Poedit-SearchPath-3: addons/checkskin.py\n"
+"X-Poedit-SearchPath-4: addons/File_Commander.py\n"
+"X-Poedit-SearchPath-5: addons/type_utils.py\n"
+"X-Poedit-SearchPath-6: addons/WeatherSearch.py\n"
 
 #: DownloadControl.py:83 DownloadControl.py:112
+#, python-brace-format
 msgid "Download error: {}"
-msgstr "Σφάλμα λήψης: {}"
+msgstr ""
+
+#: addons/File_Commander.py:28 addons/type_utils.py:23
+msgid "File Commander - Addon"
+msgstr "File Commander - Πρόσθετο"
+
+#: addons/File_Commander.py:29 addons/type_utils.py:24
+msgid "play/show Files"
+msgstr "aναπαραγωγή/προβολή αρχείων"
+
+#: addons/File_Commander.py:91 addons/type_utils.py:86
+msgid "Exit"
+msgstr "Έξοδος"
+
+#: addons/File_Commander.py:92 addons/type_utils.py:87
+msgid "Save"
+msgstr "Αποθήκευση"
+
+#: addons/File_Commander.py:93 addons/type_utils.py:88
+msgid "Del Line"
+msgstr ""
+
+#: addons/File_Commander.py:94 addons/type_utils.py:89
+msgid "Ins Line"
+msgstr ""
+
+#: addons/WeatherSearch.py:32
+msgid "metric system"
+msgstr "mετρικό σύστημα"
+
+#: addons/WeatherSearch.py:32
+msgid "imperial system"
+msgstr "aγγλικό σύστημα"
+
+#: addons/WeatherSearch.py:79
+msgid "WeatherPlugin: List of Entries"
+msgstr "WeatherPlugin: Λίστα καταχωρήσεων"
+
+#: addons/WeatherSearch.py:80 addons/WeatherSearch.py:258
+msgid "City"
+msgstr "Πόλη"
+
+#: addons/WeatherSearch.py:81 addons/WeatherSearch.py:258
+msgid "System"
+msgstr "Σύστημα"
+
+#: addons/WeatherSearch.py:82 addons/WeatherSearch.py:376
+msgid "Back"
+msgstr "Πίσω"
+
+#: addons/WeatherSearch.py:83
+msgid "Add"
+msgstr "Προσθήκη"
+
+#: addons/WeatherSearch.py:84
+msgid "Edit"
+msgstr "Επεξεργασία"
+
+#: addons/WeatherSearch.py:85 addons/WeatherSearch.py:250
+msgid "Delete"
+msgstr "Διαγραφή"
+
+#: addons/WeatherSearch.py:142 addons/WeatherSearch.py:313
+msgid "Really delete this WeatherPlugin Entry?"
+msgstr "Θέλετε σίγουρα να διαγράψετε αυτήν την καταχώρηση του WeatherPlugin;"
+
+#: addons/WeatherSearch.py:238
+msgid "WeatherPlugin: Edit Entry"
+msgstr "WeatherPlugin: Επεξεργασία καταχώρησης"
+
+#: addons/WeatherSearch.py:248
+msgid "Cancel"
+msgstr "Άκυρο"
+
+#: addons/WeatherSearch.py:249 addons/WeatherSearch.py:377
+msgid "OK"
+msgstr "Εντάξει"
+
+#: addons/WeatherSearch.py:251
+msgid "Search Code"
+msgstr "Αναζήτηση κωδικού"
+
+#: addons/WeatherSearch.py:258
+msgid "Location code"
+msgstr "Κωδικός τοποθεσίας"
+
+#: addons/WeatherSearch.py:272
+msgid ""
+"You need to enter a valid city name before you can search for the location "
+"code."
+msgstr ""
+"Πρέπει να εισάγετε ένα έγκυρο όνομα πόλης πριν μπορέσετε να αναζητήσετε τον "
+"κωδικό τοποθεσίας."
+
+#: addons/WeatherSearch.py:284 addons/WeatherSearch.py:296
+msgid "Please enter a valid city name."
+msgstr "Παρακαλώ εισάγετε ένα έγκυρο όνομα πόλης."
+
+#: addons/WeatherSearch.py:286 addons/WeatherSearch.py:299
+msgid "Please enter a valid location code for the city."
+msgstr "Παρακαλώ εισάγετε έναν έγκυρο κωδικό τοποθεσίας για την πόλη."
+
+#: addons/WeatherSearch.py:375
+msgid "MSN location search result"
+msgstr "Αποτέλεσμα αναζήτησης τοποθεσίας MSN"
 
 #: api_config.py:168
+#, python-brace-format
 msgid "Key {} successfully loaded!"
-msgstr "Το κλειδί {} φορτώθηκε με επιτυχία!"
+msgstr ""
 
 #: api_config.py:169
+#, python-brace-format
 msgid "File {} not found or empty"
-msgstr "Το αρχείο {} δεν βρέθηκε ή είναι κενό"
+msgstr ""
 
 #: api_config.py:172
+#, fuzzy, python-brace-format
+#| msgid "Error downloading files!"
 msgid "Error loading: {}"
-msgstr "Σφάλμα φόρτωσης: {}"
+msgstr "Σφάλμα κατά τη λήψη των αρχείων!"
 
 #: api_config.py:217 api_config.py:225
 msgid "Automatic"
-msgstr "Αυτόματο"
+msgstr ""
 
 #: api_config.py:218 api_config.py:226
 msgid "TMDB Only"
-msgstr "Μόνο TMDB"
+msgstr ""
 
 #: api_config.py:219 api_config.py:227
 msgid "OMDB Only"
-msgstr "Μόνο OMDB"
+msgstr ""
 
 #: api_config.py:220 api_config.py:228
 msgid "Off"
-msgstr "Απενεργοποίηση"
+msgstr ""
 
-#: api_config.py:242 api_config.py:254 api_config.py:264 api_config.py:268 api_config.py:299 api_config.py:335
+#: api_config.py:242 api_config.py:254 api_config.py:264 api_config.py:268
+#: api_config.py:297 api_config.py:335
 msgid "Default"
 msgstr "Προεπιλογή"
 
@@ -79,119 +200,131 @@ msgstr "Κόκκινο"
 
 #: api_config.py:249
 msgid "Purple"
-msgstr "Μωβ"
+msgstr "Μοβ"
 
 #: api_config.py:250
-msgid "Green2"
-msgstr "Πράσινο2"
+#, fuzzy
+#| msgid "Green"
+msgid "Dark Green"
+msgstr "Πράσινο"
 
 #: api_config.py:255
 msgid "HandelGotD"
-msgstr ""
+msgstr "HandelGotD"
 
 #: api_config.py:256
 msgid "KhalidArtboldRegular"
-msgstr ""
+msgstr "KhalidArtboldRegular"
 
 #: api_config.py:257
 msgid "BebasNeue"
-msgstr ""
+msgstr "BebasNeue"
 
 #: api_config.py:258
 msgid "Greta"
-msgstr ""
+msgstr "Greta"
 
 #: api_config.py:259
 msgid "Segoe UI light"
-msgstr ""
+msgstr "Segoe UI light"
 
 #: api_config.py:260
 msgid "MV Boli"
-msgstr ""
+msgstr "MV Boli"
 
-#: api_config.py:269 api_config.py:300
+#: api_config.py:269 api_config.py:298
 msgid "Style2"
 msgstr "Στυλ2"
 
-#: api_config.py:270 api_config.py:301
+#: api_config.py:270 api_config.py:299
 msgid "Style3"
 msgstr "Στυλ3"
 
-#: api_config.py:271 api_config.py:302
+#: api_config.py:271 api_config.py:300
 msgid "Style4"
 msgstr "Στυλ4"
 
-#: api_config.py:272
-msgid "Style5 CD"
-msgstr "Στυλ5 CD"
-
-#: api_config.py:276 api_config.py:282 api_config.py:306 api_config.py:311 api_config.py:340 plugin.py:231 plugin.py:256
+#: api_config.py:275 api_config.py:281 api_config.py:304 api_config.py:309
+#: api_config.py:340 plugin.py:231 plugin.py:255
 msgid "OFF"
 msgstr "Απενεργοποίηση"
 
-#: api_config.py:277 api_config.py:283 api_config.py:307 api_config.py:312 api_config.py:341 plugin.py:232 plugin.py:257
+#: api_config.py:276 api_config.py:282 api_config.py:305 api_config.py:310
+#: api_config.py:341 plugin.py:232 plugin.py:256
 msgid "ON"
 msgstr "Ενεργοποίηση"
 
-#: api_config.py:278 api_config.py:284 plugin.py:237 plugin.py:267
-msgid "CD"
-msgstr ""
-
-#: api_config.py:285 plugin.py:263
+#: api_config.py:277 api_config.py:283 plugin.py:262
 msgid "Backdrop"
 msgstr "Σκηνικό"
 
-#: api_config.py:289
+#: api_config.py:287
 msgid "Infobar_NO_Date"
 msgstr "Μπάρα πληροφοριών_Χωρίς ημερομηνία"
 
-#: api_config.py:290
+#: api_config.py:288
 msgid "Infobar_Date"
 msgstr "Μπάρα πληροφοριών_Ημερομηνία"
 
-#: api_config.py:294
+#: api_config.py:292
 msgid "Infobar_NO_Weather"
 msgstr "Μπάρα πληροφοριών_Χωρίς καιρό"
 
-#: api_config.py:295
+#: api_config.py:293
+#, fuzzy
+#| msgid "Infobar_OAWeather"
 msgid "Infobar_Weather"
-msgstr "Μπάρα πληροφοριών_Καιρός"
+msgstr "Μπάρα πληροφοριών_Καιρός OA"
 
-#: api_config.py:316
+#: api_config.py:314
 msgid "ChannelSelection_NO_Posters"
 msgstr "Επιλογή καναλιών_Χωρίς αφίσες"
 
-#: api_config.py:317
+#: api_config.py:315
 msgid "ChannelSelection_NO_Posters_NO_Picon"
 msgstr "Επιλογή καναλιών_Χωρίς αφίσες_Χωρίς Picon"
 
+#: api_config.py:316
+msgid "ChannelSelection_BackDrop_V_EX"
+msgstr "Επιλογή καναλιών_Κάθετο σκηνικό EX"
+
+#: api_config.py:317
+msgid "ChannelSelection_BackDrop_V_PX"
+msgstr "Επιλογή καναλιών_Κάθετο σκηνικό PX"
+
 #: api_config.py:318
-msgid "ChannelSelection_BackDrop_V"
-msgstr "Επιλογή καναλιών_Κάθετο σκηνικό"
+msgid "ChannelSelection_BackDrop_H_EX"
+msgstr "Επιλογή καναλιών_Οριζόντιο σκηνικό_EX"
 
 #: api_config.py:319
-msgid "ChannelSelection_BackDrop_H"
-msgstr "Επιλογή καναλιών_Οριζόντιο σκηνικό"
+msgid "ChannelSelection_BackDrop_H_PX"
+msgstr "Επιλογή καναλιών_Οριζόντιο σκηνικό PX"
 
 #: api_config.py:320
+#, fuzzy
+#| msgid "ChannelSelection_1_Poster_PX"
 msgid "ChannelSelection_1_Poster_X"
-msgstr "Επιλογή καναλιών_1_αφίσα_X"
+msgstr "Επιλογή καναλιών_1 αφίσα PX"
 
 #: api_config.py:321
 msgid "ChannelSelection_1_Poster_EX"
-msgstr "Επιλογή καναλιών_1_αφίσα_EX"
+msgstr "Επιλογή καναλιών_1 αφίσα EX"
 
 #: api_config.py:322
+#, fuzzy
+#| msgid "ChannelSelection_4_Posters_PX"
 msgid "ChannelSelection_4_Posters_X"
-msgstr "Επιλογή καναλιών_4 αφίσες X"
+msgstr "Επιλογή καναλιών_4 αφίσες PX"
 
 #: api_config.py:323
 msgid "ChannelSelection_4_Posters_EX"
 msgstr "Επιλογή καναλιών_4 αφίσες EX"
 
 #: api_config.py:324
+#, fuzzy
+#| msgid "ChannelSelection_6_Posters_PX"
 msgid "ChannelSelection_6_Posters_X"
-msgstr "Επιλογή καναλιών_6 αφίσες X"
+msgstr "Επιλογή καναλιών_6 αφίσες PX"
 
 #: api_config.py:325
 msgid "ChannelSelection_6_Posters_EX"
@@ -199,7 +332,7 @@ msgstr "Επιλογή καναλιών_6 αφίσες EX"
 
 #: api_config.py:326
 msgid "ChannelSelection_big_mini_tv"
-msgstr "Επιλογή καναλιών_big mini tv"
+msgstr "Επιλογή καναλιών_Μεγάλη mini tv"
 
 #: api_config.py:330
 msgid "EventView_NO_Posters"
@@ -211,213 +344,241 @@ msgstr "Προβολή προγραμμάτων_7 αφίσες"
 
 #: api_config.py:336
 msgid "volume2"
-msgstr "Ένταση2"
+msgstr "eνταση2"
 
-#: plugin.py:286
+#: plugin.py:237 plugin.py:266
+msgid "CD"
+msgstr "CD"
+
+#: plugin.py:285
 msgid "Color Style:"
 msgstr "Στυλ χρωμάτων:"
 
-#: plugin.py:287
+#: plugin.py:286
 msgid "Select Your Font:"
 msgstr "Επιλογή γραμματοσειράς:"
 
-#: plugin.py:288
+#: plugin.py:287
 msgid "Skin Style:"
 msgstr "Στυλ θέματος:"
 
-#: plugin.py:289
+#: plugin.py:288
 msgid "InfoBar Style:"
 msgstr "Στυλ μπάρας πληροφοριών:"
 
-#: plugin.py:290
+#: plugin.py:289
 msgid "InfoBar PosterX:"
 msgstr "Αφίσες μπάρας πληροφοριών:"
 
-#: plugin.py:291
+#: plugin.py:290
 msgid "InfoBar Xtraevent:"
 msgstr "Έξτρα πρόγραμμα μπάρας πληροφοριών:"
 
-#: plugin.py:292
+#: plugin.py:291
 msgid "InfoBar Date:"
 msgstr "Ημερομηνία μπάρας πληροφοριών:"
 
-#: plugin.py:293
+#: plugin.py:292
 msgid "InfoBar Weather:"
 msgstr "Καιρός μπάρας πληροφοριών:"
 
-#: plugin.py:294
+#: plugin.py:293
 msgid "SecondInfobar Style:"
 msgstr "Στυλ 2ης μπάρας πληροφοριών:"
 
-#: plugin.py:295
+#: plugin.py:294
 msgid "SecondInfobar Posterx:"
 msgstr "Αφίσες 2ης μπάρας πληροφοριών:"
 
-#: plugin.py:296
+#: plugin.py:295
 msgid "SecondInfobar Xtraevent:"
 msgstr "Έξτρα πρόγραμμα 2ης μπάρας πληροφοριών:"
 
-#: plugin.py:297
+#: plugin.py:296
 msgid "ChannelSelection Style:"
 msgstr "Στυλ επιλογής καναλιών:"
 
-#: plugin.py:298
+#: plugin.py:297
 msgid "EventView Style:"
 msgstr "Στυλ προβολής προγραμμάτων:"
 
-#: plugin.py:299
+#: plugin.py:298
 msgid "VolumeBar Style:"
 msgstr "Στυλ μπάρας έντασης ήχου:"
 
-#: plugin.py:300
+#: plugin.py:299
 msgid "Support E2iplayer Skins:"
 msgstr "Υποστήριξη θεμάτων E2iplayer:"
 
-#: plugin.py:304
+#: plugin.py:303
 msgid "Remove all png (poster - backdrop) (OK)"
-msgstr "Αφαίρεση όλων των png (αφίσα - φόντο) (OK)"
+msgstr ""
 
-#: plugin.py:304
+#: plugin.py:303
 msgid "This operation remove all png from folder device (Poster-Backdrop)"
-msgstr "Αυτή η λειτουργία αφαιρεί όλα τα png από το φάκελο της συσκευής (Αφίσα-Φόντο)"
+msgstr ""
 
-#: plugin.py:308
+#: plugin.py:307
 msgid "Enable Rating Star:"
-msgstr "Ενεργοποίηση αστεριών αξιολόγησης:"
+msgstr ""
+
+#: plugin.py:307
+msgid ""
+"This operation enable the display of rating stars for events, based on the "
+"selected rating source."
+msgstr ""
 
 #: plugin.py:308
-msgid "This operation enable the display of rating stars for events, based on the selected rating source."
-msgstr "Αυτή η λειτουργία ενεργοποιεί την εμφάνιση αστεριών αξιολόγησης για προγράμματα, με βάση την επιλεγμένη πηγή αξιολόγησης."
-
-#: plugin.py:309
 msgid "Enable Parental Icons:"
-msgstr "Ενεργοποίηση εικονιδίων γονικού ελέγχου:"
+msgstr ""
+
+#: plugin.py:308
+msgid ""
+"Show parental guidance icons on events to indicate content rating and age "
+"suitability."
+msgstr ""
 
 #: plugin.py:309
-msgid "Show parental guidance icons on events to indicate content rating and age suitability."
-msgstr "Εμφάνιση εικονιδίων γονικού ελέγχου για τα προγράμματα ώστε να φαίνεται η καταλληλότητά τους."
-
-#: plugin.py:310
 msgid "Enable Display InfoEvents:"
-msgstr "Ενεργοποίηση εμφάνισης πληροφοριών προγραμμάτων:"
+msgstr ""
+
+#: plugin.py:309
+msgid ""
+"Enable the display of extended event information, including full cast, crew, "
+"plot details, and other metadata, in the info widget."
+msgstr ""
 
 #: plugin.py:310
-msgid "Enable the display of extended event information, including full cast, crew, plot details, and other metadata, in the info widget."
-msgstr "Ενεργοποίηση εμφάνισης εκτεταμένων πληροφοριών για προγράμματα, όπως πλήρες καστ, συνεργείο, πλοκή και άλλα μεταδεδομένα στο widget πληροφοριών."
-
-#: plugin.py:311
 msgid "Enable Display Genre icons:"
-msgstr "Ενεργοποίηση εικονιδίων είδους:"
+msgstr ""
+
+#: plugin.py:310
+msgid ""
+"Show icons representing the genre of each event (e.g., action, comedy, drama)"
+msgstr ""
 
 #: plugin.py:311
-msgid "Show icons representing the genre of each event (e.g., action, comedy, drama)"
-msgstr "Εμφάνιση εικονιδίων που αναπαριστούν το είδος κάθε προγράμματος (π.χ. δράση, κωμωδία, δράμα)"
-
-#: plugin.py:312
 msgid "Enable Display XMC Poster:"
-msgstr "Ενεργοποίηση εμφάνισης Αφίσας XMC:"
+msgstr ""
 
-#: plugin.py:312
+#: plugin.py:311
 msgid "Show poster from movie in local folder"
-msgstr "Εμφάνιση αφίσας από ταινία στον τοπικό φάκελο"
+msgstr ""
 
-#: plugin.py:314
+#: plugin.py:313
 msgid "Settings Apikey Server"
 msgstr "Ρυθμίσεις διακομιστή Apikey"
 
-#: plugin.py:322
+#: plugin.py:321
+#, python-brace-format
 msgid "Activate/Deactivate {}"
-msgstr "Ενεργοποίηση/Απενεργοποίηση {}"
+msgstr ""
 
-#: plugin.py:330
+#: plugin.py:329
+#, fuzzy, python-brace-format
+#| msgid "Load TMDB Apikey from /tmp/tmdbkey.txt"
 msgid "Load from /tmp/{}key.txt"
-msgstr "Φόρτωση από το /tmp/{}key.txt"
+msgstr "Φόρτωση TMDB ApiKey από το /tmp/tmdbkey.txt"
 
-#: plugin.py:335
+#: plugin.py:334
+#, python-brace-format
 msgid "Personal API key for {}"
-msgstr "Προσωπικό κλειδί API για {}"
+msgstr ""
+
+#: plugin.py:337
+msgid "Activate/Deactivate ELCINEMA"
+msgstr ""
 
 #: plugin.py:338
-msgid "Activate/Deactivate ELCINEMA"
-msgstr "Ενεργοποίηση/Απενεργοποίηση ELCINEMA"
+msgid "Activate/Deactivate GOOGLE"
+msgstr ""
 
 #: plugin.py:339
-msgid "Activate/Deactivate GOOGLE"
-msgstr "Ενεργοποίηση/Απενεργοποίηση GOOGLE"
+msgid "Activate/Deactivate IMDB"
+msgstr ""
 
 #: plugin.py:340
-msgid "Activate/Deactivate IMDB"
-msgstr "Ενεργοποίηση/Απενεργοποίηση IMDB"
+msgid "Activate/Deactivate MOLOTOV"
+msgstr ""
 
 #: plugin.py:341
-msgid "Activate/Deactivate MOLOTOV"
-msgstr "Ενεργοποίηση/Απενεργοποίηση MOLOTOV"
-
-#: plugin.py:342
 msgid "Activate/Deactivate PROGRAMMETV"
-msgstr "Ενεργοποίηση/Απενεργοποίηση PROGRAMMETV"
+msgstr ""
+
+#: plugin.py:345
+msgid ""
+"Enable or disable caching during event download to speed up repeated "
+"searches."
+msgstr ""
 
 #: plugin.py:346
-msgid "Enable or disable caching during event download to speed up repeated searches."
-msgstr "Ενεργοποίηση ή απενεργοποίηση της προσωρινής αποθήκευσης κατά τη λήψη προγραμμάτων για επιτάχυνση επαναλαμβανόμενων αναζητήσεων."
-
-#: plugin.py:347
+#, fuzzy
+#| msgid "Download in progress..."
 msgid "Download now poster"
-msgstr "Λήψη αφίσας τώρα"
+msgstr "Λήψη σε εξέλιξη…"
+
+#: plugin.py:346
+msgid "Start downloading poster immediately"
+msgstr ""
 
 #: plugin.py:347
-msgid "Start downloading poster immediately"
-msgstr "Έναρξη λήψης αφίσας αμέσως"
-
-#: plugin.py:348
 msgid "Automatic download of poster"
-msgstr "Αυτόματη λήψη αφίσας"
+msgstr ""
 
-#: plugin.py:348
+#: plugin.py:347
 msgid "Automatically fetch posters for favorite events based on EPG"
-msgstr "Αυτόματη αναζήτηση αφισών για αγαπημένα προγράμματα βάσει EPG"
+msgstr ""
+
+#: plugin.py:349
+msgid "Set Time our - minute for Poster download"
+msgstr ""
+
+#: plugin.py:349 plugin.py:353
+msgid ""
+"Configure the delay time (in minutes) before starting the automatic poster "
+"download"
+msgstr ""
 
 #: plugin.py:350
-msgid "Set Time our - minute for Poster download"
-msgstr "Ορισμός χρονικού ορίου - λεπτά για λήψη αφίσας"
-
-#: plugin.py:350 plugin.py:354
-msgid "Configure the delay time (in minutes) before starting the automatic poster download"
-msgstr "Ορίστε το χρονικό διάστημα καθυστέρησης (σε λεπτά) πριν ξεκινήσει η αυτόματη λήψη αφίσας"
-
-#: plugin.py:351
 msgid "Download now backdrop"
-msgstr "Λήψη φόντου τώρα"
+msgstr ""
+
+#: plugin.py:350
+msgid "Start downloading backdrop immediately"
+msgstr ""
 
 #: plugin.py:351
-msgid "Start downloading backdrop immediately"
-msgstr "Έναρξη λήψης φόντου αμέσως"
-
-#: plugin.py:352
 msgid "Automatic download of backdrop"
-msgstr "Αυτόματη λήψη φόντου"
+msgstr ""
 
-#: plugin.py:352
+#: plugin.py:351
 msgid "Automatically fetch backdrop for favorite events based on EPG"
-msgstr "Αυτόματη αναζήτηση φόντου για αγαπημένα προγράμματα βάσει EPG"
+msgstr ""
 
-#: plugin.py:354
+#: plugin.py:353
 msgid "Set Time our - minute for Backdrop download"
-msgstr "Ορισμός χρονικού ορίου - λεπτά για λήψη φόντου"
+msgstr ""
 
-#: plugin.py:365
+#: plugin.py:364
+#, fuzzy
+#| msgid ""
+#| "[Checkskin] This operation checks if the skin has its components (is not "
+#| "sure)..\n"
+#| "Do you really want to continue?"
 msgid ""
-"[Checkskin] This operation checks if the skin has its components (not guaranteed)...\n"
+"[Checkskin] This operation checks if the skin has its components (not "
+"guaranteed)...\n"
 "Do you really want to continue?"
 msgstr ""
-"[Checkskin] Αυτή η λειτουργία ελέγχει εάν το θέμα έχει τα συστατικά του (χωρίς εγγύηση)...\n"
+"[Checkskin] Αυτή η λειτουργία ελέγχει εάν το θέμα έχει τα συστατικά του (δεν "
+"είναι σίγουρο).\n"
 "Θέλετε πραγματικά να συνεχίσετε;"
 
-#: plugin.py:428
-#, python-format
+#: plugin.py:427
+#, python-brace-format
 msgid ""
 "Setup Aglare Skin\n"
-"for %s v.%s\n"
+"for {0} v.{1}\n"
 "\n"
 "by Lululla @2020\n"
 "\n"
@@ -425,109 +586,109 @@ msgid ""
 "\n"
 "Skinner creator: Odem2014 "
 msgstr ""
-"Ρύθμιση θέματος Aglare\n"
-"για %s v.%s\n"
-"\n"
-"από Lululla @2020\n"
-"\n"
-"Φόρουμ υποστήριξης στο linuxsat-support.com\n"
-"\n"
-"Δημιουργός θέματος: Odem2014 "
 
-#: plugin.py:431
+#: plugin.py:430
 msgid "Setup Aglare Skin Info"
-msgstr "Πληροφορίες ρύθμισης θέματος Aglare"
+msgstr ""
 
-#: plugin.py:437
+#: plugin.py:436
+#, fuzzy
+#| msgid ""
+#| "[Checkskin] This operation checks if the skin has its components (is not "
+#| "sure)..\n"
+#| "Do you really want to continue?"
 msgid ""
-"[RemovePng] This operation will remove all PNGs from the device folder (Poster-Backdrop)...\n"
+"[RemovePng] This operation will remove all PNGs from the device folder "
+"(Poster-Backdrop)...\n"
 "Do you really want to continue?"
 msgstr ""
-"[RemovePng] Αυτή η λειτουργία θα αφαιρέσει όλα τα PNGs από το φάκελο της συσκευής (Αφίσα-Φόντο)...\n"
+"[Checkskin] Αυτή η λειτουργία ελέγχει εάν το θέμα έχει τα συστατικά του (δεν "
+"είναι σίγουρο).\n"
 "Θέλετε πραγματικά να συνεχίσετε;"
 
-#: plugin.py:446
+#: plugin.py:445
 msgid "All png are removed from folder!"
-msgstr "Όλα τα png αφαιρέθηκαν από το φάκελο!"
+msgstr ""
 
-#: plugin.py:447
+#: plugin.py:446
 msgid "Info..."
 msgstr "Πληροφορίες..."
 
-#: plugin.py:496 plugin.py:555
+#: plugin.py:495 plugin.py:554
 msgid "No active providers enabled"
-msgstr "Δεν είναι ενεργοποιημένος κανένας πάροχος"
+msgstr ""
 
-#: plugin.py:501 plugin.py:560
+#: plugin.py:500 plugin.py:559
 msgid ""
 "Warning: You are using default API keys!\n"
 "We strongly recommend configuring your own API keys in the plugin settings."
 msgstr ""
-"Προειδοποίηση: Χρησιμοποιείτε τα προεπιλεγμένα κλειδιά API!\n"
-"Σας προτείνουμε να ρυθμίσετε τα δικά σας κλειδιά API στις ρυθμίσεις του πρόσθετου."
 
-#: plugin.py:508
+#: plugin.py:507
 msgid ""
 "Poster download will start in 2 minutes.\n"
 "You can safely exit this menu."
 msgstr ""
-"Η λήψη της αφίσας θα ξεκινήσει σε 2 λεπτά.\n"
-"Μπορείτε να βγείτε με ασφάλεια από αυτό το μενού."
 
-#: plugin.py:520 plugin.py:579
+#: plugin.py:519 plugin.py:578
+#, python-brace-format
 msgid "Error: {}"
-msgstr "Σφάλμα: {}"
+msgstr ""
 
-#: plugin.py:529
+#: plugin.py:528
+#, python-brace-format
 msgid "Poster download error: {}"
-msgstr "Σφάλμα λήψης αφίσας: {}"
+msgstr ""
 
-#: plugin.py:567
+#: plugin.py:566
 msgid ""
 "Backdrop download will start in 2 minutes.\n"
 "You can safely exit this menu."
 msgstr ""
-"Η λήψη του φόντου θα ξεκινήσει σε 2 λεπτά.\n"
-"Μπορείτε να βγείτε με ασφάλεια από αυτό το μενού."
 
-#: plugin.py:588
+#: plugin.py:587
+#, python-brace-format
 msgid "Backdrop download error: {}"
-msgstr "Σφάλμα λήψης φόντου: {}"
+msgstr ""
 
-#: plugin.py:604
-#, python-format
-msgid "Import key %s from %s?"
-msgstr "Να γίνει εισαγωγή κλειδιού %s από το %s;"
+#: plugin.py:603
+#, python-brace-format
+msgid "Import key {0} from {1}?"
+msgstr ""
 
-#: plugin.py:609
-#, python-format
+#: plugin.py:608
+#, fuzzy, python-format
+#| msgid "TMDB ApiKey is empty!"
 msgid "The file %s is empty."
-msgstr "Το αρχείο %s είναι κενό."
+msgstr "Το TMDB ApiKey είναι κενό!"
 
-#: plugin.py:616
+#: plugin.py:615
 #, python-format
 msgid "The file %s was not found."
-msgstr "Το αρχείο %s δεν βρέθηκε."
+msgstr ""
 
-#: plugin.py:626
+#: plugin.py:625
+#, fuzzy
+#| msgid "TMDB ApiKey is empty!"
 msgid "Key empty"
-msgstr "Κενό κλειδί"
+msgstr "Το TMDB ApiKey είναι κενό!"
 
-#: plugin.py:636
+#: plugin.py:635
 #, python-format
 msgid "%s key imported!"
-msgstr "Το κλειδί %s εισήχθη!"
+msgstr ""
 
-#: plugin.py:644
-#, python-format
-msgid "Error %s: %s"
-msgstr "Σφάλμα %s: %s"
+#: plugin.py:643
+#, python-brace-format
+msgid "Error {0}: {1}"
+msgstr ""
 
-#: plugin.py:786
+#: plugin.py:792
+#, python-brace-format
 msgid "Error by processing the skin file: {}"
-msgstr "Σφάλμα κατά την επεξεργασία του αρχείου θέματος: {}"
+msgstr ""
 
-#: plugin.py:791
+#: plugin.py:797
 msgid ""
 "GUI needs a restart to apply a new skin.\n"
 "Do you want to Restart the GUI now?"
@@ -535,75 +696,223 @@ msgstr ""
 "Πρέπει να γίνει επανεκκίνηση του GUI για να εφαρμοστεί το νέο θέμα.\n"
 "Θέλετε να γίνει επανεκκίνηση της διεπαφής χρήστη τώρα;"
 
-#: plugin.py:794 plugin.py:926
+#: plugin.py:800 plugin.py:932
 msgid "Restart GUI now?"
 msgstr "Να γίνει επανεκκίνηση του γραφικού περιβάλλοντος τώρα;"
 
-#: plugin.py:807
-msgid "Update URL not initialised – open the plugin once from the Plugins menu first."
-msgstr "Η διεύθυνση URL ενημέρωσης δεν έχει αρχικοποιηθεί - ανοίξτε το πρόσθετο μία φορά από το μενού Πρόσθετων."
+#: plugin.py:813
+msgid ""
+"Update URL not initialised – open the plugin once from the Plugins menu "
+"first."
+msgstr ""
 
-#: plugin.py:839
+#: plugin.py:845
+#, fuzzy, python-brace-format
+#| msgid "You have the current version Aglare!"
 msgid "You already have the latest version ({})."
-msgstr "Έχετε ήδη την πιο πρόσφατη έκδοση ({})."
+msgstr "Έχετε την τρέχουσα έκδοση του Aglare!"
 
-#: plugin.py:847
+#: plugin.py:853
+#, python-brace-format
 msgid ""
 "Server version: {}\n"
 "Installed version: {}\n"
 "\n"
 "A newer build is available – update now?"
 msgstr ""
-"Έκδοση διακομιστή: {}\n"
-"Εγκατεστημένη έκδοση: {}\n"
-"\n"
-"Υπάρχει διαθέσιμη νεότερη έκδοση - να γίνει ενημέρωση τώρα;"
 
-#: plugin.py:855
+#: plugin.py:861
+#, python-brace-format
 msgid "Local build ({}) is newer than server build ({})."
-msgstr "Η τοπική έκδοση ({}) είναι νεότερη από την έκδοση του διακομιστή ({})."
+msgstr ""
 
-#: plugin.py:860
+#: plugin.py:866
+#, python-brace-format
 msgid "Update check failed: {}"
-msgstr "Αποτυχία ελέγχου για ενημερώσεις: {}"
+msgstr ""
 
-#: plugin.py:898
+#: plugin.py:904
 msgid "Downloading Aglare..."
 msgstr "Γίνεται λήψη του Aglare..."
 
-#: plugin.py:906
+#: plugin.py:912
+#, fuzzy
+#| msgid "Installing updates!"
 msgid "Installing updates..."
-msgstr "Εγκατάσταση ενημερώσεων..."
+msgstr "Εγκατάσταση ενημερώσεων!"
 
-#: plugin.py:923
+#: plugin.py:929
+#, fuzzy
+#| msgid ""
+#| "Aglare update was done!!!\n"
+#| "Do you want to restart the GUI now?"
 msgid ""
 "Aglare update was done!\n"
 "Do you want to restart the GUI now?"
 msgstr ""
-"Η ενημέρωση του Aglare ολοκληρώθηκε!\n"
+"Η ενημέρωση του Aglare ολοκληρώθηκε!!!\n"
 "Θέλετε να γίνει επανεκκίνηση της διεπαφής χρήστη τώρα;"
 
-#: plugin.py:928
+#: plugin.py:934
 msgid "Update package not found!"
-msgstr "Το πακέτο ενημέρωσης δεν βρέθηκε!"
+msgstr ""
 
-#: plugin.py:931
+#: plugin.py:937
 msgid ""
 "The update file was not found in /tmp.\n"
 "Update aborted."
 msgstr ""
-"Το αρχείο ενημέρωσης δεν βρέθηκε στο /tmp.\n"
-"Η ενημέρωση ακυρώθηκε."
 
-#: plugin.py:936
+#: plugin.py:942
 msgid "Error downloading files!"
 msgstr "Σφάλμα κατά τη λήψη των αρχείων!"
 
-#: plugin.py:950
+#: plugin.py:956
+#, fuzzy
+#| msgid "Download in progress..."
 msgid "Download in progress…"
 msgstr "Λήψη σε εξέλιξη…"
 
-#: plugin.py:1032
-#, python-format
+#: plugin.py:1038
+#, fuzzy, python-format
+#| msgid "Customization tool for Aglare-FHD Skin"
 msgid "Customization tool for %s Skin"
-msgstr "Εργαλείο παραμετροποίησης για το θέμα %s"
+msgstr "Εργαλείο προσαρμογής για το θέμα Aglare-FHD"
+
+#~ msgid "Do you want to save the changes?"
+#~ msgstr "Θέλετε να αποθηκεύσετε τις αλλαγές;"
+
+#~ msgid "Green2"
+#~ msgstr "Πράσινο2"
+
+#~ msgid "Style5 CD"
+#~ msgstr "Στυλ5 CD"
+
+#~ msgid "1 poster"
+#~ msgstr "1 αφίσα"
+
+#~ msgid "Infobar_MSNWeather"
+#~ msgstr "Μπάρα πληροφοριών_Καιρός MSN"
+
+#~ msgid "Second Infobar_NO_Weather"
+#~ msgstr "2η μπάρα πληροφοριών_Χωρίς καιρό"
+
+#~ msgid "Second Infobar_MSNWeather"
+#~ msgstr "2η μπάρα πληροφοριών_Καιρός MSN"
+
+#~ msgid "Second Infobar_OAWeather"
+#~ msgstr "2η μπάρα πληροφοριών_Καιρός OA"
+
+#~ msgid "White"
+#~ msgstr "Λευκό"
+
+#~ msgid "Mint"
+#~ msgstr "Μέντα"
+
+#~ msgid "SnowWhite"
+#~ msgstr "Λευκό χιονιού"
+
+#~ msgid "Teal"
+#~ msgstr "Γαλαζοπράσινο"
+
+#~ msgid "Crimson"
+#~ msgstr "Βυσσινί"
+
+#~ msgid "Tomato"
+#~ msgstr "Χρώμα ντομάτας"
+
+#~ msgid "SteelBlue"
+#~ msgstr "Γκριζογάλανο"
+
+#~ msgid "LimeGreen"
+#~ msgstr "Πρασινοκίτρινο"
+
+#~ msgid "YellowGreen"
+#~ msgstr "Κιτρινοπράσινο"
+
+#~ msgid "LightGray"
+#~ msgstr "Ανοιχτό γκρι"
+
+#~ msgid "Sienna"
+#~ msgstr "Καφέ σιένα"
+
+#~ msgid "Orange"
+#~ msgstr "Πορτοκαλί"
+
+#~ msgid "Pink"
+#~ msgstr "Ροζ"
+
+#~ msgid "Import Api Key TMDB from /tmp/tmdbkey.txt?"
+#~ msgstr "Να γίνει εισαγωγή του κλειδιού Api TMDB από το /tmp/tmdbkey.txt;"
+
+#, python-format
+#~ msgid "Missing %s !"
+#~ msgstr "Λείπει το %s !"
+
+#~ msgid "TMDB ApiKey Imported & Stored!"
+#~ msgstr "Το TMDB ApiKey εισήχθη και αποθηκεύτηκε!"
+
+#~ msgid "Import Api Key OMDB from /tmp/omdbkey.txt?"
+#~ msgstr "Να γίνει εισαγωγή του κλειδιού Api OMDB από το /tmp/omdbkey.txt;"
+
+#~ msgid "OMDB ApiKey Imported & Stored!"
+#~ msgstr "Το OMDB ApiKey εισήχθη και αποθηκεύτηκε!"
+
+#~ msgid "OMDB ApiKey is empty!"
+#~ msgstr "Το OMDB ApiKey είναι κενό!"
+
+#~ msgid "InfoBar ECM:"
+#~ msgstr "ECM μπάρας πληροφοριών:"
+
+#~ msgid "SecondInfobar Weather:"
+#~ msgstr "Καιρός 2ης μπάρας πληροφοριών:"
+
+#~ msgid "Channel Foreground Color:"
+#~ msgstr "Χρώμα προσκήνιου καναλιών:"
+
+#~ msgid "Channel Selected Foreground Color:"
+#~ msgstr "Χρώμα προσκήνιου επιλεγμένου καναλιού:"
+
+#~ msgid "Channel Description Color:"
+#~ msgstr "Χρώμα περιγραφής καναλιών:"
+
+#~ msgid "Channel Selected Description Color:"
+#~ msgstr "Χρώμα περιγραφής επιλεγμένου καναλιού:"
+
+#~ msgid "Settings TMDB ApiKey"
+#~ msgstr "Ρυθμίσεις TMDB ApiKey"
+
+#~ msgid "Signup on TMDB and input free personal ApiKey"
+#~ msgstr "Εγγραφή στο TMDB και εισαγωγή δωρεάν προσωπικού ApiKey"
+
+#~ msgid "Settings OMDB APIKEY"
+#~ msgstr "Ρυθμίσεις OMDB APIKEY"
+
+#~ msgid "Load OMDB Apikey from /tmp/omdbkey.txt"
+#~ msgstr "Φόρτωση OMDB ApiKey από το /tmp/omdbkey.txt"
+
+#~ msgid "Signup on OMDB and input free personal ApiKey"
+#~ msgstr "Εγγραφή στο OMDB και εισαγωγή δωρεάν προσωπικού ApiKey"
+
+#, python-format
+#~ msgid "Setup Aglare for Aglare-FHD v.%s"
+#~ msgstr "Ρυθμίσεις Aglare για το Aglare-FHD v.%s"
+
+#~ msgid "Server version:"
+#~ msgstr "Έκδοση διακομιστή:"
+
+#~ msgid "Version installed:"
+#~ msgstr "Εγκατεστημένη έκδοση:"
+
+#~ msgid ""
+#~ "The update is available!\n"
+#~ "\n"
+#~ "Do you want to run the update now?"
+#~ msgstr ""
+#~ "Η ενημέρωση είναι διαθέσιμη!\n"
+#~ "\n"
+#~ "Θέλετε να την εκτελέσετε τώρα;"
+
+#, python-format
+#~ msgid "You have version %s!!!"
+#~ msgstr "Έχετε την έκδοση %s!!!"

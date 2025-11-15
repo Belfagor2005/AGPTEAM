@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Aglare\n"
-"POT-Creation-Date: 2025-06-03 17:41+0200\n"
+"POT-Creation-Date: 2025-11-15 12:34+0100\n"
 "PO-Revision-Date: 2025-01-12 18:23+0100\n"
 "Last-Translator: \n"
 "Language-Team: lululla\n"
@@ -11,26 +11,134 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 3.6\n"
+"X-Generator: Poedit 3.8\n"
 "X-Poedit-Basepath: ..\n"
 "X-Poedit-SourceCharset: iso-8859-1\n"
 "X-Poedit-SearchPath-0: api_config.py\n"
 "X-Poedit-SearchPath-1: DownloadControl.py\n"
 "X-Poedit-SearchPath-2: plugin.py\n"
+"X-Poedit-SearchPath-3: addons/checkskin.py\n"
+"X-Poedit-SearchPath-4: addons/File_Commander.py\n"
+"X-Poedit-SearchPath-5: addons/type_utils.py\n"
+"X-Poedit-SearchPath-6: addons/WeatherSearch.py\n"
 
 #: DownloadControl.py:83 DownloadControl.py:112
+#, python-brace-format
 msgid "Download error: {}"
 msgstr ""
 
+#: addons/File_Commander.py:28 addons/type_utils.py:23
+msgid "File Commander - Addon"
+msgstr ""
+
+#: addons/File_Commander.py:29 addons/type_utils.py:24
+msgid "play/show Files"
+msgstr ""
+
+#: addons/File_Commander.py:91 addons/type_utils.py:86
+msgid "Exit"
+msgstr ""
+
+#: addons/File_Commander.py:92 addons/type_utils.py:87
+msgid "Save"
+msgstr ""
+
+#: addons/File_Commander.py:93 addons/type_utils.py:88
+msgid "Del Line"
+msgstr ""
+
+#: addons/File_Commander.py:94 addons/type_utils.py:89
+msgid "Ins Line"
+msgstr ""
+
+#: addons/WeatherSearch.py:32
+msgid "metric system"
+msgstr ""
+
+#: addons/WeatherSearch.py:32
+msgid "imperial system"
+msgstr ""
+
+#: addons/WeatherSearch.py:79
+msgid "WeatherPlugin: List of Entries"
+msgstr ""
+
+#: addons/WeatherSearch.py:80 addons/WeatherSearch.py:258
+msgid "City"
+msgstr ""
+
+#: addons/WeatherSearch.py:81 addons/WeatherSearch.py:258
+msgid "System"
+msgstr ""
+
+#: addons/WeatherSearch.py:82 addons/WeatherSearch.py:376
+msgid "Back"
+msgstr ""
+
+#: addons/WeatherSearch.py:83
+msgid "Add"
+msgstr ""
+
+#: addons/WeatherSearch.py:84
+msgid "Edit"
+msgstr ""
+
+#: addons/WeatherSearch.py:85 addons/WeatherSearch.py:250
+msgid "Delete"
+msgstr ""
+
+#: addons/WeatherSearch.py:142 addons/WeatherSearch.py:313
+msgid "Really delete this WeatherPlugin Entry?"
+msgstr ""
+
+#: addons/WeatherSearch.py:238
+msgid "WeatherPlugin: Edit Entry"
+msgstr ""
+
+#: addons/WeatherSearch.py:248
+msgid "Cancel"
+msgstr ""
+
+#: addons/WeatherSearch.py:249 addons/WeatherSearch.py:377
+msgid "OK"
+msgstr ""
+
+#: addons/WeatherSearch.py:251
+msgid "Search Code"
+msgstr ""
+
+#: addons/WeatherSearch.py:258
+msgid "Location code"
+msgstr ""
+
+#: addons/WeatherSearch.py:272
+msgid "You need to enter a valid city name before you can search for the location code."
+msgstr ""
+
+#: addons/WeatherSearch.py:284 addons/WeatherSearch.py:296
+msgid "Please enter a valid city name."
+msgstr ""
+
+#: addons/WeatherSearch.py:286 addons/WeatherSearch.py:299
+msgid "Please enter a valid location code for the city."
+msgstr ""
+
+#: addons/WeatherSearch.py:375
+msgid "MSN location search result"
+msgstr ""
+
 #: api_config.py:168
+#, python-brace-format
 msgid "Key {} successfully loaded!"
 msgstr ""
 
 #: api_config.py:169
+#, python-brace-format
 msgid "File {} not found or empty"
 msgstr ""
 
 #: api_config.py:172
+#, python-brace-format
 msgid "Error loading: {}"
 msgstr ""
 
@@ -334,14 +442,17 @@ msgid "Settings Apikey Server"
 msgstr ""
 
 #: plugin.py:321
+#, python-brace-format
 msgid "Activate/Deactivate {}"
 msgstr ""
 
 #: plugin.py:329
+#, python-brace-format
 msgid "Load from /tmp/{}key.txt"
 msgstr ""
 
 #: plugin.py:334
+#, python-brace-format
 msgid "Personal API key for {}"
 msgstr ""
 
@@ -467,10 +578,12 @@ msgid ""
 msgstr ""
 
 #: plugin.py:519 plugin.py:578
+#, python-brace-format
 msgid "Error: {}"
 msgstr ""
 
 #: plugin.py:528
+#, python-brace-format
 msgid "Poster download error: {}"
 msgstr ""
 
@@ -481,6 +594,7 @@ msgid ""
 msgstr ""
 
 #: plugin.py:587
+#, python-brace-format
 msgid "Backdrop download error: {}"
 msgstr ""
 
@@ -514,6 +628,7 @@ msgid "Error {0}: {1}"
 msgstr ""
 
 #: plugin.py:792
+#, python-brace-format
 msgid "Error by processing the skin file: {}"
 msgstr ""
 
@@ -532,10 +647,12 @@ msgid "Update URL not initialised – open the plugin once from the Plugins menu
 msgstr ""
 
 #: plugin.py:845
+#, python-brace-format
 msgid "You already have the latest version ({})."
 msgstr ""
 
 #: plugin.py:853
+#, python-brace-format
 msgid ""
 "Server version: {}\n"
 "Installed version: {}\n"
@@ -544,10 +661,12 @@ msgid ""
 msgstr ""
 
 #: plugin.py:861
+#, python-brace-format
 msgid "Local build ({}) is newer than server build ({})."
 msgstr ""
 
 #: plugin.py:866
+#, python-brace-format
 msgid "Update check failed: {}"
 msgstr ""
 
