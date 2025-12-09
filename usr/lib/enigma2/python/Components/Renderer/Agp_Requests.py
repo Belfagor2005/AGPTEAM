@@ -75,22 +75,34 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 UserAgent = namedtuple('UserAgent', ['ua', 'weight'])
 
 USER_AGENTS_2025 = [
-	UserAgent(ua="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.10 Safari/605.1.1", weight=43.03),
-	UserAgent(ua="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.3", weight=21.05),
-	UserAgent(ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.3", weight=17.34),
-	UserAgent(ua="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.3", weight=3.72),
-	UserAgent(ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Trailer/93.3.8652.5", weight=2.48),
-	UserAgent(ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.", weight=2.48),
-	UserAgent(ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.", weight=2.48),
-	UserAgent(ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 OPR/117.0.0.", weight=2.48),
-	UserAgent(ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 Edg/132.0.0.", weight=1.24),
-	UserAgent(ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36 Edge/18.1958", weight=1.24),
-	UserAgent(ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.", weight=1.24),
-	UserAgent(ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.3", weight=1.24)
+	# Desktop — Chrome (dominante)
+	UserAgent(ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36", weight=50.0),
+	UserAgent(ua="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36", weight=6.0),
+
+	# Desktop — Edge (Chromium-based)
+	UserAgent(ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 Edg/139.0.0.0", weight=13.0),
+
+	# Desktop — Safari su macOS
+	UserAgent(ua="Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15", weight=9.0),
+
+	# Desktop — Firefox
+	UserAgent(ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0", weight=4.0),
+
+	# Desktop — Opera (Chromium-based)
+	UserAgent(ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36 OPR/106.0.0.0", weight=2.0),
+
+	# Mobile — Chrome su Android
+	UserAgent(ua="Mozilla/5.0 (Linux; Android 14; SM-Galaxy) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36", weight=10.0),
+
+	# Mobile — Safari su iPhone
+	UserAgent(ua="Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1", weight=5.0),
+
+	# Mobile — Samsung Internet (Chromium-based)
+	UserAgent(ua="Mozilla/5.0 (Linux; Android 14; SM-Galaxy) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36 SamsungBrowser/23.0", weight=1.0),
 ]
 
 
-WEBP_SUPPORTED = False  # Forza disabilitazione WEBP
+WEBP_SUPPORTED = False
 
 
 def intCheck():
@@ -116,9 +128,9 @@ class RequestAgent:
 		self.session = None
 		self.timeout_connect = 3.05  # Connection timeout in seconds
 		self.timeout_read = 10       # Read timeout in seconds
-		self.max_retries = 2        # Maximum number of retries
-		self.pool_connections = 3   # Number of connection pools
-		self.pool_maxsize = 3       # Maximum size of connection pool
+		self.max_retries = 2         # Maximum number of retries
+		self.pool_connections = 3    # Number of connection pools
+		self.pool_maxsize = 3        # Maximum size of connection pool
 
 		self.download_lock = Lock()
 		self.file_lock = Lock()

@@ -46,7 +46,7 @@ from __future__ import absolute_import, print_function
 __author__ = "Lululla"
 __copyright__ = "AGP Team"
 
-from re import compile, sub, DOTALL, IGNORECASE
+from re import compile, sub, DOTALL, IGNORECASE  # , UNICODE
 from unicodedata import normalize, category
 import sys
 from Components.config import config
@@ -113,6 +113,18 @@ REGEX = compile(
 	r'\.\s\d{1,3}\s[чсЧС]\.?\s.*|'         # Part/episode number in Russian with leading dot
 	r'\s[чсЧС]\.?\s\d{1,3}.*|'             # Russian part/episode marker followed by number
 	r'\d{1,3}-(?:я|й)\s?с-н.*', DOTALL)    # Ending with number and Russian suffix
+
+
+REGEX_ = compile(
+	r'\s+-\s+(?:Prima\s*TV|primatv|First\s*Run|HDTV)\b|'  # Solo "- PrimaTv", "- HDTV"
+	r'\b(?:720p|1080p|4K|UHD|HDTV)\b|'                    # Qualità video
+	r'\b(?:WEB[-]?DL|WEBRip|DVDRip|BluRay)\b|'            # Formati
+	r'\s+[Ss]\d{1,2}[Ee]\d{1,2}\b|'                       # S01E01
+	r'\s+[Ee]p\.?\s*\d+\b|'                               # Ep.1
+	r'\s+-\s+[Ss]t\.?\s*\d+\b',                           # - St.1
+
+	DOTALL
+)
 
 
 def remove_accents(string):
@@ -255,8 +267,23 @@ CHAR_REPLACEMENTS = {
 }
 
 
-# @lru_cache(maxsize=2500)  # not tested
 def convtext(text):
+	"""Applica REGEX qui"""
+	if text is None or not str(text).strip():
+		return None
+
+	text = str(text)
+	text = text.lower().strip()
+	text = remove_accents(text)
+
+	text = REGEX.sub('', text)
+
+	text = sub(r'\s+', ' ', text).strip()
+	return text.capitalize() if text else None
+
+
+# @lru_cache(maxsize=2500)  # not tested
+def convtextxx(text):
 	try:
 		if text is None:
 			# print("return None original text:", type(text))

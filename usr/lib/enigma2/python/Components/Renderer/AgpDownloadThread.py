@@ -47,7 +47,7 @@ __author__ = "Lululla"
 __copyright__ = "AGP Team"
 
 # Standard library
-from os import remove, rename
+from os import remove
 from os.path import exists, getsize
 from re import compile, findall, DOTALL, sub
 from threading import Thread
@@ -210,7 +210,8 @@ class AgpDownloadThread(Thread):
 
 	def search_tmdb(self, dwn_poster, title, shortdesc, fulldesc, year=None, channel=None, api_key=None):
 		"""Download poster from TMDB with full verification pipeline"""
-		self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		# self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		self.title_safe = title.replace("+", " ").strip()
 		tmdb_api_key = api_key or tmdb_api
 
 		if not tmdb_api_key:
@@ -232,8 +233,6 @@ class AgpDownloadThread(Thread):
 			if year and srch == "movie":
 				url += f"&year={year}"
 
-			logger.debug(f"TMDB Search URL: {url}")
-			# Make API request with retries
 			retries = Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
 			adapter = HTTPAdapter(max_retries=retries)
 			http = Session()
@@ -268,9 +267,9 @@ class AgpDownloadThread(Thread):
 			return False, "Unexpected error during TMDb search"
 
 	def downloadData2(self, data, dwn_poster, shortdesc="", fulldesc=""):
-		# logger.debug(f"TMDB Response: {json_dumps(data, indent=2)}")
 		if not data.get('results'):
 			logger.warning("No results found on TMDB")
+			return False, "No results"
 
 		if isinstance(data, bytes):
 			data = data.decode("utf-8", errors="ignore")
@@ -292,25 +291,20 @@ class AgpDownloadThread(Thread):
 
 				poster = f"http://image.tmdb.org/t/p/original{poster_path}"
 				if not poster.strip():
-					print(f'No poster with original size, try with w500 -> {poster}')
 					poster = f"http://image.tmdb.org/t/p/w500{poster_path}"
 
-				if poster.strip():  # and not poster.endswith("/original"):
-					print(f'poster with w500 size, try with w500 -> {poster} ')
-					callInThread(self.savePoster, poster, dwn_poster)
-					if exists(dwn_poster):
-						return True, f"[SUCCESS] Poster math: {title}"
-
-				# if poster.strip() and not poster.endswith("/original"):
-					# callInThread(self.savePoster, poster, dwn_poster)
-					# if exists(dwn_poster):
-						# return True, f"[SUCCESS] Poster math: {title}"
+				if poster.strip():
+					# Download SYNCRONO - non in thread!
+					success = self.savePoster(poster, dwn_poster)
+					if success and exists(dwn_poster):
+						return True, f"[SUCCESS] Poster match: {title}"
 
 		return False, "[SKIP] No valid Result"
 
 	def search_tvdb(self, dwn_poster, title, shortdesc, fulldesc, year=None, channel=None, api_key=None):
 		"""Download poster from TVDB with full verification pipeline"""
-		self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		# self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		self.title_safe = title.replace("+", " ").strip()
 		thetvdb_api_key = api_key or thetvdb_api
 
 		if not thetvdb_api_key:
@@ -343,7 +337,8 @@ class AgpDownloadThread(Thread):
 			poster = None
 			if series_nb >= 0 and len(series_id) > series_nb and series_id[series_nb]:
 				if series_name and len(series_name) > series_nb:
-					series_name_clean = self.UNAC(series_name[series_nb])
+					# series_name_clean = self.UNAC(series_name[series_nb])
+					series_name_clean = series_name[series_nb]
 				else:
 					series_name_clean = ""
 
@@ -385,7 +380,8 @@ class AgpDownloadThread(Thread):
 
 	def search_fanart(self, dwn_poster, title, shortdesc, fulldesc, year=None, channel=None, api_key=None):
 		"""Download poster from FANART with full verification pipeline"""
-		self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		# self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		self.title_safe = title.replace("+", " ").strip()
 		fanart_api_key = api_key or fanart_api
 		if not fanart_api_key:
 			return False, "No API key"
@@ -445,7 +441,8 @@ class AgpDownloadThread(Thread):
 
 	def search_omdb(self, dwn_poster, title, shortdesc, fulldesc, year=None, channel=None, api_key=None):
 		"""OMDb Poster Downloader using API"""
-		self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		# self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		self.title_safe = title.replace("+", " ").strip()
 		omdb_api_key = api_key or omdb_api
 
 		if not exists(dwn_poster):
@@ -498,7 +495,8 @@ class AgpDownloadThread(Thread):
 
 	def search_imdb(self, dwn_poster, title, shortdesc, fulldesc, year=None, channel=None, api_key=None):
 		"""imDB Poster Downloader not using API"""
-		self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		# self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		self.title_safe = title.replace("+", " ").strip()
 		if not exists(dwn_poster):
 			return (False, "[ERROR] File not created")
 
@@ -568,14 +566,16 @@ class AgpDownloadThread(Thread):
 		return [{
 			"imdb_id": match[0],
 			"url_poster": match[1],
-			"title": self.UNAC(match[2]),
+			# "title": self.UNAC(match[2]),
+			"title": match[2],
 			"year": match[3],
 			"aka": self._parse_aka_title(match[5])
 		} for match in pattern.findall(html_content)]
 
 	def search_programmetv_google(self, dwn_poster, title, shortdesc, fulldesc, year=None, channel=None, api_key=None):
 		"""PROGRAMMETV Poster Downloader not using API"""
-		self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		# self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		self.title_safe = title.replace("+", " ").strip()
 
 		if not exists(dwn_poster):
 			return (False, "[ERROR] File not created")
@@ -604,7 +604,8 @@ class AgpDownloadThread(Thread):
 				url_poster = sub(r"\\u003d", "=", url_poster)
 				url_poster_size = findall(r'([\d]+)x([\d]+).*?([\w\.-]+).jpg', url_poster)
 				if url_poster_size and url_poster_size[0]:
-					get_title = self.UNAC(url_poster_size[0][2].replace('-', ''))
+					# get_title = self.UNAC(url_poster_size[0][2].replace('-', ''))
+					get_title = url_poster_size[0][2].replace('-', '')
 					if self.title_safe == get_title:
 						h_ori = float(url_poster_size[0][1])
 						try:
@@ -637,7 +638,8 @@ class AgpDownloadThread(Thread):
 
 	def search_molotov_google(self, dwn_poster, title, shortdesc, fulldesc, year=None, channel=None, api_key=None):
 		"""MOLOTOV Poster Downloader not using API"""
-		self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		# self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		self.title_safe = title.replace("+", " ").strip()
 		if not exists(dwn_poster):
 			return (False, "[ERROR] File not created")
 		try:
@@ -646,7 +648,8 @@ class AgpDownloadThread(Thread):
 			if chkType.startswith("movie"):
 				return False, f"[SKIP : molotov-google] {self.title_safe} [{chkType}] => Skip movie title"
 
-			pchannel = self.UNAC(channel).replace(' ', '') if channel else ''
+			# pchannel = self.UNAC(channel).replace(' ', '') if channel else ''
+			pchannel = channel.replace(' ', '') if channel else ''
 			url_mgoo = f"site:molotov.tv+{self.title_safe}"
 			if channel and self.title_safe.find(channel.split()[0]) < 0:
 				url_mgoo += "+" + quoteEventName(channel)
@@ -663,7 +666,8 @@ class AgpDownloadThread(Thread):
 
 			for pl in plst:
 				get_path = "https://www.molotov.tv/{}".format(pl[0])
-				get_name = self.UNAC(pl[1])
+				# get_name = self.UNAC(pl[1])
+				get_name = pl[1]
 				get_title_match = findall(r'(.*?)[ ]+en[ ]+streaming', get_name)
 				get_title = get_title_match[0] if get_title_match else ""
 				get_channel = self.extract_channel(get_name)
@@ -694,7 +698,8 @@ class AgpDownloadThread(Thread):
 	def extract_channel(self, get_name):
 		get_channel = findall(r'(?:streaming|replay)?[ ]+sur[ ]+(.*?)[ ]+molotov.tv', get_name) or \
 			findall(r'regarder[ ]+(.*?)[ ]+en', get_name)
-		return self.UNAC(get_channel[0]).replace(' ', '') if get_channel else None
+		return get_channel[0].replace(' ', '') if get_channel else None
+		# return self.UNAC(get_channel[0]).replace(' ', '') if get_channel else None
 
 	def handle_poster_result(self, molotov_table, headers, dwn_poster, platform):
 		ffm = get(molotov_table[3], stream=True, headers=headers).text
@@ -721,7 +726,8 @@ class AgpDownloadThread(Thread):
 
 	def search_google(self, dwn_poster, title, shortdesc, fulldesc, year=None, channel=None, api_key=None):
 		"""GOOGLE Poster Downloader not using API"""
-		self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		# self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		self.title_safe = title.replace("+", " ").strip()
 
 		if not exists(dwn_poster):
 			return (False, "[ERROR] File not created")
@@ -774,7 +780,8 @@ class AgpDownloadThread(Thread):
 
 	def search_elcinema(self, dwn_poster, title, shortdesc, fulldesc, year=None, channel=None, api_key=None):
 		"""Download poster from ElCinema using web scraping"""
-		self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		# self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		self.title_safe = title.replace("+", " ").strip()
 
 		if not exists(dwn_poster) or not self.title_safe:
 			return False, "[ERROR] File not created"
@@ -807,7 +814,8 @@ class AgpDownloadThread(Thread):
 					return False, "[SKIP] No results and aka_info present"
 
 				for t, tid in titles:
-					if self.UNAC(t.lower()) == self.title_safe.lower():
+					# if self.UNAC(t.lower()) == self.title_safe.lower():
+					if t.lower() == self.title_safe.lower():
 						url_poster = "https://elcinema.com/en/work/{}/".format(tid)
 						url_read = get(url_poster, headers=headers).text
 
@@ -825,68 +833,73 @@ class AgpDownloadThread(Thread):
 			return False, "[ERROR] ElCinema search failed"
 
 	def savePoster(self, url, filepath):
-		"""Robust poster download with atomic writes and validation"""
+		"""Robust poster download with file locking - identical to saveBackdrop"""
 		if not url:
 			logger.debug("Empty URL provided")
 			return False
 
-		if exists(filepath):
-			try:
-				with open(filepath, "rb") as f:
-					if f.read(2) == b"\xFF\xD8" and getsize(filepath) > 1024:
-						return True
-				logger.warning("Removing corrupted existing file")
-				remove(filepath)
-			except Exception as e:
-				logger.error("File check failed: " + str(e))
-				if exists(filepath):
-					remove(filepath)
+		# Create a lock for this specific file
+		lock = threading.Lock()
 
-		temp_path = filepath + ".tmp"
-		max_retries = 3
-		retry_delay = 2
-
-		for attempt in range(max_retries):
-			# Always clean temp file before trying a new download
-			if exists(temp_path):
+		with lock:  # Only one thread can access this file
+			# Check if file already exists and is valid
+			if exists(filepath):
 				try:
-					remove(temp_path)
+					with open(filepath, "rb") as f:
+						if f.read(2) == b"\xFF\xD8" and getsize(filepath) > 1024:
+							return True
+					logger.warning("Removing corrupted file")
+					remove(filepath)
 				except Exception as e:
-					logger.warning("Failed to remove temp file: " + str(e))
+					logger.error(f"File check failed: {e}")
+					if exists(filepath):
+						remove(filepath)
 
-			try:
-				headers = {
-					"User-Agent": choice(AGENTS),
-					"Accept": "image/jpeg",
-					"Accept-Encoding": "gzip"
-				}
+			max_retries = 3
 
-				response = get(url, headers=headers, stream=True, timeout=(5, 15))
-				response.raise_for_status()
+			for attempt in range(max_retries):
+				try:
+					headers = {
+						"User-Agent": choice(AGENTS),
+						"Accept": "image/jpeg",
+						"Accept-Encoding": "gzip"
+					}
 
-				if "image/jpeg" not in response.headers.get("Content-Type", "").lower():
-					raise ValueError("Invalid content type: " + response.headers.get("Content-Type", ""))
+					response = get(url, headers=headers, stream=True, timeout=(15, 30))
+					response.raise_for_status()
 
-				with open(temp_path, "wb") as f:
-					for chunk in response.iter_content(chunk_size=8192):
-						if chunk:
-							f.write(chunk)
+					if "image/jpeg" not in response.headers.get("Content-Type", "").lower():
+						raise ValueError(f"Invalid content type: {response.headers.get('Content-Type')}")
 
-				with open(temp_path, "rb") as f:
-					if f.read(2) != b"\xFF\xD8" or getsize(temp_path) < 1024:
-						raise ValueError("Invalid JPEG file")
+					# Write directly to final file (no .tmp)
+					with open(filepath, "wb") as f:
+						for chunk in response.iter_content(chunk_size=8192):
+							if chunk:
+								f.write(chunk)
 
-				rename(temp_path, filepath)
-				logger.debug("Successfully saved: " + url)
-				return True
+					# Verify downloaded file
+					with open(filepath, "rb") as f:
+						if f.read(2) != b"\xFF\xD8" or getsize(filepath) < 1024:
+							remove(filepath)
+							raise ValueError("Invalid JPEG file")
 
-			except Exception as e:
-				logger.debug("Attempt " + str(attempt + 1) + " failed: " + str(e))
-				sleep(retry_delay * (attempt + 1))
-				continue
+					logger.debug(f"Successfully saved: {url} -> {filepath}")
+					return True
 
-		# logger.error("Failed after " + str(max_retries) + " attempts: " + url)
-		return False
+				except Exception as e:
+					logger.debug(f"Attempt {attempt + 1} failed: {str(e)}")
+
+					# Clean up partial file
+					if exists(filepath):
+						try:
+							remove(filepath)
+						except:
+							pass
+
+					sleep(2 * (attempt + 1))
+					continue
+
+			return False
 
 	def resizePoster(self, dwn_poster):
 		try:
@@ -945,7 +958,8 @@ class AgpDownloadThread(Thread):
 	def _parse_aka_title(self, raw_text):
 		"""Extract AKA title from result text"""
 		aka_match = findall(r'aka <i>"(.*?)"</i>', raw_text)
-		return self.UNAC(aka_match[0]) if aka_match else ""
+		return aka_match[0] if aka_match else ""
+		# return self.UNAC(aka_match[0]) if aka_match else ""
 
 	def _find_best_match(self, results, target_year, original_title, aka):
 		"""Find best matching result using scoring system"""
