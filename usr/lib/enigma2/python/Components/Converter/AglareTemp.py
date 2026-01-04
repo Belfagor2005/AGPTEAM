@@ -183,7 +183,7 @@ class AglareTemp(Poll, Converter):
 			with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
 				s.connect(("8.8.8.8", 80))  # Google DNS
 				return s.getsockname()[0]
-		except:
+		except BaseException:
 			return None
 
 	def _get_ip_from_ip_command(self):
@@ -198,14 +198,14 @@ class AglareTemp(Poll, Converter):
 				match = re.search(r'src (\d+\.\d+\.\d+\.\d+)', result.stdout)
 				if match:
 					return match.group(1)
-		except:
+		except BaseException:
 			return None
 
 	def _get_ip_from_hostname(self):
 		"""Get IP using hostname"""
 		try:
 			return socket.gethostbyname(socket.gethostname())
-		except:
+		except BaseException:
 			return None
 
 	def _get_cpu_speed(self):
@@ -240,7 +240,7 @@ class AglareTemp(Poll, Converter):
 		try:
 			import binascii
 			return str(int(binascii.hexlify(content.encode()), 16) / 1000000)
-		except:
+		except BaseException:
 			return None
 
 	def _get_fan_info(self):
@@ -265,7 +265,7 @@ class AglareTemp(Poll, Converter):
 				with open(path, 'r') as f:
 					content = f.readline().strip()
 					return str(int(content, 16)) if hex else content
-			except:
+			except BaseException:
 				pass
 		return 'N/A'
 

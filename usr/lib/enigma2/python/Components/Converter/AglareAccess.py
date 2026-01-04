@@ -13,7 +13,7 @@ old_ecm_mtime = None
 try:
 	config.softcam_actCam = ConfigText()
 	config.softcam_actCam2 = ConfigText()
-except:
+except BaseException:
 	pass
 
 
@@ -649,7 +649,7 @@ class AglareAccess(Poll, Converter):
 					try:
 						caid = "%0.4X" % int(ecm_info.get("caid", ""), 16)
 						return "%s" % caidname
-					except:
+					except BaseException:
 						return "Unknown CA Info"
 				else:
 					return "CA Info not available"
@@ -677,7 +677,7 @@ class AglareAccess(Poll, Converter):
 
 						try:
 							pid = "%0.4X" % int(ecm_info.get("pid", ""), 16)
-						except:
+						except BaseException:
 							pid = ""
 
 						if self.type == self.PID:
@@ -685,7 +685,7 @@ class AglareAccess(Poll, Converter):
 
 						try:
 							prov = "%0.6X" % int(ecm_info.get("prov", ""), 16)
-						except:
+						except BaseException:
 							prov = ecm_info.get("prov", "")
 
 						if self.type == self.PROV:
@@ -797,7 +797,7 @@ class AglareAccess(Poll, Converter):
 								else:
 									try:
 										ecminfo = "CA: %s:%s  PID:%s  Addr:%s:%s  Prtc: %s (%s) %s  Ecm Time: %s  %s" % (caid, prov, pid, server, port, protocol, source, hops, ecm_time, provider)
-									except:
+									except BaseException:
 										pass
 							else:
 								ecminfo = casi
@@ -822,7 +822,7 @@ class AglareAccess(Poll, Converter):
 												ecminfo = "%s:%s - %s (%s) - %s" % (caid, prov, server, hop, ecm_time)
 											else:
 												ecminfo = "%s:%s - %s - %s" % (caid, prov, server, ecm_time)
-									except:
+									except BaseException:
 										pass
 							else:
 								ecminfo = csi
@@ -845,7 +845,7 @@ class AglareAccess(Poll, Converter):
 												ecminfo = "%s [%s:%s - %s@%s - %s]" % (csi, caid, prov, server, hop, ecm_time)
 											else:
 												ecminfo = "%s [%s:%s - %s - %s]" % (csi, caid, prov, server, ecm_time)
-									except:
+									except BaseException:
 										pass
 							else:
 								ecminfo = csi
@@ -881,14 +881,14 @@ class AglareAccess(Poll, Converter):
 				else:
 					camdlist = cam1
 				return camdlist
-			except:
+			except BaseException:
 				pass
 			try:
 				for line in open("/etc/init.d/cardserver"):
 					if line.find("echo") > -1:
 						sername.append(line)
 				serlist = "%s" % sername[1].split('"')[1]
-			except:
+			except BaseException:
 				pass
 			if serlist is None:
 				serlist = ""
@@ -913,7 +913,7 @@ class AglareAccess(Poll, Converter):
 								cam2 = ""
 							else:
 								cam2 = "+" + cam2
-					except:
+					except BaseException:
 						pass
 					try:
 						if exists("/etc/init.d/softcam"):
@@ -939,7 +939,7 @@ class AglareAccess(Poll, Converter):
 							return cam2
 						else:
 							return cam1
-					except:
+					except BaseException:
 						pass
 					try:
 						for line in open("/etc/init.d/cardserver"):
@@ -948,7 +948,7 @@ class AglareAccess(Poll, Converter):
 						cam2 = " %s" % sername[1].split('"')[1]
 						if not cam2 or cam2 == "None":
 							cam2 = ""
-					except:
+					except BaseException:
 						pass
 				elif "=teamBlue" in line:
 					try:
@@ -962,7 +962,7 @@ class AglareAccess(Poll, Converter):
 								cam2 = ""
 							else:
 								cam2 = "+" + cam2
-					except:
+					except BaseException:
 						pass
 					try:
 						if exists("/etc/init.d/softcam"):
@@ -988,7 +988,7 @@ class AglareAccess(Poll, Converter):
 							return cam2
 						else:
 							return cam1
-					except:
+					except BaseException:
 						pass
 					try:
 						for line in open("/etc/init.d/cardserver"):
@@ -997,7 +997,7 @@ class AglareAccess(Poll, Converter):
 						cam2 = " %s" % sername[1].split('"')[1]
 						if not cam2 or cam2 == "None":
 							cam2 = ""
-					except:
+					except BaseException:
 						pass
 				elif "=openvix" in line:
 					try:
@@ -1011,7 +1011,7 @@ class AglareAccess(Poll, Converter):
 								cam2 = ""
 							else:
 								cam2 = "+" + cam2
-					except:
+					except BaseException:
 						pass
 					try:
 						if exists("/etc/init.d/softcam"):
@@ -1037,7 +1037,7 @@ class AglareAccess(Poll, Converter):
 							return cam2
 						else:
 							return cam1
-					except:
+					except BaseException:
 						pass
 					try:
 						for line in open("/etc/init.d/cardserver"):
@@ -1046,7 +1046,7 @@ class AglareAccess(Poll, Converter):
 						cam2 = " %s" % sername[1].split('"')[1]
 						if not cam2 or cam2 == "None":
 							cam2 = ""
-					except:
+					except BaseException:
 						pass
 				elif "=opengoal" in line:
 					try:
@@ -1060,7 +1060,7 @@ class AglareAccess(Poll, Converter):
 								cam2 = ""
 							else:
 								cam2 = "+" + cam2
-					except:
+					except BaseException:
 						pass
 					try:
 						if exists("/etc/init.d/softcam"):
@@ -1086,7 +1086,7 @@ class AglareAccess(Poll, Converter):
 							return cam2
 						else:
 							return cam1
-					except:
+					except BaseException:
 						pass
 					try:
 						for line in open("/etc/init.d/cardserver"):
@@ -1095,7 +1095,7 @@ class AglareAccess(Poll, Converter):
 						cam2 = " %s" % sername[1].split('"')[1]
 						if not cam2 or cam2 == "None":
 							cam2 = ""
-					except:
+					except BaseException:
 						pass
 				elif "=opendroid" in line:
 					try:
@@ -1109,7 +1109,7 @@ class AglareAccess(Poll, Converter):
 								cam2 = ""
 							else:
 								cam2 = "+" + cam2
-					except:
+					except BaseException:
 						pass
 					try:
 						if exists("/etc/init.d/softcam"):
@@ -1135,7 +1135,7 @@ class AglareAccess(Poll, Converter):
 							return cam2
 						else:
 							return cam1
-					except:
+					except BaseException:
 						pass
 					try:
 						for line in open("/etc/init.d/cardserver"):
@@ -1144,7 +1144,7 @@ class AglareAccess(Poll, Converter):
 						cam2 = " %s" % sername[1].split('"')[1]
 						if not cam2 or cam2 == "None":
 							cam2 = ""
-					except:
+					except BaseException:
 						pass
 				elif "=satlodge" in line:
 					try:
@@ -1158,7 +1158,7 @@ class AglareAccess(Poll, Converter):
 								cam2 = ""
 							else:
 								cam2 = "/" + cam2
-					except:
+					except BaseException:
 						pass
 			return "%s%s" % (cam1, cam2)
 # OpenVix_script
@@ -1176,7 +1176,7 @@ class AglareAccess(Poll, Converter):
 								cam2 = ""
 							else:
 								cam2 = "+" + cam2
-					except:
+					except BaseException:
 						pass
 					try:
 						if exists("/tmp/.oscam/oscam.version"):
@@ -1200,7 +1200,7 @@ class AglareAccess(Poll, Converter):
 							return cam2
 						else:
 							return cam1
-					except:
+					except BaseException:
 						pass
 					try:
 						for line in open("/etc/init.d/cardserver"):
@@ -1209,18 +1209,18 @@ class AglareAccess(Poll, Converter):
 						cam2 = " %s" % sername[1].split('"')[1]
 						if not cam2 or cam2 == "None":
 							cam2 = ""
-					except:
+					except BaseException:
 						pass
 # BLACKHOLE
 		if exists("/etc/CurrentDelCamName"):
 			try:
 				camdlist = open("/etc/CurrentDelCamName", "r")
-			except:
+			except BaseException:
 				return None
 		if exists("/etc/CurrentBhCamName"):
 			try:
 				camdlist = open("/etc/CurrentBhCamName", "r")
-			except:
+			except BaseException:
 				return None
 # DE-OpenBlackHole
 		if exists("/etc/image-version") and exists("/etc/BhCamConf"):
@@ -1237,7 +1237,7 @@ class AglareAccess(Poll, Converter):
 								cam2 = ""
 							else:
 								cam2 = "+" + cam2
-					except:
+					except BaseException:
 						pass
 					try:
 						if exists("/tmp/.oscam/oscam.version"):
@@ -1261,7 +1261,7 @@ class AglareAccess(Poll, Converter):
 							return cam2
 						else:
 							return cam1
-					except:
+					except BaseException:
 						pass
 					try:
 						for line in open("/etc/init.d/cardserver"):
@@ -1270,44 +1270,44 @@ class AglareAccess(Poll, Converter):
 						cam2 = " %s" % sername[1].split('"')[1]
 						if not cam2 or cam2 == "None":
 							cam2 = ""
-					except:
+					except BaseException:
 						pass
 # HDMU
 		if exists("/etc/.emustart") and exists("/etc/image-version"):
 			try:
 				for line in open("/etc/.emustart"):
 					return line.split()[0].split("/")[-1]
-			except:
+			except BaseException:
 				return None
 # Domica
 		if exists("/etc/active_emu.list"):
 			try:
 				camdlist = open("/etc/active_emu.list", "r")
-			except:
+			except BaseException:
 				return None
 # Egami
 		if exists("/etc/EGCamConf"):
 			try:
 				camdlist = open("/etc/CurrentEGCamName", "r")
-			except:
+			except BaseException:
 				return None
 # OoZooN
 		if exists("/tmp/cam.info"):
 			try:
 				camdlist = open("/tmp/cam.info", "r")
-			except:
+			except BaseException:
 				return None
 # Dream Elite
 		if exists("/usr/bin/emuactive"):
 			try:
 				camdlist = open("/usr/bin/emuactive", "r")
-			except:
+			except BaseException:
 				return None
 # Merlin2 & PurE2
 		if exists("/etc/clist.list"):
 			try:
 				camdlist = open("/etc/clist.list", "r")
-			except:
+			except BaseException:
 				return None
 # TS-Panel
 		if exists("/etc/startcam.sh"):
@@ -1315,13 +1315,13 @@ class AglareAccess(Poll, Converter):
 				for line in open("/etc/startcam.sh"):
 					if line.find("script") > -1:
 						return "%s" % line.split("/")[-1].split()[0][:-3]
-			except:
+			except BaseException:
 				camdlist = None
 #  GlassSysUtil
 		if exists("/tmp/ucm_cam.info"):
 			try:
 				return open("/tmp/ucm_cam.info").read()
-			except:
+			except BaseException:
 				return None
 # Others
 		if serlist is not None:
@@ -1330,7 +1330,7 @@ class AglareAccess(Poll, Converter):
 				for current in serlist.readlines():
 					cardserver = current
 				serlist.close()
-			except:
+			except BaseException:
 				pass
 		else:
 			cardserver = "N/A"
@@ -1341,7 +1341,7 @@ class AglareAccess(Poll, Converter):
 				for current in camdlist.readlines():
 					emu = current
 				camdlist.close()
-			except:
+			except BaseException:
 				pass
 		else:
 			emu = "N/A"
@@ -1380,7 +1380,7 @@ class AglareAccess(Poll, Converter):
 				try:
 					if ce[0] <= caidr <= ce[1] or caidr.startswith(ce[0]):
 						caidname = ce[2]
-				except:
+				except BaseException:
 					pass
 		return caidname
 
@@ -1455,7 +1455,7 @@ class AglareAccess(Poll, Converter):
 		else:
 			try:
 				ecmpath = "/tmp/ecm.info"
-			except:
+			except BaseException:
 				pass
 		return ecmpath
 
@@ -1475,7 +1475,7 @@ class AglareAccess(Poll, Converter):
 				old_ecm_mtime = ecm_mtime
 				ecmf = open(ecmpath, "r")
 				ecm = ecmf.readlines()
-			except:
+			except BaseException:
 				old_ecm_mtime = None
 				info = {}
 				return info
@@ -1531,7 +1531,7 @@ class AglareAccess(Poll, Converter):
 										try:
 											info["server"] = it_tmp[3].split(":", 1)[0]
 											info["port"] = it_tmp[3].split(":", 1)[1][:-1]
-										except:
+										except BaseException:
 											pass
 									else:
 										info["server"] == ""

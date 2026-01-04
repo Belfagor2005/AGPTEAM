@@ -90,7 +90,7 @@ global my_cur_skin, srch
 try:
 	lng = config.osd.language.value
 	lng = lng[:-3]
-except:
+except BaseException:
 	lng = 'en'
 	pass
 
@@ -893,7 +893,7 @@ class AgpDownloadThread(Thread):
 					if exists(filepath):
 						try:
 							remove(filepath)
-						except:
+						except BaseException:
 							pass
 
 					sleep(2 * (attempt + 1))
@@ -910,7 +910,7 @@ class AgpDownloadThread(Thread):
 			new_width = int(ratio * new_height)
 			try:
 				rimg = img.resize((new_width, new_height), Image.LANCZOS)
-			except:
+			except BaseException:
 				rimg = img.resize((new_width, new_height), Image.ANTIALIAS)
 			img.close()
 			rimg.save(dwn_poster)
@@ -927,14 +927,14 @@ class AgpDownloadThread(Thread):
 			else:
 				try:
 					remove(dwn_poster)
-				except:
+				except BaseException:
 					pass
 				return False
 		except Exception as e:
 			print(e)
 			try:
 				remove(dwn_poster)
-			except:
+			except BaseException:
 				pass
 			return False
 		return True

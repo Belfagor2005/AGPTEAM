@@ -372,7 +372,7 @@ class AglareSetup(ConfigListScreen, Screen):
             check = checkskin.check_module_skin()
             try:
                 self.check_module_conn = self.check_module.timeout.connect(check)
-            except:
+            except BaseException:
                 self.check_module.callback.append(check)
             self.check_module.start(100, True)
             self.openVi()

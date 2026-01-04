@@ -1041,7 +1041,7 @@ class BackdropAutoDB(AgbDownloadThread):
 			try:
 				if not exists(fallback):
 					makedirs(fallback, mode=0o700)
-			except:
+			except BaseException:
 				pass
 			return fallback
 

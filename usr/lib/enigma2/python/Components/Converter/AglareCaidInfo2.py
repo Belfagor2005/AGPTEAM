@@ -567,7 +567,7 @@ class AglareCaidInfo2(Poll, Converter, object):
 				# pid
 				try:
 					pid = "%0.4X" % int(ecm_info.get("pid", ""), 16)
-				except:
+				except BaseException:
 					pid = ""
 				if self.type == self.PID:
 					return pid
@@ -756,7 +756,7 @@ class AglareCaidInfo2(Poll, Converter, object):
 				old_ecm_mtime = ecm_mtime
 				ecmf = open("/tmp/ecm.info", "r")
 				ecm = ecmf.readlines()
-			except:
+			except BaseException:
 				old_ecm_mtime = None
 				info = {}
 				return info
@@ -818,7 +818,7 @@ class AglareCaidInfo2(Poll, Converter, object):
 										try:
 											info["server"] = it_tmp[3].split(":", 1)[0]
 											info["port"] = it_tmp[3].split(":", 1)[1][:-1]
-										except:
+										except BaseException:
 											pass
 									else:
 										info["server"] == ""

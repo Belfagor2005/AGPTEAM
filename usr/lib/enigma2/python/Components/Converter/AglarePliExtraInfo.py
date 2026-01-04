@@ -263,7 +263,7 @@ class AglarePliExtraInfo(Poll, Converter, object):
                     for caid in available_caids:
                         if int(caid_entry[0], 16) <= caid <= int(caid_entry[1], 16):
                             color = Hex2strColor(colors[1])  # yellow
-                except:
+                except BaseException:
                     pass
 
             if color != Hex2strColor(colors[2]) or caid_entry[5]:
@@ -294,7 +294,7 @@ class AglarePliExtraInfo(Poll, Converter, object):
                 for caid in available_caids:
                     if int('0x100', 16) <= caid <= int('0x1ff', 16):
                         color = Hex2strColor(self.cryptocolors[2])
-            except:
+            except BaseException:
                 pass
         res = color + 'S'
         res += Hex2strColor(self.cryptocolors[3])
@@ -310,7 +310,7 @@ class AglarePliExtraInfo(Poll, Converter, object):
                 for caid in available_caids:
                     if int('0x500', 16) <= caid <= int('0x5ff', 16):
                         color = Hex2strColor(self.cryptocolors[2])
-            except:
+            except BaseException:
                 pass
         res = color + 'V'
         res += Hex2strColor(self.cryptocolors[3])
@@ -326,7 +326,7 @@ class AglarePliExtraInfo(Poll, Converter, object):
                 for caid in available_caids:
                     if int('0x600', 16) <= caid <= int('0x6ff', 16):
                         color = Hex2strColor(self.cryptocolors[2])
-            except:
+            except BaseException:
                 pass
         res = color + 'I'
         res += Hex2strColor(self.cryptocolors[3])
@@ -342,7 +342,7 @@ class AglarePliExtraInfo(Poll, Converter, object):
                 for caid in available_caids:
                     if int('0x900', 16) <= caid <= int('0x9ff', 16):
                         color = Hex2strColor(self.cryptocolors[2])
-            except:
+            except BaseException:
                 pass
         res = color + 'NDS'
         res += Hex2strColor(self.cryptocolors[3])
@@ -358,7 +358,7 @@ class AglarePliExtraInfo(Poll, Converter, object):
                 for caid in available_caids:
                     if int('0xb00', 16) <= caid <= int('0xbff', 16):
                         color = Hex2strColor(self.cryptocolors[2])
-            except:
+            except BaseException:
                 pass
         res = color + 'CO'
         res += Hex2strColor(self.cryptocolors[3])
@@ -374,7 +374,7 @@ class AglarePliExtraInfo(Poll, Converter, object):
                 for caid in available_caids:
                     if int('0xd00', 16) <= caid <= int('0xdff', 16):
                         color = Hex2strColor(self.cryptocolors[2])
-            except:
+            except BaseException:
                 pass
         res = color + 'CW'
         res += Hex2strColor(self.cryptocolors[3])
@@ -390,7 +390,7 @@ class AglarePliExtraInfo(Poll, Converter, object):
                 for caid in available_caids:
                     if int('0xe00', 16) <= caid <= int('0xeff', 16):
                         color = Hex2strColor(self.cryptocolors[2])
-            except:
+            except BaseException:
                 pass
         res = color + 'P'
         res += Hex2strColor(self.cryptocolors[3])
@@ -406,7 +406,7 @@ class AglarePliExtraInfo(Poll, Converter, object):
                 for caid in available_caids:
                     if int('0x1010', 16) <= caid <= int('0x1010', 16):
                         color = Hex2strColor(self.cryptocolors[2])
-            except:
+            except BaseException:
                 pass
         res = color + 'T'
         res += Hex2strColor(self.cryptocolors[3])
@@ -422,7 +422,7 @@ class AglarePliExtraInfo(Poll, Converter, object):
                 for caid in available_caids:
                     if int('0x1700', 16) <= caid <= int('0x17ff', 16):
                         color = Hex2strColor(self.cryptocolors[2])
-            except:
+            except BaseException:
                 pass
         res = color + 'B'
         res += Hex2strColor(self.cryptocolors[3])
@@ -438,7 +438,7 @@ class AglarePliExtraInfo(Poll, Converter, object):
                 for caid in available_caids:
                     if int('0x1800', 16) <= caid <= int('0x18ff', 16):
                         color = Hex2strColor(self.cryptocolors[2])
-            except:
+            except BaseException:
                 pass
         res = color + 'N'
         res += Hex2strColor(self.cryptocolors[3])
@@ -454,7 +454,7 @@ class AglarePliExtraInfo(Poll, Converter, object):
                 for caid in available_caids:
                     if int('0x2600', 16) <= caid <= int('0x26ff', 16):
                         color = Hex2strColor(self.cryptocolors[2])
-            except:
+            except BaseException:
                 pass
         res = color + 'BI'
         res += Hex2strColor(self.cryptocolors[3])
@@ -470,7 +470,7 @@ class AglarePliExtraInfo(Poll, Converter, object):
                 for caid in available_caids:
                     if int('0x4ae0', 16) <= caid <= int('0x4ae1', 16):
                         color = Hex2strColor(self.cryptocolors[2])
-            except:
+            except BaseException:
                 pass
         res = color + 'DC'
         res += Hex2strColor(self.cryptocolors[3])
@@ -489,7 +489,7 @@ class AglarePliExtraInfo(Poll, Converter, object):
                     caid_name = caid_entry[2]
                     break
             return caid_name + ":%04X:%06X:%04X" % (int(self.current_caid, 16), int(self.current_provid, 16), info.getInfo(iServiceInformation.sSID))
-        except:
+        except BaseException:
             pass
         return ""
 
@@ -503,7 +503,7 @@ class AglarePliExtraInfo(Poll, Converter, object):
                     caid_name = caid_entry[2]
                     break
             return caid_name + ":%04X" % (int(self.current_caid, 16))
-        except:
+        except BaseException:
             pass
         return ""
 
@@ -512,23 +512,23 @@ class AglarePliExtraInfo(Poll, Converter, object):
             yres = int(open("/proc/stb/vmpeg/0/yres", "r").read(), 16)
             if yres > 4096 or yres == 0:
                 return ""
-        except:
+        except BaseException:
             return ""
         try:
             xres = int(open("/proc/stb/vmpeg/0/xres", "r").read(), 16)
             if xres > 4096 or xres == 0:
                 return ""
-        except:
+        except BaseException:
             return ""
         mode = ""
         try:
             mode = "p" if int(open("/proc/stb/vmpeg/0/progressive", "r").read(), 16) else "i"
-        except:
+        except BaseException:
             pass
         fps = ""
         try:
             fps = str((int(open("/proc/stb/vmpeg/0/framerate", "r").read()) + 500) // 1000)
-        except:
+        except BaseException:
             pass
 
         return "%sx%s%s%s" % (xres, yres, mode, fps)
@@ -1033,7 +1033,7 @@ class AglarePliExtraInfo(Poll, Converter, object):
                         for caid in available_caids:
                             if int(caid_entry[0], 16) <= caid <= int(caid_entry[1], 16):
                                 return True
-                    except:
+                    except BaseException:
                         pass
 
         return False

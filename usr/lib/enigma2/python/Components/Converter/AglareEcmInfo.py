@@ -66,7 +66,7 @@ class AglareEcmInfo(Poll, Converter, object):
 		self.initTimer = eTimer()
 		try:
 			self.initTimer.callback.append(self.initBitrateCalc)
-		except:
+		except BaseException:
 			self.initTimer_conn = self.initTimer.timeout.connect(self.initBitrateCalc)
 
 		self.systemTxtCaids = {
@@ -129,17 +129,17 @@ class AglareEcmInfo(Poll, Converter, object):
 				try:
 					self.videoBitrate = eBitrateCalculator(vpid, dvbnamespace, tsid, onid, 1000, 1024 * 1024)
 					self.videoBitrate.callback.append(self.getVideoBitrateData)
-				except:
+				except BaseException:
 					self.videoBitrate = eBitrateCalculator(vpid, dvbnamespace, tsid, onid, 1000, 1024 * 1024)
 					self.videoBitrate_conn = self.videoBitrate.timeout.connect(self.getVideoBitrateData)
 			if BITRATE and apid > 0 and self.type == self.bitrate:
 				try:
 					self.audioBitrate = eBitrateCalculator(apid, dvbnamespace, tsid, onid, 1000, 64 * 1024)
 					self.audioBitrate.callback.append(self.getAudioBitrateData)
-				except:
+				except BaseException:
 					self.audioBitrate = eBitrateCalculator(apid, dvbnamespace, tsid, onid, 1000, 64 * 1024)
 					self.audioBitrate_conn = self.audioBitrate.timeout.connect(self.getAudioBitrateData)
-		except:
+		except BaseException:
 			pass
 
 	def caidstr(self):
@@ -159,7 +159,7 @@ class AglareEcmInfo(Poll, Converter, object):
 								caidvalue = value[len(caidvalue):] + caidvalue
 						elif line.find("CaID") > -1 or line.find("CAID") > -1:
 							caidvalue = line.split(",")[0].split()[-1][2:]
-				except:
+				except BaseException:
 					pass
 		return caidvalue
 
@@ -175,7 +175,7 @@ class AglareEcmInfo(Poll, Converter, object):
 		if self.type == self.vtype:
 			try:
 				return ("MPEG2", "MPEG4", "MPEG1", "MPEG4-II", "VC1", "VC1-SM", "")[info.getInfo(iServiceInformation.sVideoType)]
-			except:
+			except BaseException:
 				return " "
 
 		elif self.type == self.bitrate:
@@ -194,7 +194,7 @@ class AglareEcmInfo(Poll, Converter, object):
 				xres = info.getInfo(iServiceInformation.sVideoWidth)
 				return "%sx%s(%s) VIDEO %s: %d kbit/s  AUDIO %s: %d kbit/s" % (str(xres), str(yres) + mode, self.getServiceInfoString(info, iServiceInformation.sFrameRate, lambda x: "%d" % ((x + 500) / 1000)), ("MPEG2", "MPEG4", "MPEG1", "MPEG4-II", "VC1", "VC1-SM", "")[info.getInfo(iServiceInformation.sVideoType)], self.video, audioTrackCodec, self.audio)
 				# return "%sx%s(%s) VIDEO %s: %d kbit/s  AUDIO %s: %d kbit/s" % (str(xres), str(yres) + mode, self.getServiceInfoString(info, iServiceInformation.sFrameRate, lambda x: "%d" % ((x+500)/1000)), ("MPEG2", "MPEG4", "MPEG1", "MPEG4-II", "VC1", "VC1-SM", "")[info.getInfo(iServiceInformation.sVideoType)], self.video,str(audio.getTrackInfo(audio.getCurrentTrack()).getDescription()), self.audio)
-			except:
+			except BaseException:
 				return " "
 		elif self.type == self.txtcaid:
 			caidvalue = "%s" % self.systemTxtCaids.get(self.caidstr()[:2].upper())
@@ -230,7 +230,7 @@ class AglareEcmInfo(Poll, Converter, object):
 						for line in open("/tmp/pid.info"):
 							ecminfo += line
 					"""
-				except:
+				except BaseException:
 					pass
 
 		elif self.type == self.activecaid:
@@ -241,13 +241,13 @@ class AglareEcmInfo(Poll, Converter, object):
 
 			try:
 				return "SID: %0.4X  VPID: %0.4X  APID: %0.4X" % (int(self.getServiceInfoString(info, iServiceInformation.sSID)), int(self.getServiceInfoString(info, iServiceInformation.sVideoPID)), int(self.getServiceInfoString(info, iServiceInformation.sAudioPID)))
-			except:
+			except BaseException:
 				try:
 					return "SID: %0.4X  APID: %0.4X" % (int(self.getServiceInfoString(info, iServiceInformation.sSID)), int(self.getServiceInfoString(info, iServiceInformation.sAudioPID)))
-				except:
+				except BaseException:
 					try:
 						return "SID: %0.4X  VPID: %0.4X" % (int(self.getServiceInfoString(info, iServiceInformation.sSID)), int(self.getServiceInfoString(info, iServiceInformation.sVideoPID)))
-					except:
+					except BaseException:
 						return ""
 
 		elif self.type == self.caids:
@@ -259,7 +259,7 @@ class AglareEcmInfo(Poll, Converter, object):
 				for caid in ecminfo.split():
 					array_caids.append(caid)
 				ecminfo = ' '.join(str(x) for x in set(array_caids))
-			except:
+			except BaseException:
 				ecminfo = " "
 
 		if self.type == self.emuname:
@@ -286,25 +286,25 @@ class AglareEcmInfo(Poll, Converter, object):
 			elif exists("/etc/.ActiveCamd"):
 				try:
 					camdlist = open("/etc/.ActiveCamd", "r")
-				except:
+				except BaseException:
 					return None
 			# BlackHole
 			elif exists("/etc/CurrentBhCamName"):
 				try:
 					camdlist = open("/etc/CurrentBhCamName", "r")
-				except:
+				except BaseException:
 					camdlist = None
 			# BlackHole OE1.6
 			elif exists("/etc/CurrentDelCamName"):
 				try:
 					camdlist = open("/etc/CurrentDelCamName", "r")
-				except:
+				except BaseException:
 					return None
 			# Pure2
 			elif exists("/etc/clist.list") and not exists("/usr/lib/enigma2/python/Plugins/Extensions/Manager/levisemu.py") and not exists("/usr/lib/enigma2/python/Plugins/Extensions/tvManager/data/clist.list"):
 				try:
 					camdlist = open("/etc/clist.list", "r")
-				except:
+				except BaseException:
 					camdlist = None
 			# Unknown emu
 			else:
@@ -316,7 +316,7 @@ class AglareEcmInfo(Poll, Converter, object):
 					for current in serlist.readlines():
 						cardserver = current
 					serlist.close()
-				except:
+				except BaseException:
 					pass
 			else:
 				cardserver = ""
@@ -327,7 +327,7 @@ class AglareEcmInfo(Poll, Converter, object):
 					for current in camdlist.readlines():
 						emu = current
 					camdlist.close()
-				except:
+				except BaseException:
 					pass
 			else:
 				emu = ""

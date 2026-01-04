@@ -149,7 +149,7 @@ def agb_debug(mytext=None, append=True, mydebug='/tmp/AglareComponents.log'):
         try:  # Attempt to log the error
             with open(mydebug, 'a') as f:
                 f.write(f'{datetime.now()}\tException: {e}\n')
-        except:
+        except BaseException:
             print(f'Logging failed: {e}')
 
 

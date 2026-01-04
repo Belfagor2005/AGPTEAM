@@ -91,7 +91,7 @@ class AglareServName2(Converter, object):
 		self.timer = eTimer()
 		try:
 			self.timer.callback.append(self.neededChange)
-		except:
+		except BaseException:
 			self.timer_conn = self.timer.timeout.connect(self.neededChange)
 
 	def getServiceNumber(self, ref):
@@ -121,7 +121,7 @@ class AglareServName2(Converter, object):
 				return 0, 'N/A'
 			try:
 				acount = config.plugins.NumberZapExt.enable.value and config.plugins.NumberZapExt.acount.value or config.usage.alternative_number_mode.value
-			except:
+			except BaseException:
 				acount = False
 			rootstr = ''
 			for x in lastpath.split(';'):
@@ -428,7 +428,7 @@ class AglareServName2(Converter, object):
 				try:
 					from Components.NimManager import nimmanager
 					return str(nimmanager.getSatDescription(orbpos))
-				except:
+				except BaseException:
 					dir = ref.flags & (eServiceReference.isDirectory | eServiceReference.isMarker)
 					if not dir:
 						refString = ref.toString().lower()
@@ -543,7 +543,7 @@ class AglareServName2(Converter, object):
 			try:
 				service = self.source.serviceref
 				num = service and service.getChannelNum() or None
-			except:
+			except BaseException:
 				num = None
 			if num:
 				return str(num)
@@ -647,7 +647,7 @@ class AglareServName2(Converter, object):
 					try:
 						service = self.source.serviceref
 						num = service and service.getChannelNum() or None
-					except:
+					except BaseException:
 						num = None
 					if num:
 						ret += str(num)

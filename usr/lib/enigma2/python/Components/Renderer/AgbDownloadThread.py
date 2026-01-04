@@ -810,7 +810,7 @@ class AgbDownloadThread(Thread):
 					if exists(filepath):
 						try:
 							remove(filepath)
-						except:
+						except BaseException:
 							pass
 
 					sleep(2 * (attempt + 1))
@@ -827,7 +827,7 @@ class AgbDownloadThread(Thread):
 			new_width = int(ratio * new_height)
 			try:
 				rimg = img.resize((new_width, new_height), Image.LANCZOS)
-			except:
+			except BaseException:
 				rimg = img.resize((new_width, new_height), Image.ANTIALIAS)
 			img.close()
 			rimg.save(dwn_backdrop)
@@ -844,14 +844,14 @@ class AgbDownloadThread(Thread):
 			else:
 				try:
 					remove(dwn_backdrop)
-				except:
+				except BaseException:
 					pass
 				return False
 		except Exception as e:
 			print(e)
 			try:
 				remove(dwn_backdrop)
-			except:
+			except BaseException:
 				pass
 			return False
 		return True

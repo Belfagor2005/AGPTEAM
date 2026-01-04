@@ -116,21 +116,21 @@ class AglareReceiverInfo(Poll, Converter):
                     with open('/proc/mounts') as f:
                         if any(device_path in line and mount_point in line for line in f):
                             return True
-        except:
+        except BaseException:
             pass
         return False
 
     def getHddTemp(self):
         try:
             return popen('hddtemp -n -q /dev/sda 2>/dev/null').readline().strip() + "°C"
-        except:
+        except BaseException:
             return "N/A"
 
     def getLoadAvg(self):
         try:
             with open('/proc/loadavg', 'r') as f:
                 return f.read(15).strip()
-        except:
+        except BaseException:
             return "N/A"
 
     def getMemInfo(self, value):
@@ -146,7 +146,7 @@ class AglareReceiverInfo(Poll, Converter):
                 used = total - free
                 percent = (used * 100) / total
                 result = [total, used, free, percent]
-        except:
+        except BaseException:
             pass
         return result
 
@@ -160,7 +160,7 @@ class AglareReceiverInfo(Poll, Converter):
                     result[2] = st.f_bsize * st.f_bavail
                     result[1] = result[0] - result[2]
                     result[3] = (result[1] * 100) / result[0]
-            except:
+            except BaseException:
                 pass
         return result
 
@@ -171,7 +171,7 @@ class AglareReceiverInfo(Poll, Converter):
                     parts = line.split()
                     if len(parts) > 1 and parts[1] == path:
                         return True
-        except:
+        except BaseException:
             pass
         return False
 

@@ -95,7 +95,7 @@ RATING_MAP = {
 try:
 	lng = config.osd.language.value
 	lng = lng[:-3]
-except:
+except BaseException:
 	lng = 'en'
 	pass
 

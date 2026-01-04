@@ -47,7 +47,7 @@ def agb_debug(my_text=None, append=True, debug_file=DEBUG_FILE):
 		try:
 			with open(debug_file, 'a') as f:
 				f.write(f'Exception: {e}\n')
-		except:
+		except BaseException:
 			pass
 
 
@@ -71,7 +71,7 @@ def isImageType(img_name=''):
 						_image_type = 'openatv'
 						if '/5.3/' in content:
 							_image_type += '5.3'
-			except:
+			except BaseException:
 				pass
 
 		# Fallback to directory detection

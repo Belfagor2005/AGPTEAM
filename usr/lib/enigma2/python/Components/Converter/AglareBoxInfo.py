@@ -196,14 +196,14 @@ class AglareBoxInfo(Poll, Converter, object):
 				if not cpu_speed:
 					try:
 						cpu_speed = int(open('/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq').read()) / 1000
-					except:
+					except BaseException:
 						try:
 							import binascii
 							f = open('/sys/firmware/devicetree/base/cpus/cpu@0/clock-frequency', 'rb')
 							clockfrequency = f.read()
 							f.close()
 							cpu_speed = "%s" % str(int(binascii.hexlify(clockfrequency), 16) / 1000000)
-						except:
+						except BaseException:
 							cpu_speed = '-'
 				if cpu_info == '':
 					return _('%s, %s MHz (%d %s)') % (info, cpu_speed, cpu_count, cpu_count > 1 and cores or core)
@@ -217,7 +217,7 @@ class AglareBoxInfo(Poll, Converter, object):
 				out_line = popen('hddtemp -n -q /dev/sda').readline()
 				info = 'HDD: Temp:' + out_line[:2] + str('\xc2\xb0') + 'C'
 				textvalue = info
-			except:
+			except BaseException:
 				pass
 			return textvalue
 
@@ -259,7 +259,7 @@ class AglareBoxInfo(Poll, Converter, object):
 					info = open('/proc/stb/fp/fan_speed').read().strip('\n')
 				elif exists('/proc/stb/fp/fan_pwm'):
 					info = open('/proc/stb/fp/fan_pwm').read().strip('\n')
-			except:
+			except BaseException:
 				info = 'N/A'
 			if self.type is self.FanInfo:
 				info = 'Fan: ' + info
@@ -269,7 +269,7 @@ class AglareBoxInfo(Poll, Converter, object):
 			try:
 				with open('/proc/uptime', 'r') as file:
 					uptime_info = file.read().split()
-			except:
+			except BaseException:
 				return ' '
 				uptime_info = None
 			if uptime_info is not None:
@@ -312,14 +312,14 @@ class AglareBoxInfo(Poll, Converter, object):
 				if not info:
 					try:
 						info = int(open('/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq').read()) / 1000
-					except:
+					except BaseException:
 						try:
 							import binascii
 							info = int(int(binascii.hexlify(open('/sys/firmware/devicetree/base/cpus/cpu@0/clock-frequency', 'rb').read()), 16) / 100000000) * 100
-						except:
+						except BaseException:
 							info = '-'
 				return 'CPU Speed: %s MHz' % info
-			except:
+			except BaseException:
 				return ''
 
 		elif self.type == self.SkinInfo:
@@ -328,7 +328,7 @@ class AglareBoxInfo(Poll, Converter, object):
 					for line in open('/etc/enigma2/settings'):
 						if 'config.skin.primary_skin' in line:
 							return (_('Skin: ')) + line.replace('/skin.xml', ' ').split('=')[1]
-				except:
+				except BaseException:
 					return
 
 		elif self.type == self.TimeInfo:

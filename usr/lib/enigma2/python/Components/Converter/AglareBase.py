@@ -418,7 +418,7 @@ class AglareBase(Poll, Converter, object):
 			with open("/proc/stb/vmpeg/0/xres", "r") as w:
 				try:
 					width = int(w.read(), 16)
-				except:
+				except BaseException:
 					pass
 		if (width > 0) and not (width == 4294967295):
 			return width
@@ -431,7 +431,7 @@ class AglareBase(Poll, Converter, object):
 			with open("/proc/stb/vmpeg/0/yres", "r") as h:
 				try:
 					height = int(h.read(), 16)
-				except:
+				except BaseException:
 					pass
 		if (height > 0) and not (height == 4294967295):
 			return height
@@ -444,7 +444,7 @@ class AglareBase(Poll, Converter, object):
 			with open("/proc/stb/vmpeg/0/progressive", "r") as prog:
 				try:
 					progrs = "p" if int(prog.read(), 16) else "i"
-				except:
+				except BaseException:
 					pass
 		return progrs
 
@@ -464,7 +464,7 @@ class AglareBase(Poll, Converter, object):
 			with open("/proc/stb/vmpeg/0/framerate", "r") as fp:
 				try:
 					fps = int(fp.read())
-				except:
+				except BaseException:
 					pass
 			if (fps < 0) or (fps == -1):
 				return ""
@@ -553,7 +553,7 @@ class AglareBase(Poll, Converter, object):
 				else:
 					t2mi_pid = "PID %s" % t2mi_pid
 			return sp(t2mi_id) + sp(t2mi_pid)
-		except:
+		except BaseException:
 			return ""
 
 	def multistream(self, tpinfo):
@@ -582,7 +582,7 @@ class AglareBase(Poll, Converter, object):
 			try:
 				if sn[0] <= orbe <= sn[1] or sn[1] <= orbw <= sn[0]:
 					sat = sn[2]
-			except:
+			except BaseException:
 				pass
 		return sat
 

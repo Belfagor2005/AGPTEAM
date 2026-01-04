@@ -177,7 +177,7 @@ class AglareEventTime(Poll, Converter):
 					else:
 						# failed to return any epg data.
 						return None
-				except:
+				except BaseException:
 					# failed to return any epg data.
 					return None
 

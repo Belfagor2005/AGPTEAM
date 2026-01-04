@@ -164,7 +164,7 @@ class AglareServName3(Converter):
 					orbitalpos = "%.1f " % (float(3600 - position) / 10) + _("W")
 				else:
 					orbitalpos = "%.1f " % (float(position) / 10) + _("E")
-			except:
+			except BaseException:
 				pass
 		return orbitalpos, tp_data
 

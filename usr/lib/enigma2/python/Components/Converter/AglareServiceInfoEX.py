@@ -299,7 +299,7 @@ class AglareServiceInfoEX(Poll, Converter, object):
 			self.stream['xres'] = self.getServiceInfoString(info, iServiceInformation.sVideoWidth)
 		try:
 			self.stream['gamma'] = gamma_data[info.getInfo(iServiceInformation.sGamma)]
-		except:
+		except BaseException:
 			pass
 		audio = service.audioTracks()
 		if audio:
@@ -349,7 +349,7 @@ class AglareServiceInfoEX(Poll, Converter, object):
 			start = time.time()
 			try:
 				requests.get("http://example.com", timeout=2)
-			except:
+			except BaseException:
 				return "Timeout"
 			return f"{round((time.time() - start) * 1000, 2)} ms"
 		elif self.type == self.AUDIO_DETAILS:
@@ -499,7 +499,7 @@ class AglareServiceInfoEX(Poll, Converter, object):
 					languages = _("Original")
 				description = i.getDescription()
 				return description + "  " + languages
-			except:
+			except BaseException:
 				return _("unknown")
 
 	def hdr(self, info):
@@ -568,7 +568,7 @@ class AglareServiceInfoEX(Poll, Converter, object):
 		elif self.type == self.HAS_HBBTV:
 			try:
 				return info.getInfoString(iServiceInformation.sHBBTVUrl) != ""
-			except:
+			except BaseException:
 				pass
 		elif self.type == self.AUDIOTRACKS_AVAILABLE:
 			audio = service.audioTracks()
