@@ -826,8 +826,8 @@ class MediaStorage:
 	def _get_mount_points(self, media_type):
 		"""Get potential storage locations based on media type"""
 		return [
-			("/media/usb", f"/media/usb/{media_type}"),
 			("/media/hdd", f"/media/hdd/{media_type}"),
+			("/media/usb", f"/media/usb/{media_type}"),
 			("/media/mmc", f"/media/mmc/{media_type}"),
 			("/media/nas", f"/media/nas/{media_type}"),
 			("/mnt/media", f"/mnt/media/{media_type}"),

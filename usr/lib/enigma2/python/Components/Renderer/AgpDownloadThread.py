@@ -68,7 +68,7 @@ from twisted.internet.reactor import callInThread
 from functools import lru_cache
 
 # Enigma2 specific
-from enigma import getDesktop
+# from enigma import getDesktop
 from Components.config import config
 
 # Local imports
@@ -122,7 +122,8 @@ AGENTS = [
 headers = {"User-Agent": choice(AGENTS)}
 
 
-isz = "500,750"
+isz = "185,278"
+"""
 screenwidth = getDesktop(0).size()
 if screenwidth.width() <= 1280:
 	isz = isz.replace(isz, "185,278")
@@ -130,7 +131,7 @@ elif screenwidth.width() <= 1920:
 	isz = isz.replace(isz, "500,750")
 else:
 	isz = isz.replace(isz, "780,1170")
-
+"""
 
 '''
 🖼️ Poster Sizes:
@@ -211,7 +212,16 @@ class AgpDownloadThread(Thread):
 	def search_tmdb(self, dwn_poster, title, shortdesc, fulldesc, year=None, channel=None, api_key=None):
 		"""Download poster from TMDB with full verification pipeline"""
 		# self.title_safe = self.UNAC(title.replace("+", " ").strip())
+		def _strip_year_for_search(t):
+			t = str(t).strip()
+			# remove (2015) or [2015]
+			t = sub(r"\s*[\(\[]\s*(?:19|20)\d{2}\s*[\)\]]\s*", " ", t)
+			# remove trailing year: "Point break 2015" -> "Point break" but keep "2012"
+			t = sub(r"(?<!^)\s+(?:19|20)\d{2}\s*$", "", t)
+			return sub(r"\s+", " ", t).strip()
 		self.title_safe = title.replace("+", " ").strip()
+		self.title_safe = title.replace('–', '').strip()
+		self.title_safe = _strip_year_for_search(self.title_safe)
 		tmdb_api_key = api_key or tmdb_api
 
 		if not tmdb_api_key:
@@ -289,10 +299,11 @@ class AgpDownloadThread(Thread):
 				if not poster_path:
 					continue
 
-				poster = f"http://image.tmdb.org/t/p/original{poster_path}"
+				# poster = f"http://image.tmdb.org/t/p/original{poster_path}"
+				poster = f"http://image.tmdb.org/t/p/w185{poster_path}"
 				if not poster.strip():
-					poster = f"http://image.tmdb.org/t/p/w500{poster_path}"
-
+					# poster = f"http://image.tmdb.org/t/p/w185{poster_path}"
+					poster = f"http://image.tmdb.org/t/p/original{poster_path}"
 				if poster.strip():
 					# Download SYNCRONO - non in thread!
 					success = self.savePoster(poster, dwn_poster)
