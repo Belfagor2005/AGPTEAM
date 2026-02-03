@@ -149,6 +149,7 @@ msgstr "Delete"
 msgid "Download error: {}"
 msgstr "Download error: {}"
 
+#, fuzzy
 msgid "Download in progress"
 msgstr "Download in progress"
 
@@ -419,6 +420,7 @@ msgstr "This operation enable the display of rating stars for events, based on t
 msgid "This operation remove all png from folder device (Poster-Backdrop)"
 msgstr "This operation remove all png from folder device (Poster-Backdrop)"
 
+#, fuzzy
 msgid "Update URL not initialised  open the plugin once from the Plugins menu first."
 msgstr "Update URL not initialised  open the plugin once from the Plugins menu first."
 
