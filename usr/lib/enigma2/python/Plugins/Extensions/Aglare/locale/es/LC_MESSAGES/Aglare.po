@@ -1,0 +1,455 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: enigma 2\n"
+"PO-Revision-Date: 2026-02-03 13:18+0000\n"
+"Last-Translator:  <EMAIL@ADDRESS>\n"
+"Language-Team: Spanish <es@tp.org.es>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ASCII\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "%s key imported!"
+msgstr ""
+
+msgid "Activate/Deactivate ELCINEMA"
+msgstr ""
+
+msgid "Activate/Deactivate GOOGLE"
+msgstr ""
+
+msgid "Activate/Deactivate IMDB"
+msgstr ""
+
+msgid "Activate/Deactivate MOLOTOV"
+msgstr ""
+
+msgid "Activate/Deactivate PROGRAMMETV"
+msgstr ""
+
+msgid "Activate/Deactivate {}"
+msgstr ""
+
+msgid "Add"
+msgstr ""
+
+msgid "All png are removed from folder!"
+msgstr ""
+
+msgid "Automatic"
+msgstr ""
+
+msgid "Automatic download of backdrop"
+msgstr ""
+
+msgid "Automatic download of poster"
+msgstr ""
+
+msgid "Automatically fetch backdrop for favorite events based on EPG"
+msgstr ""
+
+msgid "Automatically fetch posters for favorite events based on EPG"
+msgstr ""
+
+msgid "Back"
+msgstr ""
+
+msgid "Backdrop"
+msgstr ""
+
+msgid "Backdrop download error: {}"
+msgstr ""
+
+msgid "BebasNeue"
+msgstr ""
+
+msgid "Black"
+msgstr ""
+
+msgid "Blue"
+msgstr ""
+
+msgid "Brown"
+msgstr ""
+
+msgid "CD"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "ChannelSelection Style:"
+msgstr ""
+
+msgid "ChannelSelection_1_Poster_EX"
+msgstr ""
+
+msgid "ChannelSelection_1_Poster_X"
+msgstr ""
+
+msgid "ChannelSelection_4_Posters_EX"
+msgstr ""
+
+msgid "ChannelSelection_4_Posters_X"
+msgstr ""
+
+msgid "ChannelSelection_6_Posters_EX"
+msgstr ""
+
+msgid "ChannelSelection_6_Posters_X"
+msgstr ""
+
+msgid "ChannelSelection_BackDrop_H_EX"
+msgstr ""
+
+msgid "ChannelSelection_BackDrop_H_PX"
+msgstr ""
+
+msgid "ChannelSelection_BackDrop_V_EX"
+msgstr ""
+
+msgid "ChannelSelection_BackDrop_V_PX"
+msgstr ""
+
+msgid "ChannelSelection_NO_Posters"
+msgstr ""
+
+msgid "ChannelSelection_NO_Posters_NO_Picon"
+msgstr ""
+
+msgid "ChannelSelection_big_mini_tv"
+msgstr ""
+
+msgid "City"
+msgstr ""
+
+msgid "Color Style:"
+msgstr ""
+
+msgid "Configure the delay time (in minutes) before starting the automatic poster download"
+msgstr ""
+
+msgid "Customization tool for %s Skin"
+msgstr ""
+
+msgid "Dark Green"
+msgstr ""
+
+msgid "Default"
+msgstr ""
+
+msgid "Del Line"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Download error: {}"
+msgstr ""
+
+msgid "Download in progress"
+msgstr ""
+
+msgid "Download now backdrop"
+msgstr ""
+
+msgid "Download now poster"
+msgstr ""
+
+msgid "Downloading Aglare..."
+msgstr ""
+
+msgid "Edit"
+msgstr ""
+
+msgid "Enable Display Genre icons:"
+msgstr ""
+
+msgid "Enable Display InfoEvents:"
+msgstr ""
+
+msgid "Enable Display XMC Poster:"
+msgstr ""
+
+msgid "Enable Parental Icons:"
+msgstr ""
+
+msgid "Enable Rating Star:"
+msgstr ""
+
+msgid "Enable or disable caching during event download to speed up repeated searches."
+msgstr ""
+
+msgid "Enable the display of extended event information, including full cast, crew, plot details, and other metadata, in the info widget."
+msgstr ""
+
+msgid "Error by processing the skin file: {}"
+msgstr ""
+
+msgid "Error downloading files!"
+msgstr ""
+
+msgid "Error loading: {}"
+msgstr ""
+
+msgid "Error {0}: {1}"
+msgstr ""
+
+msgid "Error: {}"
+msgstr ""
+
+msgid "EventView Style:"
+msgstr ""
+
+msgid "EventView_7_Posters"
+msgstr ""
+
+msgid "EventView_NO_Posters"
+msgstr ""
+
+msgid "Exit"
+msgstr ""
+
+msgid "File Commander - Addon"
+msgstr ""
+
+msgid "File {} not found or empty"
+msgstr ""
+
+msgid "Green"
+msgstr ""
+
+msgid "Greta"
+msgstr ""
+
+msgid "HandelGotD"
+msgstr ""
+
+msgid "Import key {0} from {1}?"
+msgstr ""
+
+msgid "Info..."
+msgstr ""
+
+msgid "InfoBar Date:"
+msgstr ""
+
+msgid "InfoBar PosterX:"
+msgstr ""
+
+msgid "InfoBar Style:"
+msgstr ""
+
+msgid "InfoBar Weather:"
+msgstr ""
+
+msgid "InfoBar Xtraevent:"
+msgstr ""
+
+msgid "Infobar_Date"
+msgstr ""
+
+msgid "Infobar_NO_Date"
+msgstr ""
+
+msgid "Infobar_NO_Weather"
+msgstr ""
+
+msgid "Infobar_Weather"
+msgstr ""
+
+msgid "Ins Line"
+msgstr ""
+
+msgid "Installing updates..."
+msgstr ""
+
+msgid "Key empty"
+msgstr ""
+
+msgid "Key {} successfully loaded!"
+msgstr ""
+
+msgid "KhalidArtboldRegular"
+msgstr ""
+
+msgid "Load from /tmp/{}key.txt"
+msgstr ""
+
+msgid "Local build ({}) is newer than server build ({})."
+msgstr ""
+
+msgid "Location code"
+msgstr ""
+
+msgid "MSN location search result"
+msgstr ""
+
+msgid "MV Boli"
+msgstr ""
+
+msgid "Magenta"
+msgstr ""
+
+msgid "No active providers enabled"
+msgstr ""
+
+msgid "OFF"
+msgstr ""
+
+msgid "OK"
+msgstr ""
+
+msgid "OMDB Only"
+msgstr ""
+
+msgid "ON"
+msgstr ""
+
+msgid "Off"
+msgstr ""
+
+msgid "Personal API key for {}"
+msgstr ""
+
+msgid "Please enter a valid city name."
+msgstr ""
+
+msgid "Please enter a valid location code for the city."
+msgstr ""
+
+msgid "Poster download error: {}"
+msgstr ""
+
+msgid "Purple"
+msgstr ""
+
+msgid "Really delete this WeatherPlugin Entry?"
+msgstr ""
+
+msgid "Red"
+msgstr ""
+
+msgid "Remove all png (poster - backdrop) (OK)"
+msgstr ""
+
+msgid "Restart GUI now?"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Search Code"
+msgstr ""
+
+msgid "SecondInfobar Posterx:"
+msgstr ""
+
+msgid "SecondInfobar Style:"
+msgstr ""
+
+msgid "SecondInfobar Xtraevent:"
+msgstr ""
+
+msgid "Segoe UI light"
+msgstr ""
+
+msgid "Select Your Font:"
+msgstr ""
+
+msgid "Set Time our - minute for Backdrop download"
+msgstr ""
+
+msgid "Set Time our - minute for Poster download"
+msgstr ""
+
+msgid "Settings Apikey Server"
+msgstr ""
+
+msgid "Setup Aglare Skin Info"
+msgstr ""
+
+msgid "Show icons representing the genre of each event (e.g., action, comedy, drama)"
+msgstr ""
+
+msgid "Show parental guidance icons on events to indicate content rating and age suitability."
+msgstr ""
+
+msgid "Show poster from movie in local folder"
+msgstr ""
+
+msgid "Skin Style:"
+msgstr ""
+
+msgid "Start downloading backdrop immediately"
+msgstr ""
+
+msgid "Start downloading poster immediately"
+msgstr ""
+
+msgid "Style2"
+msgstr ""
+
+msgid "Style3"
+msgstr ""
+
+msgid "Style4"
+msgstr ""
+
+msgid "Support E2iplayer Skins:"
+msgstr ""
+
+msgid "System"
+msgstr ""
+
+msgid "TMDB Only"
+msgstr ""
+
+msgid "The file %s is empty."
+msgstr ""
+
+msgid "The file %s was not found."
+msgstr ""
+
+msgid "This operation enable the display of rating stars for events, based on the selected rating source."
+msgstr ""
+
+msgid "This operation remove all png from folder device (Poster-Backdrop)"
+msgstr ""
+
+msgid "Update URL not initialised  open the plugin once from the Plugins menu first."
+msgstr ""
+
+msgid "Update check failed: {}"
+msgstr ""
+
+msgid "Update package not found!"
+msgstr ""
+
+msgid "VolumeBar Style:"
+msgstr ""
+
+msgid "WeatherPlugin: Edit Entry"
+msgstr ""
+
+msgid "WeatherPlugin: List of Entries"
+msgstr ""
+
+msgid "You already have the latest version ({})."
+msgstr ""
+
+msgid "You need to enter a valid city name before you can search for the location code."
+msgstr ""
+
+msgid "imperial system"
+msgstr ""
+
+msgid "metric system"
+msgstr ""
+
+msgid "play/show Files"
+msgstr ""
+
+msgid "volume2"
+msgstr ""

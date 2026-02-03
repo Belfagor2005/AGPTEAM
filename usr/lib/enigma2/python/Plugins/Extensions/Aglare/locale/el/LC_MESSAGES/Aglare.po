@@ -118,12 +118,6 @@ msgid "Location code"
 msgstr "Κωδικός τοποθεσίας"
 
 #: addons/WeatherSearch.py:272
-msgid ""
-"You need to enter a valid city name before you can search for the location "
-"code."
-msgstr ""
-"Πρέπει να εισάγετε ένα έγκυρο όνομα πόλης πριν μπορέσετε να αναζητήσετε τον "
-"κωδικό τοποθεσίας."
 
 #: addons/WeatherSearch.py:284 addons/WeatherSearch.py:296
 msgid "Please enter a valid city name."
@@ -423,39 +417,24 @@ msgid "Enable Rating Star:"
 msgstr ""
 
 #: plugin.py:307
-msgid ""
-"This operation enable the display of rating stars for events, based on the "
-"selected rating source."
-msgstr ""
 
 #: plugin.py:308
 msgid "Enable Parental Icons:"
 msgstr ""
 
 #: plugin.py:308
-msgid ""
-"Show parental guidance icons on events to indicate content rating and age "
-"suitability."
-msgstr ""
 
 #: plugin.py:309
 msgid "Enable Display InfoEvents:"
 msgstr ""
 
 #: plugin.py:309
-msgid ""
-"Enable the display of extended event information, including full cast, crew, "
-"plot details, and other metadata, in the info widget."
-msgstr ""
 
 #: plugin.py:310
 msgid "Enable Display Genre icons:"
 msgstr ""
 
 #: plugin.py:310
-msgid ""
-"Show icons representing the genre of each event (e.g., action, comedy, drama)"
-msgstr ""
 
 #: plugin.py:311
 msgid "Enable Display XMC Poster:"
@@ -506,10 +485,6 @@ msgid "Activate/Deactivate PROGRAMMETV"
 msgstr ""
 
 #: plugin.py:345
-msgid ""
-"Enable or disable caching during event download to speed up repeated "
-"searches."
-msgstr ""
 
 #: plugin.py:346
 #, fuzzy
@@ -534,10 +509,6 @@ msgid "Set Time our - minute for Poster download"
 msgstr ""
 
 #: plugin.py:349 plugin.py:353
-msgid ""
-"Configure the delay time (in minutes) before starting the automatic poster "
-"download"
-msgstr ""
 
 #: plugin.py:350
 msgid "Download now backdrop"
@@ -565,27 +536,9 @@ msgstr ""
 #| "[Checkskin] This operation checks if the skin has its components (is not "
 #| "sure)..\n"
 #| "Do you really want to continue?"
-msgid ""
-"[Checkskin] This operation checks if the skin has its components (not "
-"guaranteed)...\n"
-"Do you really want to continue?"
-msgstr ""
-"[Checkskin] Αυτή η λειτουργία ελέγχει εάν το θέμα έχει τα συστατικά του (δεν "
-"είναι σίγουρο).\n"
-"Θέλετε πραγματικά να συνεχίσετε;"
 
 #: plugin.py:427
 #, python-brace-format
-msgid ""
-"Setup Aglare Skin\n"
-"for {0} v.{1}\n"
-"\n"
-"by Lululla @2020\n"
-"\n"
-"Support forum on linuxsat-support.com\n"
-"\n"
-"Skinner creator: Odem2014 "
-msgstr ""
 
 #: plugin.py:430
 msgid "Setup Aglare Skin Info"
@@ -597,14 +550,6 @@ msgstr ""
 #| "[Checkskin] This operation checks if the skin has its components (is not "
 #| "sure)..\n"
 #| "Do you really want to continue?"
-msgid ""
-"[RemovePng] This operation will remove all PNGs from the device folder "
-"(Poster-Backdrop)...\n"
-"Do you really want to continue?"
-msgstr ""
-"[Checkskin] Αυτή η λειτουργία ελέγχει εάν το θέμα έχει τα συστατικά του (δεν "
-"είναι σίγουρο).\n"
-"Θέλετε πραγματικά να συνεχίσετε;"
 
 #: plugin.py:445
 msgid "All png are removed from folder!"
@@ -619,16 +564,8 @@ msgid "No active providers enabled"
 msgstr ""
 
 #: plugin.py:500 plugin.py:559
-msgid ""
-"Warning: You are using default API keys!\n"
-"We strongly recommend configuring your own API keys in the plugin settings."
-msgstr ""
 
 #: plugin.py:507
-msgid ""
-"Poster download will start in 2 minutes.\n"
-"You can safely exit this menu."
-msgstr ""
 
 #: plugin.py:519 plugin.py:578
 #, python-brace-format
@@ -641,10 +578,6 @@ msgid "Poster download error: {}"
 msgstr ""
 
 #: plugin.py:566
-msgid ""
-"Backdrop download will start in 2 minutes.\n"
-"You can safely exit this menu."
-msgstr ""
 
 #: plugin.py:587
 #, python-brace-format
@@ -689,22 +622,12 @@ msgid "Error by processing the skin file: {}"
 msgstr ""
 
 #: plugin.py:797
-msgid ""
-"GUI needs a restart to apply a new skin.\n"
-"Do you want to Restart the GUI now?"
-msgstr ""
-"Πρέπει να γίνει επανεκκίνηση του GUI για να εφαρμοστεί το νέο θέμα.\n"
-"Θέλετε να γίνει επανεκκίνηση της διεπαφής χρήστη τώρα;"
 
 #: plugin.py:800 plugin.py:932
 msgid "Restart GUI now?"
 msgstr "Να γίνει επανεκκίνηση του γραφικού περιβάλλοντος τώρα;"
 
 #: plugin.py:813
-msgid ""
-"Update URL not initialised – open the plugin once from the Plugins menu "
-"first."
-msgstr ""
 
 #: plugin.py:845
 #, fuzzy, python-brace-format
@@ -714,12 +637,6 @@ msgstr "Έχετε την τρέχουσα έκδοση του Aglare!"
 
 #: plugin.py:853
 #, python-brace-format
-msgid ""
-"Server version: {}\n"
-"Installed version: {}\n"
-"\n"
-"A newer build is available – update now?"
-msgstr ""
 
 #: plugin.py:861
 #, python-brace-format
@@ -746,22 +663,12 @@ msgstr "Εγκατάσταση ενημερώσεων!"
 #| msgid ""
 #| "Aglare update was done!!!\n"
 #| "Do you want to restart the GUI now?"
-msgid ""
-"Aglare update was done!\n"
-"Do you want to restart the GUI now?"
-msgstr ""
-"Η ενημέρωση του Aglare ολοκληρώθηκε!!!\n"
-"Θέλετε να γίνει επανεκκίνηση της διεπαφής χρήστη τώρα;"
 
 #: plugin.py:934
 msgid "Update package not found!"
 msgstr ""
 
 #: plugin.py:937
-msgid ""
-"The update file was not found in /tmp.\n"
-"Update aborted."
-msgstr ""
 
 #: plugin.py:942
 msgid "Error downloading files!"
