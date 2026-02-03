@@ -41,7 +41,8 @@ class AglareReceiverInfo(Poll, Converter):
             'HddInfo': self.HDDINFO,
             'MmcInfo': self.MMCINFO,
         }
-        return next((v for k, v in type_mapping.items() if k in type_list), self.FLASHINFO)
+        return next((v for k, v in type_mapping.items()
+                    if k in type_list), self.FLASHINFO)
 
     @cached
     def getText(self):
@@ -67,7 +68,11 @@ class AglareReceiverInfo(Poll, Converter):
         }.get(self.type, ('/', 'Unknown'))
 
     def get_disk_or_mem_info(self, paths):
-        if self.type in (self.USBINFO, self.MMCINFO, self.HDDINFO, self.FLASHINFO):
+        if self.type in (
+                self.USBINFO,
+                self.MMCINFO,
+                self.HDDINFO,
+                self.FLASHINFO):
             return self.getDiskInfo(paths)
         return self.getMemInfo(paths)
 
@@ -77,13 +82,30 @@ class AglareReceiverInfo(Poll, Converter):
         if self.shortFormat:
             return f'{label}: {self.getSizeStr(info[0])}, in use: {info[3]}%'
         if self.fullFormat:
-            return f'{label}: {self.getSizeStr(info[0])} Free:{self.getSizeStr(info[2])} used:{self.getSizeStr(info[1])} ({info[3]}%)'
-        return f'{label}: {self.getSizeStr(info[0])} used:{self.getSizeStr(info[1])} Free:{self.getSizeStr(info[2])}'
+            return f'{label}: {
+                self.getSizeStr(
+                    info[0])} Free:{
+                self.getSizeStr(
+                    info[2])} used:{
+                self.getSizeStr(
+                    info[1])} ({
+                info[3]}%)'
+        return f'{label}: {
+            self.getSizeStr(
+                info[0])} used:{
+            self.getSizeStr(
+                info[1])} Free:{
+                    self.getSizeStr(
+                        info[2])}'
 
     @cached
     def getValue(self):
         result = 0
-        if self.type in (self.MEMTOTAL, self.MEMFREE, self.SWAPTOTAL, self.SWAPFREE):
+        if self.type in (
+                self.MEMTOTAL,
+                self.MEMFREE,
+                self.SWAPTOTAL,
+                self.SWAPFREE):
             entry = {
                 self.MEMTOTAL: 'Mem', self.MEMFREE: 'Mem',
                 self.SWAPTOTAL: 'Swap', self.SWAPFREE: 'Swap'
@@ -114,7 +136,8 @@ class AglareReceiverInfo(Poll, Converter):
                 if device.startswith('mmcblk') and path.ismount(mount_point):
                     device_path = path.join('/dev', device)
                     with open('/proc/mounts') as f:
-                        if any(device_path in line and mount_point in line for line in f):
+                        if any(
+                                device_path in line and mount_point in line for line in f):
                             return True
         except BaseException:
             pass
@@ -122,7 +145,8 @@ class AglareReceiverInfo(Poll, Converter):
 
     def getHddTemp(self):
         try:
-            return popen('hddtemp -n -q /dev/sda 2>/dev/null').readline().strip() + "°C"
+            return popen(
+                'hddtemp -n -q /dev/sda 2>/dev/null').readline().strip() + "°C"
         except BaseException:
             return "N/A"
 
@@ -183,7 +207,11 @@ class AglareReceiverInfo(Poll, Converter):
             value /= 1024.0
             u += 1
 
-        return f"{value:.1f} {SIZE_UNITS[u]}" if value >= 10 else f"{value:.2f} {SIZE_UNITS[u]}"
+        return f"{
+            value:.1f} {
+            SIZE_UNITS[u]}" if value >= 10 else f"{
+            value:.2f} {
+                SIZE_UNITS[u]}"
 
     def doSuspend(self, suspended):
         self.poll_enabled = not suspended

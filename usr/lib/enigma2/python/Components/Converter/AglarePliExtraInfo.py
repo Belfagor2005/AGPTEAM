@@ -90,12 +90,19 @@ def getCryptoInfo(info):
 
 
 def createCurrentCaidLabel(info):
-    current_source, current_caid, current_provid, current_ecmpid = getCryptoInfo(info)
+    current_source, current_caid, current_provid, current_ecmpid = getCryptoInfo(
+        info)
     res = "---"
     if not pathExists("/tmp/ecm.info"):
         return "FTA"
     for caid_entry in caid_data:
-        if int(caid_entry[0], 16) <= int(current_caid, 16) <= int(caid_entry[1], 16):
+        if int(
+            caid_entry[0],
+            16) <= int(
+            current_caid,
+            16) <= int(
+            caid_entry[1],
+                16):
             res = caid_entry[4]
     return res
 
@@ -234,7 +241,8 @@ class AglarePliExtraInfo(Poll, Converter, object):
         self.ecmdata = GetEcmInfo()
         self.feraw = self.fedata = self.updateFEdata = None
         self.recursionCheck = set()
-        self.cryptocolors = parameters.get("PliExtraInfoCryptoColors", (0x004C7D3F, 0x009F9F9F, 0x00EEEE00, 0x00FFFFFF))
+        self.cryptocolors = parameters.get(
+            "PliExtraInfoCryptoColors", (0x004C7D3F, 0x009F9F9F, 0x00EEEE00, 0x00FFFFFF))
 
     def getCryptoInfo(self, info):
         if info.getInfo(iServiceInformation.sIsCrypted) == 1:
@@ -252,16 +260,31 @@ class AglarePliExtraInfo(Poll, Converter, object):
     def createCryptoBar(self, info):
         res = ""
         available_caids = info.getInfoObject(iServiceInformation.sCAIDs)
-        colors = parameters.get("PliExtraInfoColors", (0x0000FF00, 0x00FF0000, 0x00FFFFFF, 0x007F7F7F))  # "found", "not found", "available", "default" colors
+        colors = parameters.get(
+            "PliExtraInfoColors",
+            (0x0000FF00,
+             0x00FF0000,
+             0x00FFFFFF,
+             0x007F7F7F))  # "found", "not found", "available", "default" colors
 
         for caid_entry in caid_data:
-            if int(caid_entry[0], 16) <= int(self.current_caid, 16) <= int(caid_entry[1], 16):
+            if int(
+                caid_entry[0],
+                16) <= int(
+                self.current_caid,
+                16) <= int(
+                caid_entry[1],
+                    16):
                 color = Hex2strColor(colors[0])  # green
             else:
                 color = Hex2strColor(colors[2])  # grey
                 try:
                     for caid in available_caids:
-                        if int(caid_entry[0], 16) <= caid <= int(caid_entry[1], 16):
+                        if int(
+                                caid_entry[0],
+                                16) <= caid <= int(
+                                caid_entry[1],
+                                16):
                             color = Hex2strColor(colors[1])  # yellow
                 except BaseException:
                     pass
@@ -271,7 +294,8 @@ class AglarePliExtraInfo(Poll, Converter, object):
                     res += " "
                 res += color + caid_entry[3]
 
-        res += Hex2strColor(colors[3])  # white (this acts like a color "reset" for following strings
+        # white (this acts like a color "reset" for following strings
+        res += Hex2strColor(colors[3])
         return res
 
     def createCurrentCaidLabel(self):
@@ -279,7 +303,13 @@ class AglarePliExtraInfo(Poll, Converter, object):
         if not pathExists("/tmp/ecm.info"):
             return "FTA"
         for caid_entry in caid_data:
-            if int(caid_entry[0], 16) <= int(self.current_caid, 16) <= int(caid_entry[1], 16):
+            if int(
+                caid_entry[0],
+                16) <= int(
+                self.current_caid,
+                16) <= int(
+                caid_entry[1],
+                    16):
                 res = caid_entry[4]
 
         return res
@@ -398,7 +428,13 @@ class AglarePliExtraInfo(Poll, Converter, object):
 
     def createCryptoTandberg(self, info):
         available_caids = info.getInfoObject(iServiceInformation.sCAIDs)
-        if int('0x1010', 16) <= int(self.current_caid, 16) <= int('0x1010', 16):
+        if int(
+            '0x1010',
+            16) <= int(
+            self.current_caid,
+            16) <= int(
+            '0x1010',
+                16):
             color = Hex2strColor(self.cryptocolors[0])
         else:
             color = Hex2strColor(self.cryptocolors[1])
@@ -414,7 +450,13 @@ class AglarePliExtraInfo(Poll, Converter, object):
 
     def createCryptoBeta(self, info):
         available_caids = info.getInfoObject(iServiceInformation.sCAIDs)
-        if int('0x1700', 16) <= int(self.current_caid, 16) <= int('0x17ff', 16):
+        if int(
+            '0x1700',
+            16) <= int(
+            self.current_caid,
+            16) <= int(
+            '0x17ff',
+                16):
             color = Hex2strColor(self.cryptocolors[0])
         else:
             color = Hex2strColor(self.cryptocolors[1])
@@ -430,7 +472,13 @@ class AglarePliExtraInfo(Poll, Converter, object):
 
     def createCryptoNagra(self, info):
         available_caids = info.getInfoObject(iServiceInformation.sCAIDs)
-        if int('0x1800', 16) <= int(self.current_caid, 16) <= int('0x18ff', 16):
+        if int(
+            '0x1800',
+            16) <= int(
+            self.current_caid,
+            16) <= int(
+            '0x18ff',
+                16):
             color = Hex2strColor(self.cryptocolors[0])
         else:
             color = Hex2strColor(self.cryptocolors[1])
@@ -446,7 +494,13 @@ class AglarePliExtraInfo(Poll, Converter, object):
 
     def createCryptoBiss(self, info):
         available_caids = info.getInfoObject(iServiceInformation.sCAIDs)
-        if int('0x2600', 16) <= int(self.current_caid, 16) <= int('0x26ff', 16):
+        if int(
+            '0x2600',
+            16) <= int(
+            self.current_caid,
+            16) <= int(
+            '0x26ff',
+                16):
             color = Hex2strColor(self.cryptocolors[0])
         else:
             color = Hex2strColor(self.cryptocolors[1])
@@ -462,7 +516,13 @@ class AglarePliExtraInfo(Poll, Converter, object):
 
     def createCryptoDre(self, info):
         available_caids = info.getInfoObject(iServiceInformation.sCAIDs)
-        if int('0x4ae0', 16) <= int(self.current_caid, 16) <= int('0x4ae1', 16):
+        if int(
+            '0x4ae0',
+            16) <= int(
+            self.current_caid,
+            16) <= int(
+            '0x4ae1',
+                16):
             color = Hex2strColor(self.cryptocolors[0])
         else:
             color = Hex2strColor(self.cryptocolors[1])
@@ -480,15 +540,24 @@ class AglarePliExtraInfo(Poll, Converter, object):
         refstr = info.getInfoString(iServiceInformation.sServiceref)
         caid_name = "Free to Air"
         if "%3a//" in refstr.lower() and "127.0.0.1" not in refstr and "0.0.0.0" not in refstr and "localhost" not in refstr or "@" in refstr:
-            return "IPTV" + ":%06X:%04X" % (int(self.current_provid, 16), info.getInfo(iServiceInformation.sSID))
+            return "IPTV" + \
+                ":%06X:%04X" % (int(self.current_provid, 16), info.getInfo(iServiceInformation.sSID))
         elif int(self.current_caid, 16) == 0:
-            return caid_name + ":%06X:%04X" % (int(self.current_provid, 16), info.getInfo(iServiceInformation.sSID))
+            return caid_name + \
+                ":%06X:%04X" % (int(self.current_provid, 16), info.getInfo(iServiceInformation.sSID))
         try:
             for caid_entry in caid_data:
-                if int(caid_entry[0], 16) <= int(self.current_caid, 16) <= int(caid_entry[1], 16):
+                if int(
+                    caid_entry[0],
+                    16) <= int(
+                    self.current_caid,
+                    16) <= int(
+                    caid_entry[1],
+                        16):
                     caid_name = caid_entry[2]
                     break
-            return caid_name + ":%04X:%06X:%04X" % (int(self.current_caid, 16), int(self.current_provid, 16), info.getInfo(iServiceInformation.sSID))
+            return caid_name + ":%04X:%06X:%04X" % (int(self.current_caid, 16), int(
+                self.current_provid, 16), info.getInfo(iServiceInformation.sSID))
         except BaseException:
             pass
         return ""
@@ -499,7 +568,13 @@ class AglarePliExtraInfo(Poll, Converter, object):
             return caid_name
         try:
             for caid_entry in self.caid_data:
-                if int(caid_entry[0], 16) <= int(self.current_caid, 16) <= int(caid_entry[1], 16):
+                if int(
+                    caid_entry[0],
+                    16) <= int(
+                    self.current_caid,
+                    16) <= int(
+                    caid_entry[1],
+                        16):
                     caid_name = caid_entry[2]
                     break
             return caid_name + ":%04X" % (int(self.current_caid, 16))
@@ -522,19 +597,32 @@ class AglarePliExtraInfo(Poll, Converter, object):
             return ""
         mode = ""
         try:
-            mode = "p" if int(open("/proc/stb/vmpeg/0/progressive", "r").read(), 16) else "i"
+            mode = "p" if int(
+                open(
+                    "/proc/stb/vmpeg/0/progressive",
+                    "r").read(),
+                16) else "i"
         except BaseException:
             pass
         fps = ""
         try:
-            fps = str((int(open("/proc/stb/vmpeg/0/framerate", "r").read()) + 500) // 1000)
+            fps = str(
+                (int(
+                    open(
+                        "/proc/stb/vmpeg/0/framerate",
+                        "r").read()) +
+                    500) //
+                1000)
         except BaseException:
             pass
 
         return "%sx%s%s%s" % (xres, yres, mode, fps)
 
     def createVideoCodec(self, info):
-        return codec_data.get(info.getInfo(iServiceInformation.sVideoType), _("N/A"))
+        return codec_data.get(
+            info.getInfo(
+                iServiceInformation.sVideoType),
+            _("N/A"))
 
     def createServiceRef(self, info):
         return info.getInfoString(iServiceInformation.sServiceref)
@@ -558,7 +646,8 @@ class AglarePliExtraInfo(Poll, Converter, object):
             tsid = 0
         if onid < 0:
             onid = 0
-        return "%d-%d:%05d:%04d:%04d:%04d" % (onid, tsid, sidpid, vpid, apid, pcrpid)
+        return "%d-%d:%05d:%04d:%04d:%04d" % (onid,
+                                              tsid, sidpid, vpid, apid, pcrpid)
 
     def createInfoString(self, fieldGroup, fedata, feraw, info):
         if fieldGroup in self.recursionCheck:
@@ -568,7 +657,8 @@ class AglarePliExtraInfo(Poll, Converter, object):
         fields = self.info_fields[fieldGroup]
         if fields and isinstance(fields[0], (tuple, list)):
             if fieldGroup == "TransponderInfo":
-                fields = fields[feraw and int("DVB-T" in feraw.get("tuner_type", "")) + 1 or 0]
+                fields = fields[feraw and int(
+                    "DVB-T" in feraw.get("tuner_type", "")) + 1 or 0]
             else:
                 fields = fields[int(config.usage.show_cryptoinfo.value) > 0]
 
@@ -582,7 +672,8 @@ class AglarePliExtraInfo(Poll, Converter, object):
             elif field == "StreamURLInfo":
                 val = self.createStreamURLInfo(info)
             elif field == "TransponderModulationFEC":
-                val = self.createModulation(fedata) + '-' + self.createFEC(fedata, feraw)
+                val = self.createModulation(
+                    fedata) + '-' + self.createFEC(fedata, feraw)
             elif field == "TransponderName":
                 val = self.createTransponderName(feraw)
             elif field == "ProviderName":
@@ -601,7 +692,8 @@ class AglarePliExtraInfo(Poll, Converter, object):
     def createStreamURLInfo(self, info):
         refstr = info.getInfoString(iServiceInformation.sServiceref)
         if "%3a//" in refstr.lower():
-            return refstr.replace("%3a", ":").replace("%3A", ":").split("://")[1].split("/")[0].split('@')[-1]
+            return refstr.replace("%3a", ":").replace(
+                "%3A", ":").split("://")[1].split("/")[0].split('@')[-1]
         return ""
 
     def createFrequency(self, fedata):
@@ -611,7 +703,8 @@ class AglarePliExtraInfo(Poll, Converter, object):
         return ""
 
     def createChannelNumber(self, fedata, feraw):
-        return "DVB-T" in feraw.get("tuner_type", "") and fedata.get("channel") or ""
+        return "DVB-T" in feraw.get("tuner_type",
+                                    "") and fedata.get("channel") or ""
 
     def createSymbolRate(self, fedata, feraw):
         if "DVB-T" in feraw.get("tuner_type", ""):
@@ -930,7 +1023,8 @@ class AglarePliExtraInfo(Poll, Converter, object):
             self.updateFEdata = False
             feinfo = service.frontendInfo()
             if feinfo:
-                self.feraw = feinfo.getAll(config.usage.infobar_frontend_source.value == "settings")
+                self.feraw = feinfo.getAll(
+                    config.usage.infobar_frontend_source.value == "settings")
                 if self.feraw:
                     self.fedata = ConvertToHumanReadable(self.feraw)
 
@@ -1026,12 +1120,22 @@ class AglarePliExtraInfo(Poll, Converter, object):
         for caid_entry in caid_data:
             if caid_entry[3] == request_caid:
                 if request_selected:
-                    if int(caid_entry[0], 16) <= int(current_caid, 16) <= int(caid_entry[1], 16):
+                    if int(
+                        caid_entry[0],
+                        16) <= int(
+                        current_caid,
+                        16) <= int(
+                        caid_entry[1],
+                            16):
                         return True
                 else:  # request available
                     try:
                         for caid in available_caids:
-                            if int(caid_entry[0], 16) <= caid <= int(caid_entry[1], 16):
+                            if int(
+                                    caid_entry[0],
+                                    16) <= caid <= int(
+                                    caid_entry[1],
+                                    16):
                                 return True
                     except BaseException:
                         pass

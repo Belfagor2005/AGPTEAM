@@ -59,57 +59,57 @@ backdrop_lock = threading.Lock()
 
 
 def startPosterAutoDB(providers, session=None):
-	from Components.Renderer.AglarePosterX import PosterAutoDB
-	global poster_auto_db
-	with poster_lock:
-		try:
-			if session and not hasattr(session, 'open'):
-				raise AttributeError("No Valid Session for l'UI")
+    from Components.Renderer.AglarePosterX import PosterAutoDB
+    global poster_auto_db
+    with poster_lock:
+        try:
+            if session and not hasattr(session, 'open'):
+                raise AttributeError("No Valid Session for l'UI")
 
-			if poster_auto_db and poster_auto_db.is_alive():
-				poster_auto_db.stop()
-				poster_auto_db.join(2.0)
+            if poster_auto_db and poster_auto_db.is_alive():
+                poster_auto_db.stop()
+                poster_auto_db.join(2.0)
 
-			poster_auto_db = PosterAutoDB(providers=providers)
-			poster_auto_db.daemon = True
-			poster_auto_db.start()
-			poster_auto_db._execute_immediate_scan()
+            poster_auto_db = PosterAutoDB(providers=providers)
+            poster_auto_db.daemon = True
+            poster_auto_db.start()
+            poster_auto_db._execute_immediate_scan()
 
-		except Exception as e:
-			if session:
-				reactor.callFromThread(
-					session.open,
-					MessageBox,
-					_("Download error: {}").format(str(e)),
-					MessageBox.TYPE_ERROR
-				)
-			print(f"PosterAutoDB init error: {str(e)}")
-			raise
+        except Exception as e:
+            if session:
+                reactor.callFromThread(
+                    session.open,
+                    MessageBox,
+                    _("Download error: {}").format(str(e)),
+                    MessageBox.TYPE_ERROR
+                )
+            print(f"PosterAutoDB init error: {str(e)}")
+            raise
 
 
 def startBackdropAutoDB(providers, session=None):
-	from Components.Renderer.AglareBackdropX import BackdropAutoDB
-	global backdrop_auto_db
-	with backdrop_lock:
-		try:
-			if session and not hasattr(session, 'open'):
-				raise AttributeError("No Valid Session for l'UI")
+    from Components.Renderer.AglareBackdropX import BackdropAutoDB
+    global backdrop_auto_db
+    with backdrop_lock:
+        try:
+            if session and not hasattr(session, 'open'):
+                raise AttributeError("No Valid Session for l'UI")
 
-			if backdrop_auto_db and backdrop_auto_db.is_alive():
-				backdrop_auto_db.stop()
-				backdrop_auto_db.join(2.0)
+            if backdrop_auto_db and backdrop_auto_db.is_alive():
+                backdrop_auto_db.stop()
+                backdrop_auto_db.join(2.0)
 
-			backdrop_auto_db = BackdropAutoDB(providers=providers)
-			backdrop_auto_db.daemon = True
-			backdrop_auto_db.start()
-			backdrop_auto_db._execute_immediate_scan()
-		except Exception as e:
-			print(f"BackdropAutoDB init error: {str(e)}")
-			if session:
-				reactor.callFromThread(
-					session.open,
-					MessageBox,
-					_("Download error: {}").format(str(e)),
-					MessageBox.TYPE_ERROR
-				)
-			raise
+            backdrop_auto_db = BackdropAutoDB(providers=providers)
+            backdrop_auto_db.daemon = True
+            backdrop_auto_db.start()
+            backdrop_auto_db._execute_immediate_scan()
+        except Exception as e:
+            print(f"BackdropAutoDB init error: {str(e)}")
+            if session:
+                reactor.callFromThread(
+                    session.open,
+                    MessageBox,
+                    _("Download error: {}").format(str(e)),
+                    MessageBox.TYPE_ERROR
+                )
+            raise

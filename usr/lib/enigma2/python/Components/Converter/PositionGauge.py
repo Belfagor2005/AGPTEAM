@@ -4,78 +4,79 @@ from enigma import ePositionGauge
 
 
 class PositionGauge(Renderer):
-    
-	def __init__(self):
-		Renderer.__init__(self)
-		self.__position = 0
-		self.__seek_position = 0
-		self.__length = 0
-		self.__seek_enable = 0
-		self.__cutlist = []
 
-	GUI_WIDGET = ePositionGauge
+    def __init__(self):
+        Renderer.__init__(self)
+        self.__position = 0
+        self.__seek_position = 0
+        self.__length = 0
+        self.__seek_enable = 0
+        self.__cutlist = []
 
-	def postWidgetCreate(self, instance):
-		self.changed((self.CHANGED_DEFAULT,))
-		self.cutlist_changed()
-		instance.setInOutList(self.__cutlist)
+    GUI_WIDGET = ePositionGauge
 
-	def changed(self, what):
-		if what[0] == self.CHANGED_CLEAR:
-			(self.length, self.position) = 0
-		else:
-			(self.length, self.position) = (self.source.length or 0, self.source.position or 0)
+    def postWidgetCreate(self, instance):
+        self.changed((self.CHANGED_DEFAULT,))
+        self.cutlist_changed()
+        instance.setInOutList(self.__cutlist)
 
-	def cutlist_changed(self):
-		self.cutlist = self.source.cutlist or [ ]
+    def changed(self, what):
+        if what[0] == self.CHANGED_CLEAR:
+            (self.length, self.position) = 0
+        else:
+            (self.length, self.position) = (
+                self.source.length or 0, self.source.position or 0)
 
-	def getPosition(self):
-		return self.__position
+    def cutlist_changed(self):
+        self.cutlist = self.source.cutlist or []
 
-	def setPosition(self, pos):
-		self.__position = pos
-		if self.instance is not None:
-			self.instance.setPosition(pos)
+    def getPosition(self):
+        return self.__position
 
-	position = property(getPosition, setPosition)
+    def setPosition(self, pos):
+        self.__position = pos
+        if self.instance is not None:
+            self.instance.setPosition(pos)
 
-	def getLength(self):
-		return self.__length
+    position = property(getPosition, setPosition)
 
-	def setLength(self, len):
-		self.__length = len
-		if self.instance is not None:
-			self.instance.setLength(len)
+    def getLength(self):
+        return self.__length
 
-	length = property(getLength, setLength)
+    def setLength(self, len):
+        self.__length = len
+        if self.instance is not None:
+            self.instance.setLength(len)
 
-	def getCutlist(self):
-		return self.__cutlist
+    length = property(getLength, setLength)
 
-	def setCutlist(self, cutlist):
-		if self.__cutlist != cutlist:
-			self.__cutlist = cutlist
-			if self.instance is not None:
-				self.instance.setInOutList(cutlist)
+    def getCutlist(self):
+        return self.__cutlist
 
-	cutlist = property(getCutlist, setCutlist)
+    def setCutlist(self, cutlist):
+        if self.__cutlist != cutlist:
+            self.__cutlist = cutlist
+            if self.instance is not None:
+                self.instance.setInOutList(cutlist)
 
-	def getSeekEnable(self):
-		return self.__seek_enable
+    cutlist = property(getCutlist, setCutlist)
 
-	def setSeekEnable(self, val):
-		self.__seek_enable = val
-		if self.instance is not None:
-			self.instance.enableSeekPointer(val)
+    def getSeekEnable(self):
+        return self.__seek_enable
 
-	seek_pointer_enabled = property(getSeekEnable, setSeekEnable)
+    def setSeekEnable(self, val):
+        self.__seek_enable = val
+        if self.instance is not None:
+            self.instance.enableSeekPointer(val)
 
-	def getSeekPosition(self):
-		return self.__seek_position
+    seek_pointer_enabled = property(getSeekEnable, setSeekEnable)
 
-	def setSeekPosition(self, pos):
-		self.__seek_position = pos
-		if self.instance is not None:
-			self.instance.setSeekPosition(pos)
+    def getSeekPosition(self):
+        return self.__seek_position
 
-	seek_pointer_position = property(getSeekPosition, setSeekPosition)
+    def setSeekPosition(self, pos):
+        self.__seek_position = pos
+        if self.instance is not None:
+            self.instance.setSeekPosition(pos)
+
+    seek_pointer_position = property(getSeekPosition, setSeekPosition)

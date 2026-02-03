@@ -70,14 +70,14 @@ from Screens.Standby import TryQuitMainloop
 from Tools.Directories import fileExists
 from Tools.Downloader import downloadWithProgress
 from twisted.internet import reactor
-from urllib.request import Request,  urlopen
+from urllib.request import Request, urlopen
 
 # Plugin-local imports
 from . import _
 from .api_config import cfg, ApiKeyManager
 from .DownloadControl import startPosterAutoDB, startBackdropAutoDB
 
-skinversion = '' 
+skinversion = ''
 api_key_manager = ApiKeyManager()
 version = '5.7'
 
@@ -113,7 +113,16 @@ This allows the plugin to use custom API keys depending on the active skin.
 
 def calcTime(hours, minutes):
     now_time = localtime()
-    ret_time = mktime((now_time.tm_year, now_time.tm_mon, now_time.tm_mday, hours, minutes, 0, now_time.tm_wday, now_time.tm_yday, now_time.tm_isdst))
+    ret_time = mktime(
+        (now_time.tm_year,
+         now_time.tm_mon,
+         now_time.tm_mday,
+         hours,
+         minutes,
+         0,
+         now_time.tm_wday,
+         now_time.tm_yday,
+         now_time.tm_isdst))
     return ret_time
 
 
@@ -164,7 +173,9 @@ class AglareSetup(ConfigListScreen, Screen):
         Screen.__init__(self, session)
         self.session = session
         self.version = skinversion
-        self.skinFile = join("/usr/share/enigma2", config.skin.primary_skin.value)
+        self.skinFile = join(
+            "/usr/share/enigma2",
+            config.skin.primary_skin.value)
         self.previewFiles = '/usr/lib/enigma2/python/Plugins/Extensions/Aglare/sample/'
         self['Preview'] = Pixmap()
         self.onChangedEntry = []
@@ -174,7 +185,11 @@ class AglareSetup(ConfigListScreen, Screen):
         list.append(getConfigListEntry(section))
         section = '--------------------------( SKIN APIKEY SETUP )-----------------------'
         list.append(getConfigListEntry(section))
-        ConfigListScreen.__init__(self, list, session=self.session, on_change=self.changedEntry)
+        ConfigListScreen.__init__(
+            self,
+            list,
+            session=self.session,
+            on_change=self.changedEntry)
         self["actions"] = HelpableActionMap(
             self,
             "AglareActions",
@@ -212,7 +227,11 @@ class AglareSetup(ConfigListScreen, Screen):
         from Screens.VirtualKeyBoard import VirtualKeyBoard
         sel = self["config"].getCurrent()
         if sel:
-            self.session.openWithCallback(self.VirtualKeyBoardCallback, VirtualKeyBoard, title=self["config"].getCurrent()[0], text=self["config"].getCurrent()[1].value)
+            self.session.openWithCallback(
+                self.VirtualKeyBoardCallback,
+                VirtualKeyBoard,
+                title=self["config"].getCurrent()[0],
+                text=self["config"].getCurrent()[1].value)
 
     def VirtualKeyBoardCallback(self, callback=None):
         if callback is not None and len(callback):
@@ -229,7 +248,7 @@ class AglareSetup(ConfigListScreen, Screen):
             # Always‑available PosterX choices
             posterx_choices = [
                 ('infobar_posters_posterx_off', _('OFF')),
-                ('infobar_posters_posterx_on',  _('ON')),
+                ('infobar_posters_posterx_on', _('ON')),
             ]
 
             # Add “CD” only if Style5 CD is selected
@@ -253,7 +272,7 @@ class AglareSetup(ConfigListScreen, Screen):
             # Always–present options
             xtraevent_choices = [
                 ('infobar_posters_xtraevent_off', _('OFF')),
-                ('infobar_posters_xtraevent_on',  _('ON')),
+                ('infobar_posters_xtraevent_on', _('ON')),
             ]
 
             # Style‑dependent extras
@@ -275,42 +294,101 @@ class AglareSetup(ConfigListScreen, Screen):
             )
 
             # ✔ use it here
-            if cfg.InfobarXtraevent.value not in [v for v, _ in xtraevent_choices]:
+            if cfg.InfobarXtraevent.value not in [
+                    v for v, _ in xtraevent_choices]:
                 cfg.InfobarXtraevent.value = safe_default
             cfg.InfobarXtraevent.setChoices(xtraevent_choices)
             # ────────────────────────────────────────────────────────────────
             list = []
             section = '-------------------------( GENERAL SKIN  SETUP )------------------------'
             list.append((_(section), NoSave(ConfigNothing())))
-            list.append(getConfigListEntry(_('Color Style:'), cfg.colorSelector))
-            list.append(getConfigListEntry(_('Select Your Font:'), cfg.FontStyle))
+            list.append(
+                getConfigListEntry(
+                    _('Color Style:'),
+                    cfg.colorSelector))
+            list.append(
+                getConfigListEntry(
+                    _('Select Your Font:'),
+                    cfg.FontStyle))
             list.append(getConfigListEntry(_('Skin Style:'), cfg.skinSelector))
-            list.append(getConfigListEntry(_('InfoBar Style:'), cfg.InfobarStyle))
-            list.append(getConfigListEntry(_('InfoBar PosterX:'), cfg.InfobarPosterx))
-            list.append(getConfigListEntry(_('InfoBar Xtraevent:'), cfg.InfobarXtraevent))
-            list.append(getConfigListEntry(_('InfoBar Date:'), cfg.InfobarDate))
-            list.append(getConfigListEntry(_('InfoBar Weather:'), cfg.InfobarWeather))
-            list.append(getConfigListEntry(_('SecondInfobar Style:'), cfg.SecondInfobarStyle))
-            list.append(getConfigListEntry(_('SecondInfobar Posterx:'), cfg.SecondInfobarPosterx))
-            list.append(getConfigListEntry(_('SecondInfobar Xtraevent:'), cfg.SecondInfobarXtraevent))
-            list.append(getConfigListEntry(_('ChannelSelection Style:'), cfg.ChannSelector))
-            list.append(getConfigListEntry(_('EventView Style:'), cfg.EventView))
-            list.append(getConfigListEntry(_('VolumeBar Style:'), cfg.VolumeBar))
-            list.append(getConfigListEntry(_('Support E2iplayer Skins:'), cfg.E2iplayerskins))
+            list.append(
+                getConfigListEntry(
+                    _('InfoBar Style:'),
+                    cfg.InfobarStyle))
+            list.append(
+                getConfigListEntry(
+                    _('InfoBar PosterX:'),
+                    cfg.InfobarPosterx))
+            list.append(
+                getConfigListEntry(
+                    _('InfoBar Xtraevent:'),
+                    cfg.InfobarXtraevent))
+            list.append(
+                getConfigListEntry(
+                    _('InfoBar Date:'),
+                    cfg.InfobarDate))
+            list.append(
+                getConfigListEntry(
+                    _('InfoBar Weather:'),
+                    cfg.InfobarWeather))
+            list.append(
+                getConfigListEntry(
+                    _('SecondInfobar Style:'),
+                    cfg.SecondInfobarStyle))
+            list.append(
+                getConfigListEntry(
+                    _('SecondInfobar Posterx:'),
+                    cfg.SecondInfobarPosterx))
+            list.append(
+                getConfigListEntry(
+                    _('SecondInfobar Xtraevent:'),
+                    cfg.SecondInfobarXtraevent))
+            list.append(
+                getConfigListEntry(
+                    _('ChannelSelection Style:'),
+                    cfg.ChannSelector))
+            list.append(
+                getConfigListEntry(
+                    _('EventView Style:'),
+                    cfg.EventView))
+            list.append(
+                getConfigListEntry(
+                    _('VolumeBar Style:'),
+                    cfg.VolumeBar))
+            list.append(
+                getConfigListEntry(
+                    _('Support E2iplayer Skins:'),
+                    cfg.E2iplayerskins))
 
             section = '--------------------------( UTILITY SKIN SETUP )------------------------'
             list.append((_(section), NoSave(ConfigNothing())))
-            list.append(getConfigListEntry(_('Remove all png (poster - backdrop) (OK)'), cfg.png, _("This operation remove all png from folder device (Poster-Backdrop)")))
+            list.append(
+                getConfigListEntry(
+                    _('Remove all png (poster - backdrop) (OK)'),
+                    cfg.png,
+                    _("This operation remove all png from folder device (Poster-Backdrop)")))
 
             section = '---------------------------( APIKEY SKIN SETUP )------------------------'
             list.append((_(section), NoSave(ConfigNothing())))
-            list.append(getConfigListEntry(_('Enable Rating Star:'), cfg.rating_source, _("This operation enable the display of rating stars for events, based on the selected rating source.")))
-            list.append(getConfigListEntry(_('Enable Parental Icons:'), cfg.info_parental_mode, _("Show parental guidance icons on events to indicate content rating and age suitability.")))
-            list.append(getConfigListEntry(_('Enable Display InfoEvents:'), cfg.info_display_mode, _("Enable the display of extended event information, including full cast, crew, plot details, and other metadata, in the info widget.")))
-            list.append(getConfigListEntry(_('Enable Display Genre icons:'), cfg.genre_source, _("Show icons representing the genre of each event (e.g., action, comedy, drama)")))
-            list.append(getConfigListEntry(_('Enable Display XMC Poster:'), cfg.xemc_poster, _("Show poster from movie in local folder")))
+            list.append(getConfigListEntry(_('Enable Rating Star:'), cfg.rating_source, _(
+                "This operation enable the display of rating stars for events, based on the selected rating source.")))
+            list.append(getConfigListEntry(_('Enable Parental Icons:'), cfg.info_parental_mode, _(
+                "Show parental guidance icons on events to indicate content rating and age suitability.")))
+            list.append(getConfigListEntry(_('Enable Display InfoEvents:'), cfg.info_display_mode, _(
+                "Enable the display of extended event information, including full cast, crew, plot details, and other metadata, in the info widget.")))
+            list.append(getConfigListEntry(_('Enable Display Genre icons:'), cfg.genre_source, _(
+                "Show icons representing the genre of each event (e.g., action, comedy, drama)")))
+            list.append(
+                getConfigListEntry(
+                    _('Enable Display XMC Poster:'),
+                    cfg.xemc_poster,
+                    _("Show poster from movie in local folder")))
 
-            list.append(getConfigListEntry("API KEY SETUP:", cfg.actapi, _("Settings Apikey Server")))
+            list.append(
+                getConfigListEntry(
+                    "API KEY SETUP:",
+                    cfg.actapi,
+                    _("Settings Apikey Server")))
 
             if cfg.actapi.value:
                 for api in api_key_manager.API_CONFIG:
@@ -334,23 +412,68 @@ class AglareSetup(ConfigListScreen, Screen):
                             _("Personal API key for {}".format(upper))
                         ))
 
-                list.append(getConfigListEntry("ELCINEMA:", cfg.elcinema, _("Activate/Deactivate ELCINEMA")))
-                list.append(getConfigListEntry("GOOGLE:", cfg.google, _("Activate/Deactivate GOOGLE")))
-                list.append(getConfigListEntry("IMDB:", cfg.imdb, _("Activate/Deactivate IMDB")))
-                list.append(getConfigListEntry("MOLOTOV:", cfg.molotov, _("Activate/Deactivate MOLOTOV")))
-                list.append(getConfigListEntry("PROGRAMMETV:", cfg.programmetv, _("Activate/Deactivate PROGRAMMETV")))
+                list.append(
+                    getConfigListEntry(
+                        "ELCINEMA:",
+                        cfg.elcinema,
+                        _("Activate/Deactivate ELCINEMA")))
+                list.append(
+                    getConfigListEntry(
+                        "GOOGLE:",
+                        cfg.google,
+                        _("Activate/Deactivate GOOGLE")))
+                list.append(
+                    getConfigListEntry(
+                        "IMDB:",
+                        cfg.imdb,
+                        _("Activate/Deactivate IMDB")))
+                list.append(
+                    getConfigListEntry(
+                        "MOLOTOV:",
+                        cfg.molotov,
+                        _("Activate/Deactivate MOLOTOV")))
+                list.append(
+                    getConfigListEntry(
+                        "PROGRAMMETV:",
+                        cfg.programmetv,
+                        _("Activate/Deactivate PROGRAMMETV")))
                 section = '------------------------------------------------------------------------'
                 list.append((_(section), NoSave(ConfigNothing())))
                 if cfg.actapi.value:
-                    list.append(getConfigListEntry("Use Cache on download:", cfg.cache, _("Enable or disable caching during event download to speed up repeated searches.")))
-                    list.append(getConfigListEntry(_('Download now poster'), cfg.download_now_poster, _("Start downloading poster immediately")))
-                    list.append(getConfigListEntry(_('Automatic download of poster'), cfg.pstdown, _("Automatically fetch posters for favorite events based on EPG")))
+                    list.append(getConfigListEntry("Use Cache on download:", cfg.cache, _(
+                        "Enable or disable caching during event download to speed up repeated searches.")))
+                    list.append(
+                        getConfigListEntry(
+                            _('Download now poster'),
+                            cfg.download_now_poster,
+                            _("Start downloading poster immediately")))
+                    list.append(
+                        getConfigListEntry(
+                            _('Automatic download of poster'),
+                            cfg.pstdown,
+                            _("Automatically fetch posters for favorite events based on EPG")))
                     if cfg.pstdown.value is True:
-                        list.append(getConfigListEntry(_('Set Time our - minute for Poster download'), cfg.pscan_time, _("Configure the delay time (in minutes) before starting the automatic poster download")))
-                    list.append(getConfigListEntry(_('Download now backdrop'), cfg.download_now_backdrop, _("Start downloading backdrop immediately")))
-                    list.append(getConfigListEntry(_('Automatic download of backdrop'), cfg.bkddown, _("Automatically fetch backdrop for favorite events based on EPG")))
+                        list.append(
+                            getConfigListEntry(
+                                _('Set Time our - minute for Poster download'),
+                                cfg.pscan_time,
+                                _("Configure the delay time (in minutes) before starting the automatic poster download")))
+                    list.append(
+                        getConfigListEntry(
+                            _('Download now backdrop'),
+                            cfg.download_now_backdrop,
+                            _("Start downloading backdrop immediately")))
+                    list.append(
+                        getConfigListEntry(
+                            _('Automatic download of backdrop'),
+                            cfg.bkddown,
+                            _("Automatically fetch backdrop for favorite events based on EPG")))
                     if cfg.bkddown.value is True:
-                        list.append(getConfigListEntry(_('Set Time our - minute for Backdrop download'), cfg.bscan_time, _("Configure the delay time (in minutes) before starting the automatic poster download")))
+                        list.append(
+                            getConfigListEntry(
+                                _('Set Time our - minute for Backdrop download'),
+                                cfg.bscan_time,
+                                _("Configure the delay time (in minutes) before starting the automatic poster download")))
 
             self["config"].list = list
             self["config"].l.setList(list)
@@ -362,8 +485,7 @@ class AglareSetup(ConfigListScreen, Screen):
             self.Checkskin2,
             MessageBox,
             _("[Checkskin] This operation checks if the skin has its components (not guaranteed)...\nDo you really want to continue?"),
-            MessageBox.TYPE_YESNO
-        )
+            MessageBox.TYPE_YESNO)
 
     def Checkskin2(self, answer):
         if answer:
@@ -371,7 +493,8 @@ class AglareSetup(ConfigListScreen, Screen):
             self.check_module = eTimer()
             check = checkskin.check_module_skin()
             try:
-                self.check_module_conn = self.check_module.timeout.connect(check)
+                self.check_module_conn = self.check_module.timeout.connect(
+                    check)
             except BaseException:
                 self.check_module.callback.append(check)
             self.check_module.start(100, True)
@@ -424,9 +547,10 @@ class AglareSetup(ConfigListScreen, Screen):
     def info(self):
         aboutbox = self.session.open(
             MessageBox,
-            _("Setup Aglare Skin\nfor {0} v.{1}\n\nby Lululla @2020\n\nSupport forum on linuxsat-support.com\n\nSkinner creator: Odem2014 ").format(cur_skin, version),
-            MessageBox.TYPE_INFO
-        )
+            _("Setup Aglare Skin\nfor {0} v.{1}\n\nby Lululla @2020\n\nSupport forum on linuxsat-support.com\n\nSkinner creator: Odem2014 ").format(
+                cur_skin,
+                version),
+            MessageBox.TYPE_INFO)
         aboutbox.setTitle(_("Setup Aglare Skin Info"))
 
     def removPng(self):
@@ -434,15 +558,17 @@ class AglareSetup(ConfigListScreen, Screen):
             self.removPng2,
             MessageBox,
             _("[RemovePng] This operation will remove all PNGs from the device folder (Poster-Backdrop)...\nDo you really want to continue?"),
-            MessageBox.TYPE_YESNO
-        )
+            MessageBox.TYPE_YESNO)
 
     def removPng2(self, result):
         if result:
             print('from remove png......')
             removePng()
             print('png are removed')
-            aboutbox = self.session.open(MessageBox, _('All png are removed from folder!'), MessageBox.TYPE_INFO)
+            aboutbox = self.session.open(
+                MessageBox,
+                _('All png are removed from folder!'),
+                MessageBox.TYPE_INFO)
             aboutbox.setTitle(_('Info...'))
 
     def keyRun(self):
@@ -499,15 +625,13 @@ class AglareSetup(ConfigListScreen, Screen):
                     MessageBox,
                     _("Warning: You are using default API keys!\nWe strongly recommend configuring your own API keys in the plugin settings."),
                     MessageBox.TYPE_INFO,
-                    timeout=5
-                )
+                    timeout=5)
 
             current_session.open(
                 MessageBox,
                 _("Poster download will start in 2 minutes.\nYou can safely exit this menu."),
                 MessageBox.TYPE_INFO,
-                timeout=5
-            )
+                timeout=5)
 
             def _start_download(session_ref=current_session):
                 try:
@@ -558,15 +682,13 @@ class AglareSetup(ConfigListScreen, Screen):
                     MessageBox,
                     _("Warning: You are using default API keys!\nWe strongly recommend configuring your own API keys in the plugin settings."),
                     MessageBox.TYPE_INFO,
-                    timeout=5
-                )
+                    timeout=5)
 
             current_session.open(
                 MessageBox,
                 _("Backdrop download will start in 2 minutes.\nYou can safely exit this menu."),
                 MessageBox.TYPE_INFO,
-                timeout=5
-            )
+                timeout=5)
 
             def _start_download(session_ref=current_session):
                 try:
@@ -598,10 +720,9 @@ class AglareSetup(ConfigListScreen, Screen):
                 file_info = stat(api_file)
                 if file_info.st_size > 0:
                     self.session.openWithCallback(
-                        lambda answer: self.handle_api_load(api, answer),
-                        MessageBox,
-                        _("Import key {0} from {1}?").format(api.upper(), api_file)
-                    )
+                        lambda answer: self.handle_api_load(
+                            api, answer), MessageBox, _("Import key {0} from {1}?").format(
+                            api.upper(), api_file))
                 else:
                     self.session.open(
                         MessageBox,
@@ -715,12 +836,14 @@ class AglareSetup(ConfigListScreen, Screen):
             x()
 
     def getCurrentValue(self):
-        if self["config"].getCurrent() and len(self["config"].getCurrent()) > 0:
+        if self["config"].getCurrent() and len(
+                self["config"].getCurrent()) > 0:
             return str(self["config"].getCurrent()[1].getText())
         return ""
 
     def getCurrentEntry(self):
-        return self["config"].getCurrent() and self["config"].getCurrent()[0] or ""
+        return self["config"].getCurrent() and self["config"].getCurrent()[
+            0] or ""
 
     def createSummary(self):
         from Screens.Setup import SetupSummary
@@ -728,7 +851,10 @@ class AglareSetup(ConfigListScreen, Screen):
 
     def keySave(self):
         if not skinversion:
-            self.session.open(MessageBox, "Skin version file missing or invalid.", MessageBox.TYPE_ERROR)
+            self.session.open(
+                MessageBox,
+                "Skin version file missing or invalid.",
+                MessageBox.TYPE_ERROR)
             self.close()
             return
 
@@ -779,24 +905,34 @@ class AglareSetup(ConfigListScreen, Screen):
             ]
 
             for filename in xml_files:
-                skin_lines.extend(load_xml_to_skin_lines(self.previewFiles + filename + '.xml'))
+                skin_lines.extend(
+                    load_xml_to_skin_lines(
+                        self.previewFiles +
+                        filename +
+                        '.xml'))
 
             base_file = 'base1.xml' if cfg.skinSelector.value == 'base1' else 'base.xml'
-            skin_lines.extend(load_xml_to_skin_lines(self.previewFiles + base_file))
+            skin_lines.extend(
+                load_xml_to_skin_lines(
+                    self.previewFiles +
+                    base_file))
 
             print("Writing to file: {}".format(self.skinFile))
             with open(self.skinFile, 'w') as xFile:
                 xFile.writelines(skin_lines)
 
         except Exception as e:
-            self.session.open(MessageBox, _('Error by processing the skin file: {}').format(str(e)), MessageBox.TYPE_ERROR)
+            self.session.open(
+                MessageBox,
+                _('Error by processing the skin file: {}').format(
+                    str(e)),
+                MessageBox.TYPE_ERROR)
 
         restartbox = self.session.openWithCallback(
             self.restartGUI,
             MessageBox,
             _('GUI needs a restart to apply a new skin.\nDo you want to Restart the GUI now?'),
-            MessageBox.TYPE_YESNO
-        )
+            MessageBox.TYPE_YESNO)
         restartbox.setTitle(_('Restart GUI now?'))
 
     def restartGUI(self, answer):
@@ -811,8 +947,7 @@ class AglareSetup(ConfigListScreen, Screen):
             self.session.open(
                 MessageBox,
                 _("Update URL not initialised – open the plugin once from the Plugins menu first."),
-                MessageBox.TYPE_ERROR
-            )
+                MessageBox.TYPE_ERROR)
             return
 
         try:
@@ -820,8 +955,8 @@ class AglareSetup(ConfigListScreen, Screen):
             tmp_file = f'/tmp/{destr}'
             req = Request(
                 fullurl,
-                headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'}
-            )
+                headers={
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'})
             data = urlopen(req).read().decode('utf‑8')
 
             with open(tmp_file, 'w') as f:
@@ -835,7 +970,8 @@ class AglareSetup(ConfigListScreen, Screen):
 
             # expected format: "<version>#<ipk‑url>"
             try:
-                version_server, self.updateurl = (x.strip() for x in line.split('#', 1))
+                version_server, self.updateurl = (
+                    x.strip() for x in line.split('#', 1))
             except ValueError:
                 raise ValueError(f"Malformed version string: {line}")
 
@@ -843,8 +979,7 @@ class AglareSetup(ConfigListScreen, Screen):
                 self.session.open(
                     MessageBox,
                     _("You already have the latest version ({}).").format(version),
-                    MessageBox.TYPE_INFO
-                )
+                    MessageBox.TYPE_INFO)
             elif version_server > version:
                 self.session.openWithCallback(
                     self.update,
@@ -857,13 +992,13 @@ class AglareSetup(ConfigListScreen, Screen):
                 )
             else:  # local build is somehow newer
                 self.session.open(
-                    MessageBox,
-                    _("Local build ({}) is newer than server build ({}).").format(version, version_server),
-                    MessageBox.TYPE_INFO
-                )
+                    MessageBox, _("Local build ({}) is newer than server build ({}).").format(
+                        version, version_server), MessageBox.TYPE_INFO)
 
         except Exception as e:
-            self.session.open(MessageBox, _("Update check failed: {}").format(str(e)), MessageBox.TYPE_ERROR)
+            self.session.open(
+                MessageBox, _("Update check failed: {}").format(
+                    str(e)), MessageBox.TYPE_ERROR)
 
     def update(self, answer):
         if answer is True:
@@ -906,7 +1041,9 @@ class AglareUpdater(Screen):
         print('self.dlfile', self.dlfile)
         self.download = downloadWithProgress(self.updateurl, self.dlfile)
         self.download.addProgress(self.downloadProgress)
-        self.download.start().addCallback(self.downloadFinished).addErrback(self.downloadFailed)
+        self.download.start().addCallback(
+            self.downloadFinished).addErrback(
+            self.downloadFailed)
 
     def downloadFinished(self, string=""):
         self["status"].setText(_("Installing updates..."))
@@ -927,8 +1064,7 @@ class AglareUpdater(Screen):
                 self.restartGUI,
                 MessageBox,
                 _("Aglare update was done!\nDo you want to restart the GUI now?"),
-                MessageBox.TYPE_YESNO
-            )
+                MessageBox.TYPE_YESNO)
             restartbox.setTitle(_("Restart GUI now?"))
         else:
             self["status"].setText(_("Update package not found!"))
@@ -994,7 +1130,8 @@ def removePng():
         png_files_backdrop = glob_glob(join(patch_backdrop, "*.png"))
         jpg_files_backdrop = glob_glob(join(patch_backdrop, "*.jpg"))
         json_file_backdrop = glob_glob(join(path_poster, "*.json"))
-        files_to_remove_backdrop = png_files_backdrop + jpg_files_backdrop + json_file_backdrop
+        files_to_remove_backdrop = png_files_backdrop + \
+            jpg_files_backdrop + json_file_backdrop
 
         if not files_to_remove_backdrop:
             print("No PNG or JPG files found in the folder " + patch_backdrop)
@@ -1026,7 +1163,12 @@ def main(session, **kwargs):
     else:
         def closePlugin(*args):
             session.close()
-        session.openWithCallback(closePlugin, MessageBox, "Skin not supported.\nPlugin closed.", MessageBox.TYPE_ERROR, timeout=5)
+        session.openWithCallback(
+            closePlugin,
+            MessageBox,
+            "Skin not supported.\nPlugin closed.",
+            MessageBox.TYPE_ERROR,
+            timeout=5)
         return
 
     session.open(AglareSetup)
