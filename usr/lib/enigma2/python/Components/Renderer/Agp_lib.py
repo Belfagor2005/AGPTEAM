@@ -78,9 +78,7 @@ def quoteEventName(eventName, safe="+"):
     :return: Stringa codificata URL-safe
     """
     try:
-        text = eventName.decode('utf8').replace(
-            u'\x86', u'').replace(
-            u'\x87', u'').encode('utf8')
+        text = eventName.decode('utf8').replace(u'\x86', u'').replace(u'\x87', u'').encode('utf8')
     except BaseException:
         text = eventName
     return quote_plus(text, safe=safe)
@@ -104,27 +102,21 @@ REGEX = compile(
     r'/.*|'                                # Everything after a slash
     r'\|\s?\d+\+|'                         # Pipe followed by number and plus sign
     r'\d+\+|'                              # Number followed by plus sign
-    # Asterisk followed by a 4-digit year
-    r'\s\*\d{4}\Z|'
-    # Round, square brackets or pipe with content
-    r'[\(\[\|].*?[\)\]\|]|'
+    r'\s\*\d{4}\Z|'                        # Asterisk followed by a 4-digit year
+    r'[\(\[\|].*?[\)\]\|]|'                # Round, square brackets or pipe with content
     r'(?:\"[\.|\,]?\s.*|\"|'               # Text in quotes
     r'\.\s.+)|'                            # Dot followed by text
     r'Премьера\.\s|'                       # "Premiere." (specific to Russian)
     r'[хмтдХМТД]/[фс]\s|'                  # Russian pattern with /ф or /с
     r'\s[сС](?:езон|ерия|-н|-я)\s.*|'      # Season or episode in Russian
     r'\s\d{1,3}\s[чсЧС]\.?\s.*|'           # Part/episode number in Russian
-    # Part/episode number in Russian with leading dot
-    r'\.\s\d{1,3}\s[чсЧС]\.?\s.*|'
-    # Russian part/episode marker followed by number
-    r'\s[чсЧС]\.?\s\d{1,3}.*|'
-    # Ending with number and Russian suffix
-    r'\d{1,3}-(?:я|й)\s?с-н.*', DOTALL)
+    r'\.\s\d{1,3}\s[чсЧС]\.?\s.*|'         # Part/episode number in Russian with leading dot
+    r'\s[чсЧС]\.?\s\d{1,3}.*|'             # Russian part/episode marker followed by number
+    r'\d{1,3}-(?:я|й)\s?с-н.*', DOTALL)    # Ending with number and Russian suffix
 
 
 REGEX_ = compile(
-    # Solo "- PrimaTv", "- HDTV"
-    r'\s+-\s+(?:Prima\s*TV|primatv|First\s*Run|HDTV)\b|'
+    r'\s+-\s+(?:Prima\s*TV|primatv|First\s*Run|HDTV)\b|'  # Solo "- PrimaTv", "- HDTV"
     r'\b(?:720p|1080p|4K|UHD|HDTV)\b|'                    # Qualità video
     r'\b(?:WEB[-]?DL|WEBRip|DVDRip|BluRay)\b|'            # Formati
     r'\s+[Ss]\d{1,2}[Ee]\d{1,2}\b|'                       # S01E01
@@ -196,7 +188,8 @@ def sanitize_filename(name):
         r"\b(?:XviD|DivX|x264|H\.264|x265|HEVC|AVC|10bits)\b",
         " ",
         name,
-        flags=IGNORECASE)
+        flags=IGNORECASE
+    )
 
     # 3A) Remove year ONLY if inside () or []
     name = sub(r"\s*[\(\[]\s*(?:19|20)\d{2}\s*[\)\]]\s*", " ", name)
@@ -213,8 +206,7 @@ def sanitize_filename(name):
     for char in '*?"<>|,':
         name = name.replace(char, "")
 
-    # 6) Replace any remaining non-word (except space, underscore, dash) with
-    # space
+    # 6) Replace any remaining non-word (except space, underscore, dash) with space
     name = sub(r"[^\w\s\-_]", " ", name)
 
     # 7) Final whitespace cleanup
@@ -372,10 +364,8 @@ def convtextxx(text):
             ("senza traccia", "senza traccia", "set"),
             ("hudson e rex", "hudson e rex", "set"),
             ("ben-hur", "ben-hur", "set"),
-            ("alessandro borghese - 4 ristoranti",
-             "alessandroborgheseristoranti", "set"),
-            ("alessandro borghese: 4 ristoranti",
-             "alessandroborgheseristoranti", "set"),
+            ("alessandro borghese - 4 ristoranti", "alessandroborgheseristoranti", "set"),
+            ("alessandro borghese: 4 ristoranti", "alessandroborgheseristoranti", "set"),
             ("amici di maria", "amicimaria", "set"),
             ("csi miami", "csi miami", "set"),
             ("csi: miami", "csi miami", "set"),
@@ -433,124 +423,29 @@ def convtextxx(text):
 
         # Remove unwanted strings
         unwanted = [
-            "\xe2\x80\x93",
-            "\xc2\x86",
-            "\xc2\x87",
-            "webhdtv",
-            "1080i",
-            "dvdr5",
-            "((",
-            "))",
-            "hdtvrip",
-            "german",
-            "english",
-            "ws",
-            "ituneshd",
-            "hdtv",
-            "dvdrip",
-            "unrated",
-            "retail",
-            "web-dl",
-            "divx",
-            "bdrip",
-            "uncut",
-            "avc",
-            "ac3d",
-            "ts",
-            "ac3md",
-            "ac3",
-            "webhdtvrip",
-            "xvid",
-            "bluray",
-            "complete",
-            "internal",
-            "dtsd",
-            "h264",
-            "dvdscr",
-            "dubbed",
-            "line.dubbed",
-            "dd51",
-            "dvdr9",
-            "sync",
-            "webhdrip",
-            "webrip",
-            "repack",
-            "dts",
-            "webhd",
-            "1^tv",
-            "1^ tv",
-            " - prima tv",
-            " - primatv",
-            "primatv",
-            "en direct:",
-            "first screening",
-            "live:",
-            "1^ visione rai",
-            "1^ visione",
-            "premiere:",
-            "nouveau:",
-            "prima visione",
-            "film -",
-            "en vivo:",
-            "nueva emisión:",
-            "new:",
-            "film:",
-            "première diffusion",
-            "estreno:",
-            "fhd",
-            "hd",
-            "4k",
-            "uhd",
-            " ep",
-            " episodio",
-            " st",
-            " stag",
-            " odc",
-            " parte",
-            " pt!series",
-            " serie",
+            "\xe2\x80\x93", "\xc2\x86", "\xc2\x87", "webhdtv", "1080i", "dvdr5", "((", "))", "hdtvrip",
+            "german", "english", "ws", "ituneshd", "hdtv", "dvdrip", "unrated", "retail", "web-dl", "divx",
+            "bdrip", "uncut", "avc", "ac3d", "ts", "ac3md", "ac3", "webhdtvrip", "xvid", "bluray",
+            "complete", "internal", "dtsd", "h264", "dvdscr", "dubbed", "line.dubbed", "dd51", "dvdr9",
+            "sync", "webhdrip", "webrip", "repack", "dts", "webhd", "1^tv", "1^ tv", " - prima tv",
+            " - primatv", "primatv", "en direct:", "first screening", "live:", "1^ visione rai",
+            "1^ visione", "premiere:", "nouveau:", "prima visione", "film -", "en vivo:",
+            "nueva emisión:", "new:", "film:", "première diffusion", "estreno:", "fhd", "hd", "4k", "uhd",
+            " ep", " episodio", " st", " stag", " odc", " parte", " pt!series", " serie",
         ]
         for item in unwanted:
             if item in text:
                 text = text.split(item)[0].strip()
 
-        text = sub(
-            r'\d+[\s]*[a-z°\^]?[\s]*puntata.*',
-            '',
-            text,
-            flags=IGNORECASE)
+        text = sub(r'\d+[\s]*[a-z°\^]?[\s]*puntata.*', '', text, flags=IGNORECASE)
 
         text = getCleanTitle(text)
         # Remove invalid suffixes
         bad_suffixes = [
-            " al",
-            " ar",
-            " ba",
-            " da",
-            " de",
-            " en",
-            " es",
-            " eu",
-            " ex-yu",
-            " fi",
-            " fr",
-            " gr",
-            " hr",
-            " mk",
-            " nl",
-            " no",
-            " pl",
-            " pt",
-            " ro",
-            " rs",
-            " ru",
-            " si",
-            " swe",
-            " sw",
-            " tr",
-            " uk",
-            " yu",
-            " it"]
+            " al", " ar", " ba", " da", " de", " en", " es", " eu", " ex-yu", " fi",
+            " fr", " gr", " hr", " mk", " nl", " no", " pl", " pt", " ro", " rs",
+            " ru", " si", " swe", " sw", " tr", " uk", " yu",  " it"
+        ]
 
         for suffix in bad_suffixes:
             if text.endswith(suffix):
@@ -573,7 +468,8 @@ def convtextxx(text):
             "ermediciinprimalinea": "er medici in prima linea",
             "ritornoalfuturoparteiii": "ritorno al futuro parte iii",
             "ritornoalfuturoparteii": "ritorno al futuro parte ii",
-            "tguno": "tg1"}
+            "tguno": "tg1"
+        }
 
         for old, new in final_replacements.items():
             text = text.replace(old, new)

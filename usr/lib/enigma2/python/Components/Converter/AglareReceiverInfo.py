@@ -41,19 +41,21 @@ class AglareReceiverInfo(Poll, Converter):
             'HddInfo': self.HDDINFO,
             'MmcInfo': self.MMCINFO,
         }
-        return next((v for k, v in type_mapping.items()
-                    if k in type_list), self.FLASHINFO)
+        for key, value in type_mapping.items():
+            if key in type_list:
+                return value
+        return self.FLASHINFO
 
     @cached
     def getText(self):
         if self.type == self.HDDTEMP:
             return self.getHddTemp()
-        if self.type == self.LOADAVG:
+        elif self.type == self.LOADAVG:
             return self.getLoadAvg()
-
-        entry = self.get_info_entry()
-        info = self.get_disk_or_mem_info(entry[0])
-        return self.format_text(entry[1], info)
+        else:
+            entry = self.get_info_entry()
+            info = self.get_disk_or_mem_info(entry[0])
+            return self.format_text(entry[1], info)
 
     def get_info_entry(self):
         return {
@@ -67,45 +69,25 @@ class AglareReceiverInfo(Poll, Converter):
             self.FLASHINFO: ('/', 'Flash')
         }.get(self.type, ('/', 'Unknown'))
 
-    def get_disk_or_mem_info(self, paths):
-        if self.type in (
-                self.USBINFO,
-                self.MMCINFO,
-                self.HDDINFO,
-                self.FLASHINFO):
-            return self.getDiskInfo(paths)
-        return self.getMemInfo(paths)
+    def get_disk_or_mem_info(self, path_or_value):
+        if self.type in (self.USBINFO, self.MMCINFO, self.HDDINFO, self.FLASHINFO):
+            return self.getDiskInfo(path_or_value)
+        return self.getMemInfo(path_or_value)
 
     def format_text(self, label, info):
         if info[0] == 0:
             return f'{label}: Not Available'
-        if self.shortFormat:
+        elif self.shortFormat:
             return f'{label}: {self.getSizeStr(info[0])}, in use: {info[3]}%'
-        if self.fullFormat:
-            return f'{label}: {
-                self.getSizeStr(
-                    info[0])} Free:{
-                self.getSizeStr(
-                    info[2])} used:{
-                self.getSizeStr(
-                    info[1])} ({
-                info[3]}%)'
-        return f'{label}: {
-            self.getSizeStr(
-                info[0])} used:{
-            self.getSizeStr(
-                info[1])} Free:{
-                    self.getSizeStr(
-                        info[2])}'
+        elif self.fullFormat:
+            return f'{label}: {self.getSizeStr(info[0])} Free:{self.getSizeStr(info[2])} used:{self.getSizeStr(info[1])} ({info[3]}%)'
+        else:
+            return f'{label}: {self.getSizeStr(info[0])} used:{self.getSizeStr(info[1])} Free:{self.getSizeStr(info[2])}'
 
     @cached
     def getValue(self):
         result = 0
-        if self.type in (
-                self.MEMTOTAL,
-                self.MEMFREE,
-                self.SWAPTOTAL,
-                self.SWAPFREE):
+        if self.type in (self.MEMTOTAL, self.MEMFREE, self.SWAPTOTAL, self.SWAPFREE):
             entry = {
                 self.MEMTOTAL: 'Mem', self.MEMFREE: 'Mem',
                 self.SWAPTOTAL: 'Swap', self.SWAPFREE: 'Swap'
@@ -122,7 +104,7 @@ class AglareReceiverInfo(Poll, Converter):
 
     text = property(getText)
     value = property(getValue)
-    range = 100
+    range = 100  # Added range attribute to fix the skin error
 
     def is_mmc_device(self, mount_point):
         try:
@@ -136,8 +118,7 @@ class AglareReceiverInfo(Poll, Converter):
                 if device.startswith('mmcblk') and path.ismount(mount_point):
                     device_path = path.join('/dev', device)
                     with open('/proc/mounts') as f:
-                        if any(
-                                device_path in line and mount_point in line for line in f):
+                        if any(device_path in line and mount_point in line for line in f):
                             return True
         except BaseException:
             pass
@@ -145,31 +126,34 @@ class AglareReceiverInfo(Poll, Converter):
 
     def getHddTemp(self):
         try:
-            return popen(
-                'hddtemp -n -q /dev/sda 2>/dev/null').readline().strip() + "°C"
-        except BaseException:
-            return "N/A"
+            temp = popen('hddtemp -n -q /dev/sda').readline().strip()
+            return f"{temp}°C" if temp else "No info"
+        except:
+            return "No info"
 
     def getLoadAvg(self):
         try:
-            with open('/proc/loadavg', 'r') as f:
-                return f.read(15).strip()
+            return popen('cat /proc/loadavg').readline()[:15].strip()
         except BaseException:
-            return "N/A"
+            return "No info"
 
     def getMemInfo(self, value):
         result = [0, 0, 0, 0]
         try:
+            check = 0
             with open('/proc/meminfo', 'r') as fd:
-                mem_data = fd.read()
-
-            total = int(mem_data.split(f'{value}Total:')[1].split()[0]) * 1024
-            free = int(mem_data.split(f'{value}Free:')[1].split()[0]) * 1024
-
-            if total > 0:
-                used = total - free
-                percent = (used * 100) / total
-                result = [total, used, free, percent]
+                for line in fd:
+                    if f'{value}Total' in line:
+                        check += 1
+                        result[0] = int(line.split()[1]) * 1024
+                    elif f'{value}Free' in line:
+                        check += 1
+                        result[2] = int(line.split()[1]) * 1024
+                    if check > 1:
+                        if result[0] > 0:
+                            result[1] = result[0] - result[2]
+                            result[3] = (result[1] * 100) / result[0]
+                        break
         except BaseException:
             pass
         return result
@@ -200,20 +184,72 @@ class AglareReceiverInfo(Poll, Converter):
         return False
 
     def getSizeStr(self, value, u=0):
-        if value <= 0:
-            return "0 B"
+        fractal = 0
+        if value >= 1024:
 
-        while value >= 1024 and u < len(SIZE_UNITS) - 1:
-            value /= 1024.0
-            u += 1
+            while value >= 1024 and u < len(SIZE_UNITS):
+                value, mod = divmod(value, 1024)
+                fractal = mod * 10 // 1024
+                u += 1
 
-        return f"{
-            value:.1f} {
-            SIZE_UNITS[u]}" if value >= 10 else f"{
-            value:.2f} {
-                SIZE_UNITS[u]}"
+        return f'{value}{"." + str(fractal) if fractal else ""} {SIZE_UNITS[u]}'
 
     def doSuspend(self, suspended):
         self.poll_enabled = not suspended
         if not suspended:
             self.downstream_elements.changed((self.CHANGED_POLL,))
+
+
+"""
+<screen name="ReceiverInfoScreen" position="center,center" size="1280,720" title="Receiver Information">
+    <!-- Widget per mostrare la temperatura del disco HDD -->
+    <widget name="hddTemp" source="ServiceEvent" render="Label" position="50,100" size="1180,50" font="Bold; 26" backgroundColor="background" transparent="1" noWrap="1" zPosition="1" foregroundColor="green" valign="center">
+        <convert type="AglareReceiverInfo">HddTemp</convert>
+    </widget>
+
+    <!-- Widget per mostrare il carico medio (LoadAvg) -->
+    <widget name="loadAvg" source="ServiceEvent" render="Label" position="50,160" size="1180,50" font="Bold; 26" backgroundColor="background" transparent="1" noWrap="1" zPosition="1" foregroundColor="yellow" valign="center">
+        <convert type="AglareReceiverInfo">LoadAvg</convert>
+    </widget>
+
+    <!-- Widget per mostrare la memoria totale -->
+    <widget name="memTotal" source="ServiceEvent" render="Label" position="50,220" size="1180,50" font="Bold; 26" backgroundColor="background" transparent="1" noWrap="1" zPosition="1" foregroundColor="blue" valign="center">
+        <convert type="AglareReceiverInfo">MemTotal</convert>
+    </widget>
+
+    <!-- Widget per mostrare la memoria libera -->
+    <widget name="memFree" source="ServiceEvent" render="Label" position="50,280" size="1180,50" font="Bold; 26" backgroundColor="background" transparent="1" noWrap="1" zPosition="1" foregroundColor="red" valign="center">
+        <convert type="AglareReceiverInfo">MemFree</convert>
+    </widget>
+
+    <!-- Widget per mostrare lo spazio swap totale -->
+    <widget name="swapTotal" source="ServiceEvent" render="Label" position="50,340" size="1180,50" font="Bold; 26" backgroundColor="background" transparent="1" noWrap="1" zPosition="1" foregroundColor="purple" valign="center">
+        <convert type="AglareReceiverInfo">SwapTotal</convert>
+    </widget>
+
+    <!-- Widget per mostrare lo spazio swap libero -->
+    <widget name="swapFree" source="ServiceEvent" render="Label" position="50,400" size="1180,50" font="Bold; 26" backgroundColor="background" transparent="1" noWrap="1" zPosition="1" foregroundColor="orange" valign="center">
+        <convert type="AglareReceiverInfo">SwapFree</convert>
+    </widget>
+
+    <!-- Widget per mostrare informazioni sul dispositivo USB -->
+    <widget name="usbInfo" source="ServiceEvent" render="Label" position="50,460" size="1180,50" font="Bold; 26" backgroundColor="background" transparent="1" noWrap="1" zPosition="1" foregroundColor="cyan" valign="center">
+        <convert type="AglareReceiverInfo">UsbInfo</convert>
+    </widget>
+
+    <!-- Widget per mostrare informazioni sul disco HDD -->
+    <widget name="hddInfo" source="ServiceEvent" render="Label" position="50,520" size="1180,50" font="Bold; 26" backgroundColor="background" transparent="1" noWrap="1" zPosition="1" foregroundColor="pink" valign="center">
+        <convert type="AglareReceiverInfo">HddInfo</convert>
+    </widget>
+
+    <!-- Widget per mostrare informazioni sulla memoria Flash -->
+    <widget name="flashInfo" source="ServiceEvent" render="Label" position="50,580" size="1180,50" font="Bold; 26" backgroundColor="background" transparent="1" noWrap="1" zPosition="1" foregroundColor="lime" valign="center">
+        <convert type="AglareReceiverInfo">FlashInfo</convert>
+    </widget>
+
+    <!-- Widget per mostrare informazioni sulla memoria MMC -->
+    <widget name="mmcInfo" source="ServiceEvent" render="Label" position="50,640" size="1180,50" font="Bold; 26" backgroundColor="background" transparent="1" noWrap="1" zPosition="1" foregroundColor="magenta" valign="center">
+        <convert type="AglareReceiverInfo">MmcInfo</convert>
+    </widget>
+</screen>
+"""

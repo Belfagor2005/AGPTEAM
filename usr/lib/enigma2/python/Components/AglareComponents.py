@@ -44,7 +44,6 @@ def what_python_version():
     import sys
     return sys.version_info[0]
 
-
 def is_py2():
     global py_version
     if py_version is None:
@@ -111,8 +110,7 @@ def isImageType(img_name=''):
                     if '/5.3/' in fileContent:
                         imageType += '5.3'
     if imageType is None:
-        if path.exists(
-                '/usr/lib/enigma2/python/Plugins/SystemPlugins/VTIPanel/'):
+        if path.exists('/usr/lib/enigma2/python/Plugins/SystemPlugins/VTIPanel/'):
             imageType = 'vti'
         elif path.exists('/usr/lib/enigma2/python/Plugins/Extensions/Infopanel/'):
             imageType = 'openatv'
@@ -213,22 +211,6 @@ def CHname_2_piconName(serName, iptvStream=False):
     piconName = serName.lower()
     if iptvStream:
         piconName = piconName.replace(' fhd', ' hd').replace(' uhd', ' hd')
-    piconName = unicodedata.normalize(
-        'NFKD',
-        text_type(
-            piconName,
-            'utf_8',
-            errors='ignore')).encode(
-        'ASCII',
-        'ignore')
-    piconName = sub(
-        '[^a-z0-9]',
-        '',
-        piconName.replace(
-            '&',
-            'and').replace(
-            '+',
-            'plus').replace(
-                '*',
-            'star'))
+    piconName = unicodedata.normalize('NFKD', text_type(piconName, 'utf_8', errors='ignore')).encode('ASCII', 'ignore')
+    piconName = sub('[^a-z0-9]', '', piconName.replace('&', 'and').replace('+', 'plus').replace('*', 'star'))
     return piconName

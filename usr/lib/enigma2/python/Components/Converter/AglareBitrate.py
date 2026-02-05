@@ -24,7 +24,7 @@ _image_type = None
 _append_to_file = False
 
 
-def agb_debug(my_text=None, append=True, debug_file=DEBUG_FILE):
+def AGDEBUG(my_text=None, append=True, debug_file=DEBUG_FILE):
     global _append_to_file
     if not debug_file or not my_text:
         return
@@ -76,8 +76,7 @@ def isImageType(img_name=''):
 
         # Fallback to directory detection
         if _image_type is None:
-            if path.exists(
-                    '/usr/lib/enigma2/python/Plugins/SystemPlugins/VTIPanel/'):
+            if path.exists('/usr/lib/enigma2/python/Plugins/SystemPlugins/VTIPanel/'):
                 _image_type = 'vti'
             elif path.exists('/usr/lib/enigma2/python/Plugins/Extensions/Infopanel/'):
                 _image_type = 'openatv'
@@ -94,6 +93,7 @@ def isImageType(img_name=''):
 class AglareBitrate(Converter, object):
     def __init__(self, type):
         Converter.__init__(self, type)
+        self.mode = (type or "").strip().lower()
         self.clear_values()
         self.is_running = False
         self.is_suspended = False
@@ -116,17 +116,33 @@ class AglareBitrate(Converter, object):
 
     @cached
     def getText(self):
-        if DBG:
-            agb_debug(f"[AglareBitrate:getText] vcur {self.vcur}")
-        return f'{self.vcur} Kb/s' if self.vcur > 0 else ''
+        vcur = self.vcur if 0 < self.vcur < 100000 else 0
+        acur = self.acur if 0 < self.acur < 100000 else 0
+        if self.mode in ("video", "v"):
+            return f"V: {vcur} Kb/s" if vcur > 0 else ""
+
+        if self.mode in ("audio", "a"):
+            return f"A: {acur} Kb/s" if acur > 0 else ""
+
+        # both inline (one line)
+        if self.mode in ("inline", "single", "oneline", "line"):
+            if vcur > 0 and acur > 0:
+                return f"V: {vcur} Kb/s A: {acur} Kb/s"
+            elif vcur > 0:
+                return f"V: {vcur} Kb/s"
+            elif acur > 0:
+                return f"A: {acur} Kb/s"
+            return ""
+
+        # both (default) = 2 lines
+        if vcur > 0 and acur > 0:
+            return f"V: {vcur} Kb/s\nA: {acur} Kb/s"
 
     text = property(getText)
 
     def doSuspend(self, suspended):
         if DBG:
-            agb_debug(
-                f"[AglareBitrate:suspended] >>> self.is_suspended={
-                    self.is_suspended}, suspended={suspended}")
+            AGDEBUG(f"[AglareBitrate:suspended] >>> self.is_suspended={self.is_suspended}, suspended={suspended}")
 
         if not suspended:
             self.is_suspended = False
@@ -140,18 +156,17 @@ class AglareBitrate(Converter, object):
         if not self.is_running:
             if self.source.service:
                 if DBG:
-                    agb_debug("[AglareBitrate:start] initiate run_timer")
+                    AGDEBUG("[AglareBitrate:start] initiate run_timer")
                 self.is_running = True
                 self.run_timer.start(100, True)
             else:
                 if DBG:
-                    agb_debug(
-                        "[AglareBitrate:start] wait 100ms for self.source.service")
+                    AGDEBUG("[AglareBitrate:start] wait 100ms for self.source.service")
                 self.start_timer.start(100, True)
 
     def run_bitrate(self):
         if DBG:
-            agb_debug("[AglareBitrate:run_bitrate] >>>")
+            AGDEBUG("[AglareBitrate:run_bitrate] >>>")
 
         # Default values
         adapter = 0
@@ -162,16 +177,14 @@ class AglareBitrate(Converter, object):
             stream = self.source.service.stream()
             if stream:
                 if DBG:
-                    agb_debug(
-                        "[AglareBitrate:run_bitrate] Collecting stream data...")
+                    AGDEBUG("[AglareBitrate:run_bitrate] Collecting stream data...")
                 stream_data = stream.getStreamingData()
                 if stream_data:
                     demux = max(stream_data.get('demux', 0), 0)
                     adapter = max(stream_data.get('adapter', 0), 0)
         except Exception as e:
             if DBG:
-                agb_debug(
-                    f"[AglareBitrate:run_bitrate] Exception collecting stream data: {e}")
+                AGDEBUG(f"[AglareBitrate:run_bitrate] Exception collecting stream data: {e}")
 
         # Get service info
         try:
@@ -180,23 +193,35 @@ class AglareBitrate(Converter, object):
             apid = info.getInfo(iServiceInformation.sAudioPID)
         except Exception as e:
             if DBG:
-                agb_debug(
-                    f"[AglareBitrate:run_bitrate] Exception collecting service info: {e}")
+                AGDEBUG(f"[AglareBitrate:run_bitrate] Exception collecting service info: {e}")
             return
 
-        if vpid >= 0 and apid >= 0:
-            if isImageType('vti'):
-                cmd = f'killall -9 bitrate > /dev/null 2>&1; nice bitrate {demux} {vpid} {vpid}'
-            else:
-                cmd = f'killall -9 bitrate > /dev/null 2>&1; nice bitrate {adapter} {demux} {vpid} {vpid}'
-
+        # Skip if we don't have valid PIDs
+        if vpid < 0 and apid < 0:
             if DBG:
-                agb_debug(f'[AglareBitrate:run_bitrate] starting "{cmd}"')
-            self.container.execute(cmd)
+                AGDEBUG("[AglareBitrate:run_bitrate] Skipping - no valid PIDs")
+            self.run_timer.start(100, True)
+            return
+
+        # Use 0 for invalid PIDs
+        vpid = max(vpid, 0)
+        apid = max(apid, 0)
+
+        # Clear values before starting new measurement
+        self.clear_values()
+
+        if isImageType('vti'):
+            cmd = f'killall -9 bitrate > /dev/null 2>&1; nice bitrate {demux} {vpid} {apid}'
+        else:
+            cmd = f'killall -9 bitrate > /dev/null 2>&1; nice bitrate {adapter} {demux} {vpid} {apid}'
+
+        if DBG:
+            AGDEBUG(f'[AglareBitrate:run_bitrate] starting "{cmd}"')
+        self.container.execute(cmd)
 
     def clear_values(self, *args):
         if DBG:
-            agb_debug("[AglareBitrate:clear_values] >>>")
+            AGDEBUG("[AglareBitrate:clear_values] >>>")
 
         self.is_running = False
         self.vmin = self.vmax = self.vavg = self.vcur = 0
@@ -207,9 +232,7 @@ class AglareBitrate(Converter, object):
 
     def app_closed(self, retval):
         if DBG:
-            agb_debug(
-                f"[AglareBitrate:app_closed] >>> retval={retval}, is_suspended={
-                    self.is_suspended}")
+            AGDEBUG(f"[AglareBitrate:app_closed] >>> retval={retval}, is_suspended={self.is_suspended}")
 
         if self.is_suspended:
             self.clear_values()
@@ -218,13 +241,10 @@ class AglareBitrate(Converter, object):
 
     def data_avail(self, data):
         if DBG:
-            agb_debug(
-                f"[AglareBitrate:data_avail] >>> data '{data}'\n\tself.remaining_data='{
-                    self.remaining_data}'")
+            AGDEBUG(f"[AglareBitrate:data_avail] >>> data '{data}'\n\tself.remaining_data='{self.remaining_data}'")
 
         # Handle string encoding
-        data_str = self.remaining_data + \
-            (str(data) if six.PY2 else str(data, 'utf-8', 'ignore'))
+        data_str = self.remaining_data + (str(data) if six.PY2 else str(data, 'utf-8', 'ignore'))
         lines = data_str.split('\n')
 
         # Store incomplete line for next time
@@ -235,12 +255,18 @@ class AglareBitrate(Converter, object):
 
         if len(self.data_lines) >= 2:
             try:
-                self.vmin, self.vmax, self.vavg, self.vcur = map(
-                    int, self.data_lines[0].split())
-                self.amin, self.amax, self.aavg, self.acur = map(
-                    int, self.data_lines[1].split())
-            except ValueError:
-                pass
+                # Parse video line
+                vparts = self.data_lines[0].split()
+                if len(vparts) >= 4:
+                    self.vmin, self.vmax, self.vavg, self.vcur = map(int, vparts[:4])
+
+                # Parse audio line
+                aparts = self.data_lines[1].split()
+                if len(aparts) >= 4:
+                    self.amin, self.amax, self.aavg, self.acur = map(int, aparts[:4])
+            except (ValueError, IndexError) as e:
+                if DBG:
+                    AGDEBUG(f"[AglareBitrate:data_avail] Parse error: {e}")
 
             self.data_lines = []
             Converter.changed(self, (self.CHANGED_POLL,))

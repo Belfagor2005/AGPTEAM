@@ -195,10 +195,9 @@ class AglareAudioInfo(Poll, Converter):
 
         # Initialize converter type
         self.type, self.interesting_events = {
-            "AudioIcon": (
-                self.GET_AUDIO_ICON, (iPlayableService.evUpdatedInfo,)), "AudioCodec": (
-                self.GET_AUDIO_CODEC, (iPlayableService.evUpdatedInfo,)), }.get(
-            type, (self.GET_AUDIO_CODEC, (iPlayableService.evUpdatedInfo,)))
+            "AudioIcon": (self.GET_AUDIO_ICON, (iPlayableService.evUpdatedInfo,)),
+            "AudioCodec": (self.GET_AUDIO_CODEC, (iPlayableService.evUpdatedInfo,)),
+        }.get(type, (self.GET_AUDIO_CODEC, (iPlayableService.evUpdatedInfo,)))
 
     def getAudio(self):
         """Get current audio track information"""

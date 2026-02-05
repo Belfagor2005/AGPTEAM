@@ -96,8 +96,7 @@ class AglareEventList(Converter, object):
             # Append current event to list
             contentList.append(self.getEventTuple(event))
 
-            # Controllo che beginTime e duration non siano None prima di
-            # calcolare il prossimo inizio
+            # Controllo che beginTime e duration non siano None prima di calcolare il prossimo inizio
             begin = event.getBeginTime()
             dur = event.getDuration()
             if begin is None or dur is None:
@@ -132,8 +131,7 @@ class AglareEventList(Converter, object):
             begin = event.getBeginTime()
             dur = event.getDuration()
 
-            # Se uno dei due è None, restituisco una tupla vuota o un
-            # placeholder
+            # Se uno dei due è None, restituisco una tupla vuota o un placeholder
             if begin is None or dur is None:
                 return ("", "", "")
 
@@ -153,6 +151,7 @@ class AglareEventList(Converter, object):
             # Log the error con maggiore dettaglio
             logger.error("Error in getEventTuple: %s", e)
             return ("Error", "Error retrieving event", "")
+
 
     def changed(self, what):
         if what[0] != self.CHANGED_SPECIFIC:
