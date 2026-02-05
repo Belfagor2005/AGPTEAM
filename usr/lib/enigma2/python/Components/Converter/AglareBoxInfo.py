@@ -97,16 +97,20 @@ class AglareBoxInfo(Poll, Converter, object):
         try:
             # Try to get version from gst-launch
             if fileExists('/usr/bin/gst-launch-1.0'):
-                output = popen('/usr/bin/gst-launch-1.0 --version').read().strip()
+                output = popen(
+                    '/usr/bin/gst-launch-1.0 --version').read().strip()
                 if output:
-                    return output.split()[-1] if 'gst-launch' in output else output
+                    return output.split(
+                    )[-1] if 'gst-launch' in output else output
 
             # Try alternative locations
             for cmd in ['/usr/bin/gst-launch', 'gst-launch-1.0', 'gst-launch']:
                 try:
-                    output = subprocess.check_output([cmd, '--version'], stderr=subprocess.STDOUT).decode().strip()
+                    output = subprocess.check_output(
+                        [cmd, '--version'], stderr=subprocess.STDOUT).decode().strip()
                     if output:
-                        return output.split()[-1] if 'gst-launch' in output else output
+                        return output.split(
+                        )[-1] if 'gst-launch' in output else output
                 except (OSError, subprocess.CalledProcessError):
                     continue
 
@@ -120,7 +124,8 @@ class AglareBoxInfo(Poll, Converter, object):
         try:
             if isfile("/proc/version"):
                 with open("/proc/version", "r") as f:
-                    return f.read().split()[2]  # Kernel version is typically the third field
+                    # Kernel version is typically the third field
+                    return f.read().split()[2]
             return _("Not available")
         except Exception as e:
             print("Error getting kernel version:", str(e))
@@ -138,7 +143,8 @@ class AglareBoxInfo(Poll, Converter, object):
             # Try alternative locations
             for cmd in ['/usr/bin/openssl', 'openssl']:
                 try:
-                    output = subprocess.check_output([cmd, 'version'], stderr=subprocess.STDOUT).decode().strip()
+                    output = subprocess.check_output(
+                        [cmd, 'version'], stderr=subprocess.STDOUT).decode().strip()
                     if output:
                         return output.split()[1]
                 except (OSError, subprocess.CalledProcessError):
@@ -192,11 +198,20 @@ class AglareBoxInfo(Poll, Converter, object):
                         for line in f:
                             clean_line = line.capitalize()
                             for r in [
-                                "Open vision enigma2 image for", "More information : https://openvision.tech",
-                                "%d, %t - (%s %r %m)", "release", "Welcome to openatv", "Welcome to teamblue",
-                                "Welcome to openbh", "Welcome to openvix", "Welcome to openhdf",
-                                "Welcome to opendroid", "Welcome to openspa", r"\n", r"\l", r"\\"
-                            ]:
+                                "Open vision enigma2 image for",
+                                "More information : https://openvision.tech",
+                                "%d, %t - (%s %r %m)",
+                                "release",
+                                "Welcome to openatv",
+                                "Welcome to teamblue",
+                                "Welcome to openbh",
+                                "Welcome to openvix",
+                                "Welcome to openhdf",
+                                "Welcome to opendroid",
+                                "Welcome to openspa",
+                                r"\n",
+                                r"\l",
+                                    r"\\"]:
                                 clean_line = clean_line.replace(r, "")
                             software += clean_line.strip().capitalize()[:-1]
                 except Exception as e:
@@ -205,12 +220,36 @@ class AglareBoxInfo(Poll, Converter, object):
 
                 # Get specific distro version details
                 distro_mappings = {
-                    "Egami": ("displaydistro", "imgversion", "imagedevbuild", " - R "),
-                    "Openbh": ("displaydistro", "imgversion", "imagebuild", " "),
-                    "Openvix": ("displaydistro", "imgversion", "imagebuild", " "),
-                    "Openhdf": ("displaydistro", "imgversion", "imagebuild", " r"),
-                    "Pure2": ("displaydistro", "imgversion", "imagedevbuild", " - R "),
-                    "Openatv": ("displaydistro", "imgversion", "", ""),
+                    "Egami": (
+                        "displaydistro",
+                        "imgversion",
+                        "imagedevbuild",
+                        " - R "),
+                    "Openbh": (
+                        "displaydistro",
+                        "imgversion",
+                        "imagebuild",
+                        " "),
+                    "Openvix": (
+                        "displaydistro",
+                        "imgversion",
+                        "imagebuild",
+                        " "),
+                    "Openhdf": (
+                        "displaydistro",
+                        "imgversion",
+                        "imagebuild",
+                        " r"),
+                    "Pure2": (
+                        "displaydistro",
+                        "imgversion",
+                        "imagedevbuild",
+                        " - R "),
+                    "Openatv": (
+                        "displaydistro",
+                        "imgversion",
+                        "",
+                        ""),
                 }
 
                 for key, (distro, ver, build, sep) in distro_mappings.items():
@@ -234,7 +273,8 @@ class AglareBoxInfo(Poll, Converter, object):
                         for line in f:
                             parts = line.split()
                             if len(parts) >= 2:
-                                software += parts[0].split("-")[0] + " " + parts[-1].replace("\n", "")
+                                software += parts[0].split("-")[0] + \
+                                    " " + parts[-1].replace("\n", "")
                     software = " : %s " % software.strip()
                 except Exception as e:
                     print("Error reading /etc/vtiversion.info:", str(e))
@@ -251,12 +291,15 @@ class AglareBoxInfo(Poll, Converter, object):
                     software = " : %s %s-%s" % (distro, v, b)
 
                 elif distro == "EGAMI":
-                    v = BoxInfo.getItem("imgversion") or BoxInfo.getItem("imageversion") or ""
+                    v = BoxInfo.getItem("imgversion") or BoxInfo.getItem(
+                        "imageversion") or ""
                     software = "Egami %s" % v
 
                 elif distro == "OPENBH":
-                    v = BoxInfo.getItem("imgversion") or BoxInfo.getItem("imageversion") or ""
-                    b = BoxInfo.getItem("imagebuild") or BoxInfo.getItem("imgrevision") or ""
+                    v = BoxInfo.getItem("imgversion") or BoxInfo.getItem(
+                        "imageversion") or ""
+                    b = BoxInfo.getItem("imagebuild") or BoxInfo.getItem(
+                        "imgrevision") or ""
                     software = "%s %s-%s" % (distro, v, b)
 
             except Exception:
@@ -270,7 +313,8 @@ class AglareBoxInfo(Poll, Converter, object):
                 pythonversion = 'Python' + ' ' + about.getPythonVersionString()
             except (ImportError, AttributeError):
                 from sys import version_info
-                pythonversion = 'Python' + ' ' + '%s.%s.%s' % (version_info.major, version_info.minor, version_info.micro)
+                pythonversion = 'Python' + ' ' + \
+                    '%s.%s.%s' % (version_info.major, version_info.minor, version_info.micro)
             return '%s' % (pythonversion)
 
         elif self.type == self.CpuInfo:
@@ -283,22 +327,31 @@ class AglareBoxInfo(Poll, Converter, object):
                     with open('/proc/cpuinfo', 'r') as f:
                         for line in f:
                             if 'system type' in line:
-                                info = line.split(':')[-1].split()[0].strip().strip('\n')
+                                info = line.split(
+                                    ':')[-1].split()[0].strip().strip('\n')
                             elif 'cpu MHz' in line:
-                                cpu_speed = line.split(':')[-1].strip().strip('\n')
+                                cpu_speed = line.split(
+                                    ':')[-1].strip().strip('\n')
                             elif 'cpu type' in line:
                                 info = line.split(':')[-1].strip().strip('\n')
                             elif 'model name' in line or 'Processor' in line:
-                                info = line.split(':')[-1].strip().strip('\n').replace('Processor ', '')
+                                info = line.split(
+                                    ':')[-1].strip().strip('\n').replace('Processor ', '')
                             elif line.startswith('processor'):
                                 cpu_count += 1
-                    if info.startswith('ARM') and isfile('/proc/stb/info/chipset'):
+                    if info.startswith('ARM') and isfile(
+                            '/proc/stb/info/chipset'):
                         try:
                             with open('/proc/stb/info/chipset', 'r') as f:
                                 chipset = f.readline().strip().lower()
-                                chipset = chipset.replace('hi3798mv200', 'Hi3798MV200')
-                                chipset = chipset.replace('bcm', 'BCM').replace('brcm', 'BCM')
-                                chipset = chipset.replace('7444', 'BCM7444').replace('7278', 'BCM7278')
+                                chipset = chipset.replace(
+                                    'hi3798mv200', 'Hi3798MV200')
+                                chipset = chipset.replace(
+                                    'bcm', 'BCM').replace(
+                                    'brcm', 'BCM')
+                                chipset = chipset.replace(
+                                    '7444', 'BCM7444').replace(
+                                    '7278', 'BCM7278')
                                 info = '%s (%s)' % (chipset, info)
                         except Exception:
                             pass
@@ -311,11 +364,13 @@ class AglareBoxInfo(Poll, Converter, object):
                                 import binascii
                                 with open('/sys/firmware/devicetree/base/cpus/cpu@0/clock-frequency', 'rb') as f:
                                     clockfrequency = f.read()
-                                cpu_speed = "%s" % str(int(binascii.hexlify(clockfrequency), 16) / 1000000)
+                                cpu_speed = "%s" % str(
+                                    int(binascii.hexlify(clockfrequency), 16) / 1000000)
                             except Exception:
                                 cpu_speed = '-'
                     if cpu_info == '':
-                        return _('%s, %s MHz (%d %s)') % (info, cpu_speed, cpu_count, cpu_count > 1 and cores or core)
+                        return _('%s, %s MHz (%d %s)') % (
+                            info, cpu_speed, cpu_count, cpu_count > 1 and cores or core)
                 except Exception as e:
                     print("Error reading CPU info:", str(e))
                     return _('Error')
@@ -336,7 +391,8 @@ class AglareBoxInfo(Poll, Converter, object):
         elif self.type == self.TempInfo:
             info = "N/A"
             try:
-                if exists("/proc/stb/sensors/temp0/value") and exists("/proc/stb/sensors/temp0/unit"):
+                if exists(
+                        "/proc/stb/sensors/temp0/value") and exists("/proc/stb/sensors/temp0/unit"):
                     with open("/proc/stb/sensors/temp0/value") as f_val, open("/proc/stb/sensors/temp0/unit") as f_unit:
                         value = f_val.read().strip()
                         unit = f_unit.read().strip()
@@ -355,7 +411,8 @@ class AglareBoxInfo(Poll, Converter, object):
                     try:
                         with open("/proc/hisi/msp/pm_cpu") as f:
                             content = f.read()
-                            match = search(r"temperature = (\d+) degree", content)
+                            match = search(
+                                r"temperature = (\d+) degree", content)
                             if match:
                                 info = "%s%sC" % (match.group(1), "\xc2\xb0")
                     except Exception:
@@ -401,11 +458,14 @@ class AglareBoxInfo(Poll, Converter, object):
                 # seconds = int(total_seconds % MINUTE)
                 uptime = ''
                 if days > 0:
-                    uptime += str(days) + ' ' + (days == 1 and 'day' or 'days') + ' '
+                    uptime += str(days) + ' ' + \
+                        (days == 1 and 'day' or 'days') + ' '
                 if len(uptime) > 0 or hours > 0:
-                    uptime += str(hours) + ' ' + (hours == 1 and 'hour' or 'hours') + ' '
+                    uptime += str(hours) + ' ' + \
+                        (hours == 1 and 'hour' or 'hours') + ' '
                 if len(uptime) > 0 or minutes > 0:
-                    uptime += str(minutes) + ' ' + (minutes == 1 and 'minute' or 'minutes')
+                    uptime += str(minutes) + ' ' + (minutes ==
+                                                    1 and 'minute' or 'minutes')
                 return 'Time in work: %s' % uptime
 
         elif self.type == self.CpuLoad:
@@ -437,7 +497,8 @@ class AglareBoxInfo(Poll, Converter, object):
                             import binascii
                             with open('/sys/firmware/devicetree/base/cpus/cpu@0/clock-frequency', 'rb') as f:
                                 clock_data = f.read()
-                            info = int(int(binascii.hexlify(clock_data), 16) / 100000000) * 100
+                            info = int(int(binascii.hexlify(
+                                clock_data), 16) / 100000000) * 100
                         except Exception:
                             info = '-'
                 return 'CPU Speed: %s MHz' % info
@@ -451,7 +512,8 @@ class AglareBoxInfo(Poll, Converter, object):
                     with open('/etc/enigma2/settings', 'r') as f:
                         for line in f:
                             if 'config.skin.primary_skin' in line:
-                                return (_('Skin: ')) + line.replace('/skin.xml', ' ').split('=')[1]
+                                return (_('Skin: ')) + \
+                                    line.replace('/skin.xml', ' ').split('=')[1]
                 except Exception as e:
                     print("Error reading skin info:", str(e))
                     return _("Error")
@@ -487,7 +549,8 @@ class AglareBoxInfo(Poll, Converter, object):
         elif self.type == self.TimeInfo4:
             try:
                 if not config.timezone.area.value.startswith('(GMT)'):
-                    return (_('Part~of~the~light:')) + config.timezone.area.value[0:12]
+                    return (_('Part~of~the~light:')) + \
+                        config.timezone.area.value[0:12]
                 else:
                     return '+0'
             except Exception:

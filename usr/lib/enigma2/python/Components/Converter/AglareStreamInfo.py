@@ -31,7 +31,11 @@ class AglareStreamInfo(Converter):
             refstr = playref.toString()
             if self._is_stream_service(refstr):
                 if refstr.startswith('1:0:'):
-                    if any(x in refstr for x in ('0.0.0.0:', '127.0.0.1:', 'localhost:')):
+                    if any(
+                        x in refstr for x in (
+                            '0.0.0.0:',
+                            '127.0.0.1:',
+                            'localhost:')):
                         return 'Stream Relay'
                     elif '%3a' in refstr:
                         return 'GStreamer'
@@ -101,5 +105,6 @@ class AglareStreamInfo(Converter):
     text = property(getText)
 
     def changed(self, what):
-        if what[0] != self.CHANGED_SPECIFIC or what[1] in (iPlayableService.evStart,):
+        if what[0] != self.CHANGED_SPECIFIC or what[1] in (
+                iPlayableService.evStart,):
             Converter.changed(self, what)

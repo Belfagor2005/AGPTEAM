@@ -4,7 +4,7 @@ from enigma import ePositionGauge
 
 
 class PositionGauge(Renderer):
-    
+
     def __init__(self):
         Renderer.__init__(self)
         self.__position = 0
@@ -24,7 +24,8 @@ class PositionGauge(Renderer):
         if what[0] == self.CHANGED_CLEAR:
             (self.length, self.position) = 0
         else:
-            (self.length, self.position) = (self.source.length or 0, self.source.position or 0)
+            (self.length, self.position) = (
+                self.source.length or 0, self.source.position or 0)
 
     def cutlist_changed(self):
         self.cutlist = self.source.cutlist or []
