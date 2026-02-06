@@ -467,11 +467,13 @@ class AgpGenreX(Renderer):
                             mapped_genre.lower(), mapped_genre.lower())
 
                     if not genreTxt or genreTxt is None:
-                        logger.info("GenreX EPG mapping failed, using 'general'")
+                        logger.info(
+                            "GenreX EPG mapping failed, using 'general'")
                         genreTxt = "general"
                 else:
                     genreTxt = "general"
-                    logger.info("GenreX getGenreData() returned None, using 'general'")
+                    logger.info(
+                        "GenreX getGenreData() returned None, using 'general'")
 
             except Exception as e:
                 logger.error(f"GenreX error reading EPG: {e}")
@@ -502,4 +504,3 @@ class AgpGenreX(Renderer):
 
         self.instance.setScale(1)
         self.instance.show()
-
