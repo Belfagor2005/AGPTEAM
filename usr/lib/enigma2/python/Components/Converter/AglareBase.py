@@ -533,8 +533,10 @@ class AglareBase(Poll, Converter, object):
         return str(tp.get("tuner_type")) or ""
 
     def terrafec(self, tpinfo):
-        return "LP:{} HP:{} GI:{}".format(tpinfo.get("code_rate_lp"), tpinfo.get(
-            "code_rate_hp"), tpinfo.get("guard_interval"))
+        return "LP:{} HP:{} GI:{}".format(
+            tpinfo.get("code_rate_lp"),
+            tpinfo.get("code_rate_hp"),
+            tpinfo.get("guard_interval"))
 
     def plpid(self, tpinfo):
         plpid = str(tpinfo.get("plp_id", 0))
@@ -739,19 +741,30 @@ class AglareBase(Poll, Converter, object):
                 return self.streamurl()
             else:
                 if "DVB-S" in self.tunertype(tp):
-                    satf = "{} {} {} {} {} {}".format(self.system(tpinfo), self.modulation(tpinfo), self.frequency(
-                        tp), self.polarization(tpinfo), self.symbolrate(tp), self.fecinfo(tpinfo))
+                    satf = "{} {} {} {} {} {}".format(
+                        self.system(tpinfo),
+                        self.modulation(tpinfo),
+                        self.frequency(tp),
+                        self.polarization(tpinfo),
+                        self.symbolrate(tp),
+                        self.fecinfo(tpinfo))
                     if "is_id" in tpinfo or "pls_code" in tpinfo or "pls_mode" in tpinfo or "t2mi_plp_id" in tp:
                         return sp(satf) + self.multistream(tpinfo) + \
                             self.t2mi_info(tpinfo)
                     else:
                         return satf
                 elif "DVB-C" in self.tunertype(tp):
-                    return "{} Mhz {} SR: {} FEC: {}".format(self.frequency(tp), self.modulation(
-                        tpinfo), self.symbolrate(tp), self.fecinfo(tpinfo))
+                    return "{} Mhz {} SR: {} FEC: {}".format(
+                        self.frequency(tp),
+                        self.modulation(tpinfo),
+                        self.symbolrate(tp),
+                        self.fecinfo(tpinfo))
                 elif self.tunertype(tp) == "DVB-T":
-                    terf = "{} ({} Mhz)  {}  {}".format(self.channel(tpinfo), self.terrafreq(
-                        tp), self.constellation(tpinfo), self.terrafec(tpinfo))
+                    terf = "{} ({} Mhz)  {}  {}".format(
+                        self.channel(tpinfo),
+                        self.terrafreq(tp),
+                        self.constellation(tpinfo),
+                        self.terrafec(tpinfo))
                     return terf
                 elif self.tunertype(tp) == "DVB-T2":
                     return sp(terf) + self.plpid(tpinfo)
