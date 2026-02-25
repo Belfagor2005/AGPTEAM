@@ -412,6 +412,7 @@ class AglareBase(Poll, Converter, object):
         elif "HDRInfo" in type:
             self.type = self.HDRINFO
 
+# ######## COMMON VARIABLES #################
     def videowidth(self, info):
         width = 0
         if os.path.exists("/proc/stb/vmpeg/0/xres"):
@@ -944,20 +945,15 @@ class AglareBase(Poll, Converter, object):
     boolean = property(getBoolean)
 
     def changed(self, what):
-        # Determine whether the event is of interest to us
+        # Verifica se l'evento è di nostro interesse
         if len(what) == 1 and what[0] == self.CHANGED_POLL:
             # Evento di poll
             if hasattr(self, 'downstream_elements'):
                 self.downstream_elements.changed(what)
         elif len(what) >= 2 and what[0] == self.CHANGED_SPECIFIC and what[1] == iPlayableService.evUpdatedInfo:
-            # Notify downstream components about the change
+            # Evento specifico (aggiornamento info)
             if hasattr(self, 'downstream_elements'):
                 self.downstream_elements.changed(what)
-            # Alternatively, if you want to call the superclass method:
-            # try:
-            #     super().changed(what)
-            # except AttributeError:
-            #     pass
 
 
 """

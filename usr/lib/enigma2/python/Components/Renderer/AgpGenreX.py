@@ -464,8 +464,7 @@ class AgpGenreX(Renderer):
                     mapped_genre = None
                     subgenres = genre_mapping.get(lvl1)
 
-                    if isinstance(subgenres,
-                                  tuple) and 0 <= lvl2 < len(subgenres):
+                    if isinstance(subgenres, tuple) and 0 <= lvl2 < len(subgenres):
                         mapped_genre = subgenres[lvl2]
 
                         logger.info(
