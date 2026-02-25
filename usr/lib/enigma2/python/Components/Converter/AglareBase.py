@@ -956,7 +956,7 @@ class AglareBase(Poll, Converter, object):
             len(what) > 1 and
             what[1] == iPlayableService.evUpdatedInfo
         )
-        
+
         if is_poll or is_specific_update:
             # Notify downstream components about the change
             if hasattr(self, 'downstream_elements'):
