@@ -390,12 +390,12 @@ class AgpGenreX(Renderer):
             return
 
         if what is None or not cfg.genre_source.value:
-            # logger.debug(f"AgpGenreX.changed skipped (what={what}, genre_source={cfg.genre_source.value})")
+            # logger.debug("AgpGenreX.changed skipped (what=%s, genre_source=%s)", what, cfg.genre_source.value)
             if self.instance:
                 self.instance.hide()
             return
 
-        # logger.info(f"AgpGenreX.changed running (what={what})")
+        # logger.info("AgpGenreX.changed running (what=%s)", what)
         self.delay()
 
     def delay(self):
@@ -412,7 +412,7 @@ class AgpGenreX(Renderer):
         # Clean event name
         evName = self.event.getEventName().strip().replace('ё', 'е')
         eventNm = clean_for_tvdb(evName)
-        # logger.info(f"GenreX raw event name: {evName!r}, cleaned: {eventNm!r}")
+        # logger.info("GenreX raw event name: %r, cleaned: %r", evName, eventNm)
 
         # Try JSON metadata
         infos_file = join(self.storage_path, eventNm + ".json")
@@ -422,51 +422,61 @@ class AgpGenreX(Renderer):
                     with open(infos_file, "r") as f:
                         content = f.read()
                         json_data = json_loads(content)
+
                         # Handle missing genres key
                         if "genres" in json_data and json_data["genres"]:
                             genre_id = json_data["genres"][0]["id"]
                             genreTxt = GENRE_MAP.get(
-                                genre_id, {
-                                    "default": "general"}).get(
-                                "default", "general")
+                                genre_id,
+                                {"default": "general"}
+                            ).get("default", "general")
+
                             genreTxt = SIMPLIFIED_GENRES.get(
-                                genreTxt.lower(), genreTxt.lower())
+                                genreTxt.lower(),
+                                genreTxt.lower()
+                            )
                         else:
                             logger.info(
                                 "GenreX JSON file has no genres data: %s",
                                 infos_file)
-                            genreTxt = "general"  # Default fallback
+                            genreTxt = "general"
                 else:
                     logger.info(
                         "GenreX JSON file is empty (0 bytes): %s",
                         infos_file)
-                    genreTxt = "general"  # Default fallback
+                    genreTxt = "general"
+
             except Exception as e:
-                logger.warning("GenreX invalid JSON: %s", str(e))
-                genreTxt = "general"  # Default fallback
+                logger.warning("GenreX invalid JSON: %s", e)
+                genreTxt = "general"
 
         # Fallback to EPG if needed
         if not genreTxt or genreTxt == "general":
             try:
                 gData = self.event.getGenreData()
-                logger.info(f"GenreX raw gData: {gData}")
+                logger.info("GenreX raw gData: %s", gData)
+
                 if gData:
                     lvl1 = gData.getLevel1()
                     lvl2 = gData.getLevel2()
-                    # logger.info(f"GenreX EPG levels → level1={lvl1}, level2={lvl2}")
+                    # logger.info("GenreX EPG levels → level1=%s, level2=%s", lvl1, lvl2)
 
-                    # Map using genre_mapping tuple by index
                     mapped_genre = None
                     subgenres = genre_mapping.get(lvl1)
-                    if isinstance(subgenres,
-                                  tuple) and 0 <= lvl2 < len(subgenres):
-                        mapped_genre = subgenres[lvl2]
-                        logger.info(
-                            f"GenreX mapped genreTxt after EPG → '{mapped_genre}'")
-                        genreTxt = SIMPLIFIED_GENRES.get(
-                            mapped_genre.lower(), mapped_genre.lower())
 
-                    if not genreTxt or genreTxt is None:
+                    if isinstance(subgenres, tuple) and 0 <= lvl2 < len(subgenres):
+                        mapped_genre = subgenres[lvl2]
+
+                        logger.info(
+                            "GenreX mapped genreTxt after EPG → '%s'",
+                            mapped_genre)
+
+                        genreTxt = SIMPLIFIED_GENRES.get(
+                            mapped_genre.lower(),
+                            mapped_genre.lower()
+                        )
+
+                    if not genreTxt:
                         logger.info(
                             "GenreX EPG mapping failed, using 'general'")
                         genreTxt = "general"
@@ -476,30 +486,37 @@ class AgpGenreX(Renderer):
                         "GenreX getGenreData() returned None, using 'general'")
 
             except Exception as e:
-                logger.error(f"GenreX error reading EPG: {e}")
-                genreTxt = "general"  # Final fallback
+                logger.error("GenreX error reading EPG: %s", e)
+                genreTxt = "general"
 
         # Ensure genreTxt is never None or empty
         if not genreTxt:
             genreTxt = "general"
-            logger.warning("GenreX: genreTxt is empty, forcing to 'general'")
+            logger.warning(
+                "GenreX: genreTxt is empty, forcing to 'general'")
 
         # Build PNG path
-        # logger.info(f"GenreTxt value before generating PNG path: {genreTxt}")
+        # logger.info("GenreTxt value before generating PNG path: %s", genreTxt)
+
         png_name = sub(
             r"[^0-9a-z]+",
             "_",
-            genreTxt.lower()).strip("_") + ".png"
+            genreTxt.lower()
+        ).strip("_") + ".png"
+
         png_path = join(GENRE_PIC_PATH, png_name)
 
-        # logger.info(f"GenreX: checking PNG file path: {png_path}")
+        # logger.info("GenreX: checking PNG file path: %s", png_path)
+
         if exists(png_path):
-            # logger.info(f"GenreX found PNG file at path: {png_path}")
+            # logger.info("GenreX found PNG file at path: %s", png_path)
             self.instance.setPixmap(loadPNG(png_path))
         else:
             generic = join(GENRE_PIC_PATH, "general.png")
             logger.warning(
-                f"Genre image not found at {png_path}. Using default {generic}")
+                "Genre image not found at %s. Using default %s",
+                png_path,
+                generic)
             self.instance.setPixmap(loadPNG(generic))
 
         self.instance.setScale(1)
