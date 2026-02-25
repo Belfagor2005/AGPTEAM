@@ -321,9 +321,9 @@ class AglareBase(Poll, Converter, object):
 
     def __init__(self, type):
         Converter.__init__(self, type)
+        Poll.__init__(self)
         self.type = type
         self.short_list = True
-        Poll.__init__(self)
         self.poll_interval = 1000
         self.poll_enabled = True
         self.list = []
@@ -412,7 +412,6 @@ class AglareBase(Poll, Converter, object):
         elif "HDRInfo" in type:
             self.type = self.HDRINFO
 
-# ######## COMMON VARIABLES #################
     def videowidth(self, info):
         width = 0
         if os.path.exists("/proc/stb/vmpeg/0/xres"):
@@ -796,7 +795,10 @@ class AglareBase(Poll, Converter, object):
         elif self.type == self.STREAMURL:
             return str(self.streamurl())
 
-        elif self.type == self.PIDHEXINFO:
+        elif self.type == self.STREAMURL:
+            return str(self.streamurl())
+
+        elif self.type == self.STREAMTYPE:          # it was incorrectly PIDHEXINFO
             return str(self.streamtype())
 
         elif self.type == self.HDRINFO:
@@ -942,11 +944,30 @@ class AglareBase(Poll, Converter, object):
                     return True
                 return False
 
-    boolean = property(getBoolean)
+    # def changed(self, what):
+        # if what[0] == self.CHANGED_SPECIFIC and what[1] == iPlayableService.evUpdatedInfo or what[0] == self.CHANGED_POLL:
+            # Converter.changed(self, what)
 
     def changed(self, what):
-        if what[0] == self.CHANGED_SPECIFIC and what[1] == iPlayableService.evUpdatedInfo or what[0] == self.CHANGED_POLL:
-            Converter.changed(self, what)
+        # Determine whether the event is of interest to us
+        is_poll = what[0] == self.CHANGED_POLL
+        is_specific_update = (
+            what[0] == self.CHANGED_SPECIFIC and
+            len(what) > 1 and
+            what[1] == iPlayableService.evUpdatedInfo
+        )
+        
+        if is_poll or is_specific_update:
+            # Notify downstream components about the change
+            if hasattr(self, 'downstream_elements'):
+                self.downstream_elements.changed(what)
+            # Alternatively, if you want to call the superclass method:
+            # try:
+            #     super().changed(what)
+            # except AttributeError:
+            #     pass
+
+    boolean = property(getBoolean)
 
 
 """
