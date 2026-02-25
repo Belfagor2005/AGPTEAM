@@ -321,9 +321,9 @@ class AglareBase(Poll, Converter, object):
 
     def __init__(self, type):
         Converter.__init__(self, type)
-        Poll.__init__(self)
         self.type = type
         self.short_list = True
+        Poll.__init__(self)
         self.poll_interval = 1000
         self.poll_enabled = True
         self.list = []
@@ -453,7 +453,7 @@ class AglareBase(Poll, Converter, object):
         yresol = str(self.videoheight(info))
         progrs = self.proginfo(info)
         if (xresol > "0"):
-            videosize = "%sx%s%s" % (xresol, yresol, progrs)
+            videosize = "{}x{}{}".format(xresol, yresol, progrs)
             return videosize
         else:
             return ""
@@ -468,15 +468,15 @@ class AglareBase(Poll, Converter, object):
                     pass
             if (fps < 0) or (fps == -1):
                 return ""
-            fps = "%6.3f" % (fps / 1000.)
-        return "%s fps" % (fps.replace(".000", ""))
+            fps = "{:6.3f}".format(fps / 1000.0)
+        return "{} fps".format(fps.replace(".000", ""))
 
     def videocodec(self, info):
         vcodec = codecs.get(
             info.getInfo(
                 iServiceInformation.sVideoType),
             "N/A")
-        return "%s" % (vcodec)
+        return "{}".format(vcodec)
 
     def hdr(self, info):
         gamma = info.getInfo(iServiceInformation.sGamma)
@@ -533,7 +533,7 @@ class AglareBase(Poll, Converter, object):
         return str(tp.get("tuner_type")) or ""
 
     def terrafec(self, tpinfo):
-        return "LP:%s HP:%s GI:%s" % (tpinfo.get("code_rate_lp"), tpinfo.get(
+        return "LP:{} HP:{} GI:{}".format(tpinfo.get("code_rate_lp"), tpinfo.get(
             "code_rate_hp"), tpinfo.get("guard_interval"))
 
     def plpid(self, tpinfo):
@@ -541,7 +541,7 @@ class AglareBase(Poll, Converter, object):
         if plpid == "None" or plpid == "-1":
             return ""
         else:
-            return "PLP ID:%s" % plpid
+            return "PLP ID:{}".format(plpid)
 
     def t2mi_info(self, tpinfo):
         try:
@@ -551,11 +551,11 @@ class AglareBase(Poll, Converter, object):
                 t2mi_id = ""
                 t2mi_pid = ""
             else:
-                t2mi_id = "T2MI PLP %s" % t2mi_id
+                t2mi_id = "T2MI PLP {}".format(t2mi_id)
                 if t2mi_pid == "None":
                     t2mi_pid = ""
                 else:
-                    t2mi_pid = "PID %s" % t2mi_pid
+                    t2mi_pid = "PID {}".format(t2mi_pid)
             return sp(t2mi_id) + sp(t2mi_pid)
         except BaseException:
             return ""
@@ -570,7 +570,7 @@ class AglareBase(Poll, Converter, object):
         if isid == "None" or isid == "-1" or isid == "0":
             isid = ""
         else:
-            isid = "IS:%s" % (isid)
+            isid = "IS:{}".format(isid)
         if plscode == "None" or plscode == "-1" or plscode == "0":
             plscode = ""
         if (plscode == "0" and plsmode == "Gold") or (
@@ -595,9 +595,9 @@ class AglareBase(Poll, Converter, object):
     def orbital(self, tp):
         orbp = tp.get("orbital_position")
         if orbp > 1800:
-            orbp = str((float(3600 - orbp)) / 10.0) + "°W"
+            orbp = "{:.1f}°W".format((float(3600 - orbp)) / 10.0)
         else:
-            orbp = str((float(orbp)) / 10.0) + "°E"
+            orbp = "{:.1f}°E".format((float(orbp)) / 10.0)
         return orbp
 
     def reference(self):
@@ -633,7 +633,7 @@ class AglareBase(Poll, Converter, object):
                 strurl = refstr.split(":")
                 streamurl = strurl[10].replace("%3a", ":")
                 if len(streamurl) > 80:
-                    streamurl = "%s..." % streamurl[:79]
+                    streamurl = "{}...".format(streamurl[:79])
                 return streamurl
             else:
                 return ""
@@ -674,7 +674,7 @@ class AglareBase(Poll, Converter, object):
             onid = ""
         else:
             onid = "ONID:" + str(onid).zfill(4)
-        pidinfo = "%s %s %s %s %s %s %s" % (
+        pidinfo = "{} {} {} {} {} {} {}".format(
             vpid, apid, sid, pcrpid, pmtpid, tsid, onid)
         return pidinfo
 
@@ -714,7 +714,7 @@ class AglareBase(Poll, Converter, object):
             onid = ""
         else:
             onid = "ONID:" + str(hex(onid)[2:]).upper().zfill(4)
-        pidhexinfo = "%s %s %s %s" % (vpid, apid, sid, pmtpid)
+        pidhexinfo = "{} {} {} {}".format(vpid, apid, sid, pmtpid)
         return pidhexinfo
 
     @cached
@@ -739,7 +739,7 @@ class AglareBase(Poll, Converter, object):
                 return self.streamurl()
             else:
                 if "DVB-S" in self.tunertype(tp):
-                    satf = "%s %s %s %s %s %s" % (self.system(tpinfo), self.modulation(tpinfo), self.frequency(
+                    satf = "{} {} {} {} {} {}".format(self.system(tpinfo), self.modulation(tpinfo), self.frequency(
                         tp), self.polarization(tpinfo), self.symbolrate(tp), self.fecinfo(tpinfo))
                     if "is_id" in tpinfo or "pls_code" in tpinfo or "pls_mode" in tpinfo or "t2mi_plp_id" in tp:
                         return sp(satf) + self.multistream(tpinfo) + \
@@ -747,16 +747,16 @@ class AglareBase(Poll, Converter, object):
                     else:
                         return satf
                 elif "DVB-C" in self.tunertype(tp):
-                    return "%s Mhz %s SR: %s FEC: %s" % (self.frequency(tp), self.modulation(
+                    return "{} Mhz {} SR: {} FEC: {}".format(self.frequency(tp), self.modulation(
                         tpinfo), self.symbolrate(tp), self.fecinfo(tpinfo))
                 elif self.tunertype(tp) == "DVB-T":
-                    terf = "%s (%s Mhz)  %s  %s" % (self.channel(tpinfo), self.terrafreq(
+                    terf = "{} ({} Mhz)  {}  {}".format(self.channel(tpinfo), self.terrafreq(
                         tp), self.constellation(tpinfo), self.terrafec(tpinfo))
                     return terf
                 elif self.tunertype(tp) == "DVB-T2":
                     return sp(terf) + self.plpid(tpinfo)
                 elif "ATSC" in self.tunertype(tp):
-                    return "%s (Mhz) %s" % (
+                    return "{} (Mhz) {}".format(
                         self.terrafreq(tp), self.modulation(tpinfo))
                 return ""
 
@@ -766,7 +766,7 @@ class AglareBase(Poll, Converter, object):
                 return self.streamtype()
             else:
                 if "DVB-S" in self.tunertype(tp):
-                    return "%s (%s)" % (self.satname(tp), self.orbital(tp))
+                    return "{} ({})".format(self.satname(tp), self.orbital(tp))
                 elif "DVB-C" in self.tunertype(tp) or "DVB-T" in self.tunertype(tp) or "ATSC" in self.tunertype(tp):
                     return self.system(tpinfo)
                 return ""
@@ -784,7 +784,7 @@ class AglareBase(Poll, Converter, object):
             vidsize = self.videosize(info)
             fps = self.framerate(info)
             vidcodec = self.videocodec(info)
-            return "%s  %s  %s" % (vidsize, fps, vidcodec)
+            return "{}  {}  {}".format(vidsize, fps, vidcodec)
 
         elif self.type == self.PIDINFO:
             return self.pidstring(info)
@@ -795,10 +795,7 @@ class AglareBase(Poll, Converter, object):
         elif self.type == self.STREAMURL:
             return str(self.streamurl())
 
-        elif self.type == self.STREAMURL:
-            return str(self.streamurl())
-
-        elif self.type == self.STREAMTYPE:          # it was incorrectly PIDHEXINFO
+        elif self.type == self.STREAMTYPE:
             return str(self.streamtype())
 
         elif self.type == self.HDRINFO:
@@ -944,20 +941,15 @@ class AglareBase(Poll, Converter, object):
                     return True
                 return False
 
-    # def changed(self, what):
-        # if what[0] == self.CHANGED_SPECIFIC and what[1] == iPlayableService.evUpdatedInfo or what[0] == self.CHANGED_POLL:
-            # Converter.changed(self, what)
+    boolean = property(getBoolean)
 
     def changed(self, what):
         # Determine whether the event is of interest to us
-        is_poll = what[0] == self.CHANGED_POLL
-        is_specific_update = (
-            what[0] == self.CHANGED_SPECIFIC and
-            len(what) > 1 and
-            what[1] == iPlayableService.evUpdatedInfo
-        )
-
-        if is_poll or is_specific_update:
+        if len(what) == 1 and what[0] == self.CHANGED_POLL:
+            # Evento di poll
+            if hasattr(self, 'downstream_elements'):
+                self.downstream_elements.changed(what)
+        elif len(what) >= 2 and what[0] == self.CHANGED_SPECIFIC and what[1] == iPlayableService.evUpdatedInfo:
             # Notify downstream components about the change
             if hasattr(self, 'downstream_elements'):
                 self.downstream_elements.changed(what)
@@ -966,8 +958,6 @@ class AglareBase(Poll, Converter, object):
             #     super().changed(what)
             # except AttributeError:
             #     pass
-
-    boolean = property(getBoolean)
 
 
 """
