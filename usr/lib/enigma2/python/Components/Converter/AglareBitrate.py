@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # based on version by areq 2015-12-13 http://areq.eu.org/
 # mod by Fhroma version 12.10.2018
 # improved version

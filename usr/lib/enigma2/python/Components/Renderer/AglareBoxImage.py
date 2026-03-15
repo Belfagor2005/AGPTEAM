@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 # <widget source="session.CurrentService" render="AglareBoxImage" position="1103,642" size="550,155" alphatest="on" scale="1" zPosition="99" />
 from Components.Renderer.Renderer import Renderer
 from enigma import ePixmap, loadPNG

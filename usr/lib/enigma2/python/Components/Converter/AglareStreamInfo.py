@@ -1,8 +1,16 @@
+# -*- coding: utf-8 -*-
 from Components.Converter.Converter import Converter
 from Components.Element import cached
 import NavigationInstance
 from enigma import iPlayableService
-import urllib
+from urllib import unquote
+import urllib3
+
+
+# ========================
+# DISABLE URLLIB3 DEBUG LOGS
+# ========================
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class AglareStreamInfo(Converter):
@@ -61,7 +69,7 @@ class AglareStreamInfo(Converter):
 
         try:
             # Decodifica eventuale URL-encoding
-            decoded = urllib.unquote(refstr)
+            decoded = unquote(refstr)
 
             # Cerca l'inizio dell'URL
             http_index = decoded.find('http://')

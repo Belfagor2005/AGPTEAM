@@ -15,6 +15,7 @@ from enigma import eLabel, eEPGCache
 from Components.VariableText import VariableText
 from time import localtime
 
+
 try:
     import sys
     if sys.version_info[0] == 3:

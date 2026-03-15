@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # ServiceInfoEX
 # Copyright (c) 2boom 2013-18
 # v.1.4.5
@@ -28,8 +30,18 @@ import os
 import socket
 import time
 import requests
+import urllib3
 import gettext
 _ = gettext.gettext
+
+
+# ========================
+# DISABLE URLLIB3 DEBUG LOGS
+# ========================
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+# logging.getLogger("urllib3").setLevel(logging.WARNING)
+# logging.getLogger("requests").setLevel(logging.WARNING)
+
 
 if fileExists("/etc/issue"):
     image = ''

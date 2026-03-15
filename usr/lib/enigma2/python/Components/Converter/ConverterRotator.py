@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # ConverterRotator Converter for Enigma2 (ConverterRotator.py)
 # Coded by vlamo (c) 2012
 #

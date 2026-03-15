@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 from __future__ import absolute_import, print_function
 """
 #########################################################
@@ -50,6 +51,14 @@ __copyright__ = "AGP Team"
 from Components.config import config
 from pathlib import Path
 from threading import Lock
+import urllib3
+
+# ========================
+# DISABLE URLLIB3 DEBUG LOGS
+# ========================
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+# logging.getLogger("urllib3").setLevel(logging.WARNING)
+# logging.getLogger("requests").setLevel(logging.WARNING)
 
 # Initialize thread lock for API access synchronization
 api_lock = Lock()

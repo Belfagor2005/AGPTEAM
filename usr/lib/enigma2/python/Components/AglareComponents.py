@@ -7,6 +7,7 @@ from os import path
 from re import sub
 from six import text_type
 import unicodedata
+import urllib3
 
 try:
     # Python 2 imports
@@ -34,6 +35,11 @@ except ImportError:
     from urllib.request import urlretrieve as urllib_urlretrieve, install_opener as urllib2_install_opener
     from urllib.error import HTTPError as urllib2_HTTPError, URLError as urllib2_URLError
 
+
+# ========================
+# DISABLE URLLIB3 DEBUG LOGS
+# ========================
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 append2file = False
 imageType = None

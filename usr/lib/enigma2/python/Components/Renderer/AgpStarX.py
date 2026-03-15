@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 from __future__ import absolute_import, print_function
 """
 #########################################################
@@ -46,7 +47,6 @@ from __future__ import absolute_import, print_function
 __author__ = "Lululla"
 __copyright__ = "AGP Team"
 
-# Standard library imports
 from json import load as json_load, dump as json_dump
 from functools import lru_cache
 from os import remove
@@ -54,8 +54,8 @@ from os.path import exists, getsize
 from threading import Lock, Thread
 from urllib.error import HTTPError
 from urllib.request import urlopen
+import urllib3
 
-# Enigma2 imports
 from Components.Renderer.Renderer import Renderer
 from Components.VariableValue import VariableValue
 from enigma import eEPGCache, eSlider
@@ -63,7 +63,6 @@ from re import findall
 from enigma import eTimer
 from Components.config import config
 
-# Local imports
 from Plugins.Extensions.Aglare.api_config import cfg
 from Plugins.Extensions.Aglare.api_config import ApiKeyManager
 
@@ -71,6 +70,12 @@ from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, logger
 from .Agp_Requests import intCheck
 from .Agp_lib import quoteEventName
 
+# ========================
+# DISABLE URLLIB3 DEBUG LOGS
+# ========================
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+# logging.getLogger("urllib3").setLevel(logging.WARNING)
+# logging.getLogger("requests").setLevel(logging.WARNING)
 
 if not POSTER_FOLDER.endswith("/"):
     POSTER_FOLDER += "/"

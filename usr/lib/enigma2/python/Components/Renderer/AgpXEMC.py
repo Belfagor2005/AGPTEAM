@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 from __future__ import absolute_import, print_function
 """
 #########################################################
@@ -45,7 +46,6 @@ from __future__ import absolute_import, print_function
 __author__ = "Lululla"
 __copyright__ = "AGP Team"
 
-# Standard library
 from datetime import datetime
 from os import remove, makedirs
 from os.path import join, exists, getsize, basename  # , splitext
@@ -53,8 +53,8 @@ from threading import Thread, Lock
 from queue import LifoQueue
 from concurrent.futures import ThreadPoolExecutor
 from re import findall
+import urllib3
 
-# Enigma2 specific imports
 from enigma import ePixmap, loadJPG, eTimer, eServiceCenter
 from Components.Renderer.Renderer import Renderer
 from Components.Sources.EventInfo import EventInfo
@@ -62,8 +62,6 @@ from Components.Sources.CurrentService import CurrentService
 from Components.Sources.ServiceEvent import ServiceEvent
 import NavigationInstance
 
-
-# Local imports
 from Plugins.Extensions.Aglare.api_config import cfg
 from Plugins.Extensions.Aglare.api_config import ApiKeyManager
 from Components.Renderer.AgpDownloadThread import AgpDownloadThread
@@ -71,6 +69,13 @@ from Components.Renderer.AgpDownloadThread import AgpDownloadThread
 from .Agp_Utils import IMOVIE_FOLDER, clean_for_tvdb, logger, create_secure_log_dir
 from .Agp_Requests import intCheck
 from .Agp_lib import sanitize_filename
+
+# ========================
+# DISABLE URLLIB3 DEBUG LOGS
+# ========================
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+# logging.getLogger("urllib3").setLevel(logging.WARNING)
+# logging.getLogger("requests").setLevel(logging.WARNING)
 
 secure_log_dir = create_secure_log_dir()
 

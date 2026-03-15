@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 #   NitroFHDRun renderer
 #   Based on Version: 1.5 (04.04.2012 23:40)
 #   Copyright (C) 2010-2012 vlamo <vlamodev@gmail.com>

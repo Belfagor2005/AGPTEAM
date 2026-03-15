@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 from __future__ import absolute_import, print_function
 """
 #########################################################
@@ -48,6 +49,7 @@ __copyright__ = "AGP Team"
 
 from re import sub, S, I, search, escape, compile, DOTALL
 import sys
+import urllib3
 from unicodedata import normalize, category
 
 
@@ -66,6 +68,14 @@ else:
     from urllib import quote_plus
     from HTMLParser import HTMLParser
     html_parser = HTMLParser()
+
+
+# ========================
+# DISABLE URLLIB3 DEBUG LOGS
+# ========================
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+# logging.getLogger("urllib3").setLevel(logging.WARNING)
+# logging.getLogger("requests").setLevel(logging.WARNING)
 
 
 def quoteEventName(eventName, safe="+"):

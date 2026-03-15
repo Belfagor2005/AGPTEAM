@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 from Components.Renderer.Renderer import Renderer
 from Components.VariableText import VariableText
 from enigma import eLabel, eTimer

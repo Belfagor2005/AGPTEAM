@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 from __future__ import absolute_import, print_function
 """
 #########################################################
@@ -50,8 +51,14 @@ from re import compile, sub, DOTALL, IGNORECASE  # , UNICODE
 from unicodedata import normalize, category
 import sys
 from Components.config import config
-# from .Agp_Utils import logger
-# from functools import lru_cache
+import urllib3
+
+# ========================
+# DISABLE URLLIB3 DEBUG LOGS
+# ========================
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+# logging.getLogger("urllib3").setLevel(logging.WARNING)
+# logging.getLogger("requests").setLevel(logging.WARNING)
 
 convtext_cache = {}
 DEBUG = False  # active for show text cleaned in debug

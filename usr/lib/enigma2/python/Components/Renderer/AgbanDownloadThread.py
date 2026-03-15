@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 from __future__ import absolute_import, print_function
 """
 #########################################################
@@ -46,7 +47,6 @@ from __future__ import absolute_import, print_function
 __author__ = "Lululla"
 __copyright__ = "AGP Team"
 
-# Standard library
 from os import remove
 from os.path import exists, getsize
 from re import findall, sub
@@ -59,19 +59,15 @@ import threading
 import urllib3
 import logging
 
-# Third-party libraries
 from PIL import Image
 from requests import get, codes, Session
 from requests.adapters import HTTPAdapter, Retry
 from requests.exceptions import HTTPError, RequestException
 from twisted.internet.reactor import callInThread
 from functools import lru_cache
-
-# Enigma2 specific
 from enigma import getDesktop
 from Components.config import config
 
-# Local imports
 from .Agp_apikeys import tmdb_api, thetvdb_api, fanart_api  # , omdb_api
 from .Agp_Utils import logger
 

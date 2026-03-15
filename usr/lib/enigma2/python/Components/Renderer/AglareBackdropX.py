@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 from __future__ import absolute_import, print_function
 """
 #########################################################
@@ -46,22 +47,21 @@ from __future__ import absolute_import, print_function
 __author__ = "Lululla"
 __copyright__ = "AGP Team"
 
-# Standard library
 from datetime import datetime
 from os import remove, makedirs
 from os.path import join, exists, getsize
 from re import compile, sub
 import threading
 from threading import Thread, Lock
+import urllib3
+
 from datetime import timedelta
 from time import sleep, time
 from traceback import print_exc, format_exc
 from collections import OrderedDict
 from queue import LifoQueue
-# from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor
 
-# Enigma2 specific imports
 from enigma import ePixmap, loadJPG, eEPGCache, eTimer
 from Components.Renderer.Renderer import Renderer
 from Components.Sources.Event import Event
@@ -71,7 +71,6 @@ from Components.Sources.ServiceEvent import ServiceEvent
 from ServiceReference import ServiceReference
 import NavigationInstance
 
-# Local imports
 from Plugins.Extensions.Aglare.api_config import cfg
 from Plugins.Extensions.Aglare.api_config import ApiKeyManager
 from Components.Renderer.AgbDownloadThread import AgbDownloadThread
@@ -86,6 +85,13 @@ from .Agp_Utils import (
     logger,
     create_secure_log_dir
 )
+
+# ========================
+# DISABLE URLLIB3 DEBUG LOGS
+# ========================
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+# logging.getLogger("urllib3").setLevel(logging.WARNING)
+# logging.getLogger("requests").setLevel(logging.WARNING)
 
 secure_log_dir = create_secure_log_dir()
 

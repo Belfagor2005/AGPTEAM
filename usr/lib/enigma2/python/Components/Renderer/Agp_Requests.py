@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 from __future__ import absolute_import, print_function
 """
 #########################################################
@@ -61,7 +62,6 @@ from requests import Session
 from requests.exceptions import RequestException
 from PIL import Image
 import socket
-
 # Local imports
 from .Agp_Utils import logger
 

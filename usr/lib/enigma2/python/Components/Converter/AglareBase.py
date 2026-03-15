@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import absolute_import, division
 # glamourBase converter
 # Modded and recoded by MCelliotG for use in Glamour skins or standalone, added Python3 support

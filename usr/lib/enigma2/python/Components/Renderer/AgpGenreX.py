@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 from __future__ import absolute_import, print_function
 """
 #########################################################
@@ -46,24 +47,29 @@ from __future__ import absolute_import, print_function
 __author__ = "Lululla"
 __copyright__ = "AGP Team"
 
-# Standard library imports
 from os.path import join, exists, getsize
 from re import sub
 from json import loads as json_loads
 
-# Enigma2 imports
 from Components.Renderer.Renderer import Renderer
 from enigma import ePixmap, loadPNG
 import gettext
 from Components.config import config
+import urllib3
 
-# Local imports
 from Plugins.Extensions.Aglare.api_config import cfg
 from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, logger
 from .Agp_Requests import intCheck
 
 if not POSTER_FOLDER.endswith("/"):
     POSTER_FOLDER += "/"
+
+# ========================
+# DISABLE URLLIB3 DEBUG LOGS
+# ========================
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+# logging.getLogger("urllib3").setLevel(logging.WARNING)
+# logging.getLogger("requests").setLevel(logging.WARNING)
 
 # Constants
 # api_key_manager = ApiKeyManager()

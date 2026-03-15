@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 from __future__ import absolute_import, print_function
 """
 #########################################################
@@ -43,15 +44,14 @@ from os.path import join, exists, getsize
 from re import findall
 from json import load as json_load, dump as json_dump
 from threading import Lock, Thread
+import urllib3
 
-# Enigma2 imports
 from Components.Renderer.Renderer import Renderer
 from enigma import ePixmap, loadPNG
 from urllib.request import urlopen
 import gettext
 from Components.config import config
 
-# local import
 from Plugins.Extensions.Aglare.api_config import cfg
 from Plugins.Extensions.Aglare.api_config import ApiKeyManager
 
@@ -59,8 +59,16 @@ from .Agp_Utils import POSTER_FOLDER, clean_for_tvdb, logger
 from .Agp_Requests import intCheck
 from .Agp_lib import quoteEventName
 
+# ========================
+# DISABLE URLLIB3 DEBUG LOGS
+# ========================
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+# logging.getLogger("urllib3").setLevel(logging.WARNING)
+# logging.getLogger("requests").setLevel(logging.WARNING)
+
 if not POSTER_FOLDER.endswith("/"):
     POSTER_FOLDER += "/"
+
 
 # Constants
 api_key_manager = ApiKeyManager()

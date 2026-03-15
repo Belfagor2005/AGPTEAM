@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 from __future__ import absolute_import, print_function
 """
 #########################################################
@@ -113,7 +114,9 @@ from Components.config import config
 # THREADING
 # ========================
 from threading import Timer, Lock as threading_Lock
-
+# Disable SSL warnings
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # Check Python version
 PY3 = version_info[0] >= 3
 
