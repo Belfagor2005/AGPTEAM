@@ -1,10 +1,15 @@
-### AGP (Advanced Graphics Renderer)
-** Optimized for Aglare FHD Skin**
+<h1 align="center">🖼️ AGP (Advanced Graphics Renderer)</h1>
 
-[![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-red)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+** Optimized for Aglare FHD Skin**
 [![Tested on Aglare FHD](https://img.shields.io/badge/Skin-Aglare_FHD-blueviolet)](https://github.com/Belfagor2005/enigma2-plugin-skins-aglare/main/usr/share/enigma2/Aglare-FHD-PLI)
+![Visitors](https://komarev.com/ghpvc/?username=Belfagor2005&label=Repository%20Views&color=blueviolet)
+[![Version](https://img.shields.io/badge/Version-1.0-blue.svg)](https://github.com/Belfagor2005/AGPTEAM)
+[![Enigma2](https://img.shields.io/badge/Enigma2-Plugin-ff6600.svg)](https://www.enigma2.net)
+[![Python](https://img.shields.io/badge/Python-3-blue.svg)](https://www.python.org)
+[![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-red)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 ![Python package](https://github.com/Belfagor2005/AGPTEAM/actions/workflows/pylint.yml/badge.svg)
-[![](https://komarev.com/ghpvc/?username=Belfagor2005)](https://github.com/Belfagor2005/AGPTEAM)
+[![Donate](https://img.shields.io/badge/_-Donate-red.svg?logo=githubsponsors&labelColor=555555&style=for-the-badge)](Maintainers.md#maintainers "Donate")
+
 
 <img src="https://raw.githubusercontent.com/Belfagor2005/enigma2-plugin-skins-aglare/main/usr/share/enigma2/Aglare-FHD-PLI/picon_default.png?raw=true">
 
