@@ -6,10 +6,10 @@ import subprocess
 from xml.etree import ElementTree as ET
 """
 ###########################################################
-Aglare for Enigma2
+Plugin for Enigma2
 Created by: Lululla
 ###########################################################
-Last Updated: 2026-01-31
+Last Updated: 2026-04-19
 Credits: Lululla (modifications)
 Homepage: www.corvoboys.org
           www.linuxsat-support.com
